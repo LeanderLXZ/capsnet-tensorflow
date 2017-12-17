@@ -1,0 +1,15 @@
+.DS_Store
+/.ropeproject/
+.ipynb_checkpoints/
+/__pycache__/
+/checkpoints/
+/log/
+/.idea/
+/preprocessed_data/
+/inputs/
+/logs/
+/data/
+*.jpg
+*.csv
+*.html
+*.txt
