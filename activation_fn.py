@@ -1,6 +1,5 @@
 import tensorflow as tf
-
-epsilon = 1e-9
+from config import cfg
 
 
 class ActivationFunc(object):
@@ -17,6 +16,6 @@ class ActivationFunc(object):
             A tensor with the same shape as vector but squashed in 'vec_len' dimension.
         """
         vec_squared_norm = tf.reduce_sum(tf.square(vector), -2, keep_dims=True)
-        scalar_factor = vec_squared_norm / (1 + vec_squared_norm) / tf.sqrt(vec_squared_norm + epsilon)
+        scalar_factor = vec_squared_norm / (1 + vec_squared_norm) / tf.sqrt(vec_squared_norm + cfg.EPSILON)
         squashed_vec = scalar_factor * vector  # element-wise
         return squashed_vec

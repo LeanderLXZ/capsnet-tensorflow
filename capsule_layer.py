@@ -93,15 +93,15 @@ class CapsuleLayer(object):
         u_hat_stop = tf.stop_gradient(u_hat, name='u_hat_stop')
 
         # Initializing b_ij
-        b_ij = tf.zeros([batch_size, num_caps_i, num_caps_j], tf.float32, name='b_ij')
-        # b_ij shape: (batch_size, num_caps_i, num_caps_j)
-        assert b_ij.get_shape() == (batch_size, num_caps_i, num_caps_j)
+        b_ij = tf.zeros([batch_size, num_caps_i, num_caps_j, 1], tf.float32, name='b_ij')
+        # b_ij shape: (batch_size, num_caps_i, num_caps_j, 1)
+        assert b_ij.get_shape() == (batch_size, num_caps_i, num_caps_j, 1)
 
         def _sum_and_activate(_u_hat, _c_ij):
 
             # Calculating s_j(using u_hat)
             # Using u_hat but not u_hat_stop in order to transfer gradients.
-            _s_j = tf.reduce_sum(tf.multiply(_u_hat, tf.expand_dims(_c_ij, -1)), axis=1)
+            _s_j = tf.reduce_sum(tf.multiply(_u_hat, _c_ij), axis=1)
             # _s_j shape: (batch_size, num_caps_j, vec_dim_j)
             assert _s_j.get_shape() == (batch_size, num_caps_j, vec_dim_j)
 
@@ -117,10 +117,10 @@ class CapsuleLayer(object):
             with tf.variable_scope('iter_route_{}'.format(iter_route)):
 
                 # Calculate c_ij for every epoch
-                c_ij = tf.nn.softmax(b_ij)
+                c_ij = tf.nn.softmax(b_ij, dim=2)
 
-                # c_ij shape: (batch_size, num_caps_i, num_caps_j)
-                assert c_ij.get_shape() == (batch_size, num_caps_i, num_caps_j)
+                # c_ij shape: (batch_size, num_caps_i, num_caps_j, 1)
+                assert c_ij.get_shape() == (batch_size, num_caps_i, num_caps_j, 1)
 
                 # Applying back-propagation at last epoch.
                 if iter_route == route_epoch - 1:
@@ -145,13 +145,13 @@ class CapsuleLayer(object):
                     assert u_hat_stop_reshaped.get_shape() == (batch_size, num_caps_i, num_caps_j, vec_dim_j, 1)
                     # ( , , , 1, vec_dim_j) x ( , , , vec_dim_j, 1) -> squeeze -> (batch_size, num_caps_i, num_caps_j)
 
-                    delta_b_ij = tf.squeeze(tf.matmul(v_j, u_hat_stop))
-                    # delta_b_ij shape: (batch_size, num_caps_i, num_caps_j)
-                    assert delta_b_ij.get_shape() == (batch_size, num_caps_i, num_caps_j)
+                    delta_b_ij = tf.matmul(v_j, u_hat_stop)
+                    # delta_b_ij shape: (batch_size, num_caps_i, num_caps_j, 1)
+                    assert delta_b_ij.get_shape() == (batch_size, num_caps_i, num_caps_j, 1)
 
                     b_ij = tf.add(b_ij, delta_b_ij)
-                    # b_ij shape: (batch_size, num_caps_i, num_caps_j)
-                    assert b_ij.get_shape() == (batch_size, num_caps_i, num_caps_j)
+                    # b_ij shape: (batch_size, num_caps_i, num_caps_j, 1)
+                    assert b_ij.get_shape() == (batch_size, num_caps_i, num_caps_j, 1)
 
         # v_j shape: (batch_size, num_caps_j, vec_dim_j)
         return v_j
