@@ -2,12 +2,12 @@ import os
 import gzip
 import hashlib
 import shutil
+import pickle
 import numpy as np
 import tensorflow as tf
 from os.path import isdir
 from config import cfg
 from tqdm import tqdm
-from PIL import Image
 from urllib.request import urlretrieve
 
 
@@ -39,17 +39,28 @@ def _read32(bytestream):
     return np.frombuffer(bytestream.read(4), dtype=dt)[0]
 
 
-def ungzip_image(save_path, extract_path, database_name, _):
+def _dense_to_one_hot(labels_dense, num_classes):
     """
-    Unzip a gzip file and extract it to extract_path
-    :param save_path: The path of the gzip files
-    :param extract_path: The location to extract the data to
-    :param database_name: Name of database
-    :param _: HACK - Used to have to same interface as _unzip
+    Convert class labels from scalars to one-hot vectors.
+    """
+    num_labels = labels_dense.shape[0]
+    index_offset = np.arange(num_labels) * num_classes
+    labels_one_hot = np.zeros((num_labels, num_classes))
+    labels_one_hot.flat[index_offset + labels_dense.ravel()] = 1
+    return labels_one_hot
+
+
+def extract_image(save_path, extract_path):
+    """
+    Extract the images into a 4D uint8 numpy array [index, y, x, depth].
     """
     # Get data from save_path
     with open(save_path, 'rb') as f:
+
+        print('Extracting {}...'.format(f.name))
+
         with gzip.GzipFile(fileobj=f) as bytestream:
+
             magic = _read32(bytestream)
             if magic != 2051:
                 raise ValueError('Invalid magic number {} in file: {}'.format(magic, f.name))
@@ -60,15 +71,36 @@ def ungzip_image(save_path, extract_path, database_name, _):
             data = np.frombuffer(buf, dtype=np.uint8)
             data = data.reshape(num_images, rows, cols)
 
-            # Save data to extract_path
-            for image_i, image in enumerate(tqdm(data, unit='File', unit_scale=True,
-                                                 miniters=1, desc='Extracting {}'.format(database_name))):
-                Image.fromarray(image, 'L').save(os.path.join(extract_path, 'image_{}.jpg'.format(image_i)))
+            with open(extract_path + '.p', 'wb') as f_p:
+                pickle.dump(data, f_p)
 
 
-def download_and_extract(url, data_path, save_path, extract_path, database_name, extract_fn):
+def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
+    """
+    Extract the labels into a 1D uint8 numpy array [index].
+    """
+    # Get data from save_path
+    with open(save_path, 'rb') as f:
 
-    hash_code = 'f68b3c2dcbeaaa9fbdd348bbdeb94873'
+        print('Extracting {}...'.format(f.name))
+
+        with gzip.GzipFile(fileobj=f) as bytestream:
+
+            magic = _read32(bytestream)
+            if magic != 2049:
+                raise ValueError('Invalid magic number %d in MNIST label file: %s' %
+                                 (magic, f.name))
+            num_items = _read32(bytestream)
+            buf = bytestream.read(num_items)
+            labels = np.frombuffer(buf, dtype=np.uint8)
+            if one_hot:
+                labels = _dense_to_one_hot(labels, num_classes)
+
+            with open(extract_path + '.p', 'wb') as f_p:
+                pickle.dump(labels, f_p)
+
+
+def download_and_extract_mnist(url, data_path, save_path, extract_path, database_name, data_type):
 
     if not os.path.exists(data_path):
         os.makedirs(data_path)
@@ -78,12 +110,13 @@ def download_and_extract(url, data_path, save_path, extract_path, database_name,
                         desc='Downloading {}'.format(database_name)) as pbar:
             urlretrieve(url, save_path, pbar.hook)
 
-    assert hashlib.md5(open(save_path, 'rb').read()).hexdigest() == hash_code, \
-        '{} file is corrupted.  Remove the file and try again.'.format(save_path)
-
-    os.makedirs(extract_path)
     try:
-        extract_fn(save_path, extract_path, database_name, data_path)
+        if data_type == 'image':
+            extract_image(save_path, extract_path)
+        elif data_type == 'label':
+            extract_labels(save_path, extract_path, one_hot=True, num_classes=10)
+        else:
+            raise ValueError('Wrong data_type!')
     except Exception as err:
         shutil.rmtree(extract_path)  # Remove extraction folder if there is an error
         raise err

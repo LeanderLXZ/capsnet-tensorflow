@@ -2,9 +2,6 @@ from easydict import EasyDict
 
 __C = EasyDict()
 
-# Database name
-__C.DATABASE_NAME = 'mnist'
-
 # Learning rate
 __C.LEARNING_RATE = 0.001
 
@@ -35,6 +32,9 @@ __C.MARGIN_LOSS_PARAMS = {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
 
 # Add epsilon(a very small number) to zeros
 __C.EPSILON = 1e-9
+
+# Database name
+__C.DATABASE_NAME = 'mnist'
 
 # Data directory path
 __C.DATA_PATH = './data/'

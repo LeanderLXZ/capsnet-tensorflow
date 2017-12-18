@@ -10,25 +10,44 @@ def download_data():
 
     if cfg.DATABASE_NAME == database_mnist_name:
 
-        utils.download_and_extract(url='http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-                                   data_path=cfg.DATA_PATH,
-                                   save_path=os.path.join(cfg.DATA_PATH, 'train-images-idx3-ubyte.gz'),
-                                   extract_path=os.path.join(cfg.DATA_PATH, 'mnist_train_images'),
-                                   database_name=cfg.DATABASE_NAME,
-                                   extract_fn=utils.ungzip_image)
+        SOURCE_URL = 'http://yann.lecun.com/exdb/mnist/'
+        TRAIN_IMAGES = 'train-images-idx3-ubyte.gz'
+        TRAIN_LABELS = 'train-labels-idx1-ubyte.gz'
+        TEST_IMAGES = 't10k-images-idx3-ubyte.gz'
+        TEST_LABELS = 't10k-labels-idx1-ubyte.gz'
 
-        utils.download_and_extract(url='http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
-                                   data_path=cfg.DATA_PATH,
-                                   save_path=os.path.join(cfg.DATA_PATH, 't10k-images-idx3-ubyte.gz'),
-                                   extract_path=os.path.join(cfg.DATA_PATH, 'mnist_test_images'),
-                                   database_name=cfg.DATABASE_NAME,
-                                   extract_fn=utils.ungzip_image)
+        utils.check_dir([os.path.join(cfg.DATA_PATH, 'mnist')])
 
-        # utils.download_and_extract(url='http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
-        #                            data_path=cfg.DATA_PATH,
-        #                            save_path=os.path.join(cfg.DATA_PATH, 'train-labels-idx1-ubyte.gz'),
-        #                            extract_path=os.path.join(cfg.DATA_PATH, 'mnist_train_label'),
-        #                            database_name=cfg.DATABASE_NAME)
+        utils.download_and_extract_mnist(url=SOURCE_URL + TRAIN_IMAGES,
+                                         data_path=cfg.DATA_PATH,
+                                         save_path=os.path.join(cfg.DATA_PATH, TRAIN_IMAGES),
+                                         extract_path=os.path.join(cfg.DATA_PATH, 'mnist/train_image'),
+                                         database_name=cfg.DATABASE_NAME,
+                                         data_type='image')
+
+        utils.download_and_extract_mnist(url=SOURCE_URL + TRAIN_LABELS,
+                                         data_path=cfg.DATA_PATH,
+                                         save_path=os.path.join(cfg.DATA_PATH, TRAIN_LABELS),
+                                         extract_path=os.path.join(cfg.DATA_PATH, 'mnist/train_label'),
+                                         database_name=cfg.DATABASE_NAME,
+                                         data_type='label')
+
+        utils.download_and_extract_mnist(url=SOURCE_URL + TEST_IMAGES,
+                                         data_path=cfg.DATA_PATH,
+                                         save_path=os.path.join(cfg.DATA_PATH, TEST_IMAGES),
+                                         extract_path=os.path.join(cfg.DATA_PATH, 'mnist/test_image'),
+                                         database_name=cfg.DATABASE_NAME,
+                                         data_type='image')
+
+        utils.download_and_extract_mnist(url=SOURCE_URL + TEST_LABELS,
+                                         data_path=cfg.DATA_PATH,
+                                         save_path=os.path.join(cfg.DATA_PATH, TEST_LABELS),
+                                         extract_path=os.path.join(cfg.DATA_PATH, 'mnist/test_label'),
+                                         database_name=cfg.DATABASE_NAME,
+                                         data_type='label')
+
+    else:
+        raise ValueError('Wrong database name!')
 
 
 if __name__ == '__main__':
