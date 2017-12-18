@@ -37,7 +37,7 @@ __C.EPSILON = 1e-9
 __C.DATABASE_NAME = 'mnist'
 
 # Data directory path
-__C.DATA_PATH = './data/'
+__C.SOURCE_DATA_PATH = './data/source_data/'
 
 # Log directory path
 __C.LOG_PATH = './logs/'

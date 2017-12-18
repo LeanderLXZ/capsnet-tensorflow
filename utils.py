@@ -1,6 +1,5 @@
 import os
 import gzip
-import hashlib
 import shutil
 import pickle
 import numpy as np
@@ -9,6 +8,12 @@ from os.path import isdir
 from config import cfg
 from tqdm import tqdm
 from urllib.request import urlretrieve
+
+
+# Save data to pickle file
+def save_data_to_pickle(data, data_path):
+    with open(data_path, 'wb') as f:
+        pickle.dump(data, f)
 
 
 # Get the length of a vector
@@ -70,9 +75,7 @@ def extract_image(save_path, extract_path):
             buf = bytestream.read(rows * cols * num_images)
             data = np.frombuffer(buf, dtype=np.uint8)
             data = data.reshape(num_images, rows, cols)
-
-            with open(extract_path + '.p', 'wb') as f_p:
-                pickle.dump(data, f_p)
+            save_data_to_pickle(data, extract_path + '.p')
 
 
 def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
@@ -95,15 +98,10 @@ def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
             labels = np.frombuffer(buf, dtype=np.uint8)
             if one_hot:
                 labels = _dense_to_one_hot(labels, num_classes)
-
-            with open(extract_path + '.p', 'wb') as f_p:
-                pickle.dump(labels, f_p)
+            save_data_to_pickle(labels, extract_path + '.p')
 
 
-def download_and_extract_mnist(url, data_path, save_path, extract_path, database_name, data_type):
-
-    if not os.path.exists(data_path):
-        os.makedirs(data_path)
+def download_and_extract_mnist(url, save_path, extract_path, database_name, data_type):
 
     if not os.path.exists(save_path):
         with DLProgress(unit='B', unit_scale=True, miniters=1,
