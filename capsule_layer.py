@@ -80,7 +80,7 @@ class CapsuleLayer(object):
 
         # Initializing weights
         weights_shape = [1, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i]
-        weights_initializer = tf.truncated_normal_initializer(stddev=0.1)
+        weights_initializer = tf.truncated_normal_initializer(stddev=cfg.STDDEV)
         # Reuse weights
         weights = tf.get_variable('weights', shape=weights_shape,
                                   dtype=tf.float32, initializer=weights_initializer)
