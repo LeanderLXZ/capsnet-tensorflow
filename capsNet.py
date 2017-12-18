@@ -7,10 +7,10 @@ from config import cfg
 class CapsNet(object):
 
     @staticmethod
-    def _get_inputs(image_size):
+    def _get_inputs(image_size, num_class):
 
-        _inputs = tf.placeholder(tf.float32, shape=[None, *image_size], name='inputs')
-        _labels = tf.placeholder(tf.float32, shape=[None, None], name='labels')
+        _inputs = tf.placeholder(tf.float32, shape=[cfg.BATCH_SIZE, *image_size], name='inputs')
+        _labels = tf.placeholder(tf.float32, shape=[cfg.BATCH_SIZE, num_class], name='labels')
 
         return _inputs, _labels
 
@@ -21,17 +21,22 @@ class CapsNet(object):
 
         # logits shape: (batch_size, num_caps, vec_dim)
         logits_shape = logits.get_shape()
-        batch_size = logits_shape[0]
         num_caps = logits_shape[1]
+        vec_dim = logits_shape[2]
+
+        # logits shape: (batch_size, num_caps, vec_dim)
+        assert logits.get_shape() == (cfg.BATCH_SIZE, num_caps, vec_dim), \
+            'Wrong shape of logits: {}'.format(logits.get_shape().as_list())
 
         max_square_plus = tf.square(tf.maximum(0., m_plus - utils.get_vec_length(logits)))
         max_square_minus = tf.square(tf.maximum(0., utils.get_vec_length(logits) - m_minus))
         # max_square_plus & max_plus shape: (batch_size, num_caps)
-        assert max_square_plus.get_shape() == (batch_size, num_caps)
+        assert max_square_plus.get_shape() == (cfg.BATCH_SIZE, num_caps), \
+            'Wrong shape of max_square_plus: {}'.format(max_square_plus.get_shape().as_list())
 
         # label should be one-hot-encoded
         # label shape: (batch_size, num_caps)
-        assert label.get_shape() == (batch_size, num_caps)
+        assert label.get_shape() == (cfg.BATCH_SIZE, num_caps)
 
         loss_c = tf.multiply(label, max_square_plus) + \
             lambda_ * tf.multiply((1-label), max_square_minus)
@@ -45,8 +50,8 @@ class CapsNet(object):
     def _conv_layer(tensor, kernel_size=None, stride=None, depth=None):
 
         # Convolution layer
-        activation_fn = tf.nn.relu,
-        weights_initializer = tf.contrib.initializers.xavier_initializer(),
+        activation_fn = tf.nn.relu
+        weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer()
         conv = tf.contrib.layers.conv2d(inputs=tensor,
                                         num_outputs=depth,
@@ -100,7 +105,7 @@ class CapsNet(object):
 
         return caps_layers[-1]
 
-    def build_graph(self, image_size=(None, None, None)):
+    def build_graph(self, image_size=(None, None, None), num_class=None):
 
         # Build graph
         tf.reset_default_graph()
@@ -109,7 +114,7 @@ class CapsNet(object):
         with train_graph.as_default():
 
             # Get input placeholders
-            inputs, labels = self._get_inputs(image_size)
+            inputs, labels = self._get_inputs(image_size, num_class)
 
             # Build convolution layers
             conv = self._conv_layers(inputs)

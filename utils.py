@@ -27,8 +27,19 @@ def load_data_from_pickle(data_path):
 # Get the length of a vector
 def get_vec_length(vec):
 
+    vec_shape = vec.get_shape().as_list()
+    num_caps = vec_shape[1]
+    vec_dim = vec_shape[2]
+
     # vec shape: (batch_size, num_caps, vec_dim)
-    vec_length = tf.sqrt(tf.reduce_sum(tf.square(vec), axis=2, keep_dims=True) + cfg.EPSILON)
+    assert vec.get_shape() == (cfg.BATCH_SIZE, num_caps, vec_dim), \
+        'Wrong shape of vec: {}'.format(vec.get_shape().as_list())
+
+    vec_length = tf.reduce_sum(tf.square(vec), axis=2, keep_dims=True) + cfg.EPSILON
+    vec_length = tf.sqrt(tf.squeeze(vec_length))
+    # vec_length shape: (batch_size, num_caps)
+    assert vec_length.get_shape() == (cfg.BATCH_SIZE, num_caps), \
+        'Wrong shape of vec_length: {}'.format(vec_length.get_shape().as_list())
 
     # vec_length shape: (batch_size, num_caps)
     return vec_length
@@ -120,7 +131,7 @@ def download_and_extract_mnist(url, save_path, extract_path, database_name, data
         if data_type == 'image':
             extract_image(save_path, extract_path)
         elif data_type == 'label':
-            extract_labels(save_path, extract_path, one_hot=True, num_classes=10)
+            extract_labels(save_path, extract_path, one_hot=False, num_classes=10)
         else:
             raise ValueError('Wrong data_type!')
     except Exception as err:

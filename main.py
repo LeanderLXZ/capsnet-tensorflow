@@ -59,14 +59,15 @@ def _print_status(sess, x_train, y_train, x_valid, y_valid,
 def train(model):
 
     # Load data
-    x_train = None
-    y_train = None
-    x_valid = None
-    y_valid = None
+    import numpy as np
+    x_train = np.random.normal(0.5, 0.5, [80, 28, 28, 1])
+    y_train = np.ones([80, 10], dtype=np.int)
+    x_valid = np.random.normal(0.5, 0.5, [20, 28, 28, 1])
+    y_valid = np.ones([20, 10], dtype=np.int)
 
     # Build graph
     train_graph, inputs, labels, cost, optimizer, accuracy = \
-        model.build_graph(image_size=x_train.shape[1:])
+        model.build_graph(image_size=x_train.shape[1:], num_class=y_train.shape[1])
 
     train_log_path = cfg.LOG_PATH + '/train'
     valid_log_path = cfg.LOG_PATH + '/valid'
@@ -103,4 +104,5 @@ def train(model):
 
 if __name__ == '__main__':
 
-    train(CapsNet)
+    CapsNet_ = CapsNet()
+    train(CapsNet_)
