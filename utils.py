@@ -13,7 +13,15 @@ from urllib.request import urlretrieve
 # Save data to pickle file
 def save_data_to_pickle(data, data_path):
     with open(data_path, 'wb') as f:
+        print('Saving {}...'.format(f.name))
         pickle.dump(data, f)
+
+
+# Load data from pickle file
+def load_data_from_pickle(data_path):
+    with open(data_path, 'rb') as f:
+        print('Loading {}...'.format(f.name))
+        return pickle.dump(f)
 
 
 # Get the length of a vector
