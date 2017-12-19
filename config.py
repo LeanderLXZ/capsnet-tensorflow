@@ -6,10 +6,10 @@ __C = EasyDict()
 __C.LEARNING_RATE = 0.001
 
 # Epochs
-__C.EPOCHS = 1000
+__C.EPOCHS = 10
 
 # Batch size
-__C.BATCH_SIZE = 256
+__C.BATCH_SIZE = 128
 
 # Display step
 __C.DISPLAY_STEP = 1
@@ -38,7 +38,7 @@ __C.MARGIN_LOSS_PARAMS = {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
 __C.EPSILON = 1e-9
 
 # stddev of tf.truncated_normal_initializer()
-__C.STDDEV = 0.1
+__C.STDDEV = 0.01
 
 # Database name
 __C.DATABASE_NAME = 'mnist'
