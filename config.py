@@ -6,7 +6,7 @@ __C = EasyDict()
 __C.LEARNING_RATE = 0.001
 
 # Epochs
-__C.EPOCHS = 10
+__C.EPOCHS = 50
 
 # Batch size
 __C.BATCH_SIZE = 128
@@ -16,13 +16,13 @@ __C.DISPLAY_STEP = 1
 
 # Architecture parameters of convolution layers
 # [{'kernel_size': None, 'stride': None, 'depth': None}, ]
-__C.CONV_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 256},
-                   # {'kernel_size': 3, 'stride': 1, 'depth': 128}
+__C.CONV_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 256, 'padding': 'VALID'},
+                   # {'kernel_size': 3, 'stride': 1, 'depth': 128, 'padding': 'VALID'}
                    ]
 
 # Architecture parameters of conv2capsule layer
-# {'kernel_size': None, 'stride': None, 'depth': None, 'vec_dim': None}
-__C.CONV2CAPS_PARAMS = {'kernel_size': 9, 'stride': 2, 'depth': 32, 'vec_dim': 8}
+# {'kernel_size': None, 'stride': None, 'depth': None, 'vec_dim': None, 'padding': 'VALID'}
+__C.CONV2CAPS_PARAMS = {'kernel_size': 9, 'stride': 2, 'depth': 32, 'vec_dim': 8, 'padding': 'VALID'}
 
 # Architecture parameters of capsule layers
 # [{'num_caps': None, 'vec_dim': None, 'route_epoch': None}, ]

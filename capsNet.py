@@ -47,7 +47,7 @@ class CapsNet(object):
         return margin_loss
 
     @staticmethod
-    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None):
+    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None):
 
         # Convolution layer
         activation_fn = tf.nn.relu
@@ -57,7 +57,7 @@ class CapsNet(object):
                                         num_outputs=depth,
                                         kernel_size=kernel_size,
                                         stride=stride,
-                                        padding='VALID',
+                                        padding=padding,
                                         activation_fn=activation_fn,
                                         weights_initializer=weights_initializer,
                                         biases_initializer=biases_initializer)
@@ -77,7 +77,7 @@ class CapsNet(object):
 
         for iter_conv, conv_param in enumerate(cfg.CONV_PARAMS):
             with tf.name_scope('conv_{}'.format(iter_conv)):
-                # conv_param: {'kernel_size': None, 'stride': None, 'depth': None}
+                # conv_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
                 conv_layer = self._conv_layer(tensor=conv_layers[iter_conv], **conv_param)
                 conv_layers.append(conv_layer)
 
@@ -87,7 +87,8 @@ class CapsNet(object):
     def _conv2caps_layer(tensor, conv2caps_params):
 
         with tf.name_scope('conv2caps'):
-            # conv2caps_params: {'kernel_size': None, 'stride': None, 'depth': None, 'vec_dim': None}
+            # conv2caps_params: {'kernel_size': None, 'stride': None,
+            #                    'depth': None, 'vec_dim': None, 'padding': 'VALID'}
             conv2caps_layer = capsule_layer.Conv2Capsule(**conv2caps_params)
             conv2caps = conv2caps_layer(tensor)
 

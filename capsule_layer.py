@@ -5,12 +5,13 @@ from config import cfg
 
 class Conv2Capsule(object):
 
-    def __init__(self, kernel_size=None, stride=None, depth=None, vec_dim=None):
+    def __init__(self, kernel_size=None, stride=None, depth=None, vec_dim=None, padding=None):
 
         self.kernel_size = kernel_size
         self.stride = stride
         self.depth = depth
         self.vec_dim = vec_dim
+        self.padding = padding
 
     def __call__(self, inputs):
 
@@ -24,7 +25,7 @@ class Conv2Capsule(object):
                                         num_outputs=self.depth * self.vec_dim,
                                         kernel_size=self.kernel_size,
                                         stride=self.stride,
-                                        padding='VALID',
+                                        padding=self.padding,
                                         activation_fn=activation_fn,
                                         weights_initializer=weights_initializer,
                                         biases_initializer=biases_initializer)
