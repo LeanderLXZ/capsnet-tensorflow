@@ -21,7 +21,7 @@ def save_data_to_pickle(data, data_path):
 def load_data_from_pickle(data_path):
     with open(data_path, 'rb') as f:
         print('Loading {}...'.format(f.name))
-        return pickle.dump(f)
+        return pickle.load(f)
 
 
 # Get the length of a vector
@@ -131,7 +131,7 @@ def download_and_extract_mnist(url, save_path, extract_path, database_name, data
         if data_type == 'image':
             extract_image(save_path, extract_path)
         elif data_type == 'label':
-            extract_labels(save_path, extract_path, one_hot=False, num_classes=10)
+            extract_labels(save_path, extract_path, one_hot=True, num_classes=10)
         else:
             raise ValueError('Wrong data_type!')
     except Exception as err:

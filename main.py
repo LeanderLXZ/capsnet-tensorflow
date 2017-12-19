@@ -59,11 +59,23 @@ def _print_status(sess, x_train, y_train, x_valid, y_valid,
 def train(model):
 
     # Load data
-    import numpy as np
-    x_train = np.random.normal(0.5, 0.5, [80, 28, 28, 1])
-    y_train = np.ones([80, 10], dtype=np.int)
-    x_valid = np.random.normal(0.5, 0.5, [20, 28, 28, 1])
-    y_valid = np.ones([20, 10], dtype=np.int)
+    # import numpy as np
+    # x_train = np.random.normal(0.5, 0.5, [80, 28, 28, 1])
+    # y_train = np.ones([80, 10], dtype=np.int)
+    # x_valid = np.random.normal(0.5, 0.5, [20, 28, 28, 1])
+    # y_valid = np.ones([20, 10], dtype=np.int)
+
+    x_train = utils.load_data_from_pickle('./data/source_data/mnist/train_image.p')
+    x_train = x_train.reshape([-1, 28, 28, 1])
+    x_valid = x_train[5000:6000]
+    assert x_valid.shape == (1000, 28, 28, 1), x_valid.shape
+    x_train = x_train[:5000]
+    assert x_train.shape == (5000, 28, 28, 1), x_train.shape
+    y_train = utils.load_data_from_pickle('./data/source_data/mnist/train_label.p')
+    y_valid = y_train[5000:6000]
+    assert y_valid.shape == (1000, 10), y_valid.shape
+    y_train = y_train[:5000]
+    assert y_train.shape == (5000, 10), y_train.shape
 
     # Build graph
     train_graph, inputs, labels, cost, optimizer, accuracy = \

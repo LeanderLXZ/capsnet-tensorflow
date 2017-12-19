@@ -80,11 +80,12 @@ class CapsuleLayer(object):
 
         # Initializing weights
         weights_shape = [1, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i]
-        weights_initializer = tf.truncated_normal_initializer(stddev=cfg.STDDEV)
         # Reuse weights
-        weights = tf.get_variable('weights', shape=weights_shape,
-                                  dtype=tf.float32, initializer=weights_initializer)
-        weights = tf.tile(weights, [cfg.BATCH_SIZE, 1, 1, 1, 1], name='weights')
+        weights = tf.Variable(tf.truncated_normal(weights_shape, stddev=cfg.STDDEV, dtype=tf.float32), name='weights')
+        # weights_initializer = tf.truncated_normal_initializer(stddev=cfg.STDDEV)
+        # weights = tf.get_variable('weights_{}'.format(idx), shape=weights_shape,
+        #                           dtype=tf.float32, initializer=weights_initializer)
+        weights = tf.tile(weights, [cfg.BATCH_SIZE, 1, 1, 1, 1])
         # weights shape: (batch_size, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
         assert weights.get_shape() == (cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i), \
             'Wrong shape of weights: {}'.format(weights.get_shape().as_list())
