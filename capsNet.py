@@ -104,7 +104,9 @@ class CapsNet(object):
                 caps_layer = self._caps_layer(caps_layers[iter_caps], caps_param)
                 caps_layers.append(caps_layer)
 
-        return caps_layers[-1]
+        caps_out = tf.squeeze(caps_layers[-1])
+
+        return caps_out
 
     def build_graph(self, image_size=(None, None, None), num_class=None):
 

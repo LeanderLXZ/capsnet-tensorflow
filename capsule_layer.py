@@ -33,18 +33,18 @@ class Conv2Capsule(object):
         # Reshape and generating a capsule layer
         caps_shape = caps.get_shape().as_list()
         num_capsule = caps_shape[1] * caps_shape[2] * self.depth
-        caps = tf.reshape(caps, [cfg.BATCH_SIZE, -1, self.vec_dim])
-        # caps shape: (batch_size, num_caps_j, vec_dim_j)
-        assert caps.get_shape() == (cfg.BATCH_SIZE, num_capsule, self.vec_dim), \
+        caps = tf.reshape(caps, [cfg.BATCH_SIZE, -1, self.vec_dim, 1])
+        # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
+        assert caps.get_shape() == (cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1), \
             'Wrong shape of caps: {}'.format(caps.get_shape().as_list())
 
         # Applying activation function
-        caps_squashed = ActivationFunc.squash(caps)
-        # caps_squashed shape: (batch_size, num_caps_j, vec_dim_j)
-        assert caps_squashed.get_shape() == (cfg.BATCH_SIZE, num_capsule, self.vec_dim), \
-            'Wrong shape of caps_squashed: {}'.format(caps_squashed.get_shape().as_list())
+        caps_activated = ActivationFunc.squash(caps)
+        # caps_activated shape: (batch_size, num_caps_j, vec_dim_j, 1)
+        assert caps_activated.get_shape() == (cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1), \
+            'Wrong shape of caps_squashed: {}'.format(caps_activated.get_shape().as_list())
 
-        return caps_squashed
+        return caps_activated
 
 
 class CapsuleLayer(object):
@@ -65,7 +65,7 @@ class CapsuleLayer(object):
     @staticmethod
     def dynamic_routing(inputs, num_caps_j, vec_dim_j, route_epoch):
 
-        # inputs_shape: (batch_size, num_caps_i, vec_dim_i)
+        # inputs_shape: (batch_size, num_caps_i, vec_dim_i, 1)
         inputs_shape = inputs.get_shape().as_list()
         num_caps_i = inputs_shape[1]
         vec_dim_i = inputs_shape[2]
@@ -174,9 +174,8 @@ class CapsuleLayer(object):
                     assert b_ij.get_shape() == (cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1), \
                         'Wrong shape of b_ij: {}'.format(b_ij.get_shape().as_list())
 
-        v_j_out = tf.squeeze(v_j, name='v_j_out')
-        # v_j_out shape: (batch_size, num_caps_j, vec_dim_j)
-        assert v_j_out.get_shape() == (cfg.BATCH_SIZE, num_caps_j, vec_dim_j), \
-            'Wrong shape of v_j_out: {}'.format(b_ij.get_shape().as_list())
+        # v_j_out shape: (batch_size, num_caps_j, vec_dim_j, 1)
+        assert v_j.get_shape() == (cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1), \
+            'Wrong shape of v_j_out: {}'.format(v_j.get_shape().as_list())
 
-        return v_j_out
+        return v_j
