@@ -76,7 +76,7 @@ class CapsNet(object):
         conv_layers = [tensor]
 
         for iter_conv, conv_param in enumerate(cfg.CONV_PARAMS):
-            with tf.name_scope('conv_{}'.format(iter_conv)):
+            with tf.variable_scope('conv_{}'.format(iter_conv)):
                 # conv_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
                 conv_layer = self._conv_layer(tensor=conv_layers[iter_conv], **conv_param)
                 conv_layers.append(conv_layer)
@@ -86,7 +86,7 @@ class CapsNet(object):
     @staticmethod
     def _conv2caps_layer(tensor, conv2caps_params):
 
-        with tf.name_scope('conv2caps'):
+        with tf.variable_scope('conv2caps'):
             # conv2caps_params: {'kernel_size': None, 'stride': None,
             #                    'depth': None, 'vec_dim': None, 'padding': 'VALID'}
             conv2caps_layer = capsule_layer.Conv2Capsule(**conv2caps_params)
@@ -99,7 +99,7 @@ class CapsNet(object):
         caps_layers = [tensor]
 
         for iter_caps, caps_param in enumerate(cfg.CAPS_PARAMS):
-            with tf.name_scope('caps_{}'.format(iter_caps)):
+            with tf.variable_scope('caps_{}'.format(iter_caps)):
                 # caps_param: {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
                 caps_layer = self._caps_layer(caps_layers[iter_caps], caps_param)
                 caps_layers.append(caps_layer)
