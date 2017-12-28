@@ -187,11 +187,13 @@ class CapsNet(object):
     def _reconstruct_layers(self, tensor, labels):
 
         with tf.variable_scope('masking'):
-            # tensor shape: (batch_size, num_caps_j, vec_dim_j)
+            # tensor shape: (batch_size, n_class, vec_dim_j)
             # labels shape: (batch_size, n_class)
-            _masked = tf.multiply(tensor, tf.reshape(labels, (-1, 10, 1)))
+            # _masked shape: (batch_size, vec_dim_j)
+            _masked = tf.reduce_sum(tf.multiply(tensor, tf.expand_dims(labels, axis=-1)), axis=1)
 
         with tf.variable_scope('decoder'):
+            # _reconstructed shape: (batch_size, image_size*image_size)
             _reconstructed = self._decoder(_masked)
 
         return _reconstructed
@@ -221,6 +223,7 @@ class CapsNet(object):
             if cfg.WITH_RECONSTRUCTION:
 
                 # Reconstruction layers
+                # reconstructed shape: (batch_size, image_size*image_size)
                 reconstructed = self._reconstruct_layers(logits, labels)
 
                 # Reconstruction cost
@@ -228,7 +231,7 @@ class CapsNet(object):
                     inputs_flatten = tf.contrib.layers.flatten(inputs)
                     if cfg.DECODER_TYPE != 'fc':
                         reconstructed = tf.contrib.layers.flatten(reconstructed)
-                    reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
+                    reconstruct_cost = tf.reduce_mean(tf.square(tf.subtract(reconstructed, inputs_flatten)))
                     tf.summary.scalar('reconstruct_cost', reconstruct_cost)
 
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
