@@ -41,7 +41,6 @@ def get_vec_length(vec):
     assert vec_length.get_shape() == (cfg.BATCH_SIZE, num_caps), \
         'Wrong shape of vec_length: {}'.format(vec_length.get_shape().as_list())
 
-    # vec_length shape: (batch_size, num_caps)
     return vec_length
 
 

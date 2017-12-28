@@ -47,7 +47,7 @@ class CapsNet(object):
         return margin_loss
 
     @staticmethod
-    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None):
+    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, resize=None):
 
         # Convolution layer
         activation_fn = tf.nn.relu
@@ -62,7 +62,49 @@ class CapsNet(object):
                                         weights_initializer=weights_initializer,
                                         biases_initializer=biases_initializer)
 
+        if resize is not None:
+            conv = tf.image.resize_nearest_neighbor(conv, (resize, resize))
+
         return conv
+
+    @staticmethod
+    def _fc_layer(tensor, num_outputs=None, act_fn='relu'):
+
+        # Full connected layer
+        if act_fn == 'relu':
+            activation_fn = tf.nn.relu
+        elif act_fn == 'sigmoid':
+            activation_fn = tf.sigmoid
+        else:
+            activation_fn = None
+        weights_initializer = tf.contrib.layers.xavier_initializer()
+        biases_initializer = tf.zeros_initializer()
+        fc = tf.contrib.layers.fully_connected(inputs=tensor,
+                                               num_outputs=num_outputs,
+                                               activation_fn=activation_fn,
+                                               weights_initializer=weights_initializer,
+                                               weights_regularizer=biases_initializer,
+                                               biases_initializer=tf.zeros_initializer())
+
+        return fc
+
+    @staticmethod
+    def _conv_transpose_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None):
+
+        # Convolution transpose layer
+        activation_fn = tf.nn.relu
+        weights_initializer = tf.contrib.layers.xavier_initializer()
+        biases_initializer = tf.zeros_initializer()
+        conv_t = tf.contrib.layers.conv2d_transpose(inputs=tensor,
+                                                    num_outputs=depth,
+                                                    kernel_size=kernel_size,
+                                                    stride=stride,
+                                                    padding=padding,
+                                                    activation_fn=activation_fn,
+                                                    weights_initializer=weights_initializer,
+                                                    biases_initializer=biases_initializer)
+
+        return conv_t
 
     @staticmethod
     def _caps_layer(tensor, caps_param):
@@ -104,9 +146,50 @@ class CapsNet(object):
                 caps_layer = self._caps_layer(caps_layers[iter_caps], caps_param)
                 caps_layers.append(caps_layer)
 
+        # shape: (batch_size, num_caps_j, vec_dim_j, 1) -> (batch_size, num_caps_j, vec_dim_j)
         caps_out = tf.squeeze(caps_layers[-1])
 
         return caps_out
+
+    def _decoder(self, tensor):
+
+        decoder_layers = [tensor]
+
+        if cfg.DECODER_TYPE == 'fc':
+            for iter_fc, decoder_param in enumerate(cfg.DECODER_PARAMS):
+                with tf.variable_scope('decoder_{}'.format(iter_fc)):
+                    # decoder_param: {'num_outputs':None, 'act_fn': None}
+                    decoder_layer = self._fc_layer(tensor=decoder_layers[iter_fc], **decoder_param)
+                    decoder_layers.append(decoder_layer)
+
+        elif cfg.DECODER_TYPE == 'conv':
+            for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
+                with tf.variable_scope('decoder_{}'.format(iter_conv)):
+                    # decoder_param:
+                    # {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'resize': None}
+                    decoder_layer = self._conv_layer(tensor=decoder_layers[iter_conv], **decoder_param)
+                    decoder_layers.append(decoder_layer)
+
+        elif cfg.DECODER_TYPE == 'conv_t':
+            for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
+                with tf.variable_scope('decoder_{}'.format(iter_conv)):
+                    # decoder_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
+                    decoder_layer = self._conv_transpose_layer(tensor=decoder_layers[iter_conv], **decoder_param)
+                    decoder_layers.append(decoder_layer)
+
+        return decoder_layers[-1]
+
+    def _reconstruct_layers(self, tensor, labels):
+
+        with tf.variable_scope('masking'):
+            # tensor shape: (batch_size, num_caps_j, vec_dim_j)
+            # labels shape: (batch_size, n_class)
+            _masked = tf.multiply(tensor, tf.reshape(labels, (-1, 10, 1)))
+
+        with tf.variable_scope('decoder'):
+            _reconstructed = self._decoder(_masked)
+
+        return _reconstructed
 
     def build_graph(self, image_size=(None, None, None), num_class=None):
 
@@ -129,10 +212,34 @@ class CapsNet(object):
             # logits shape: (batch_size, num_caps, vec_dim)
             logits = self._caps_layers(conv2caps)
 
-            # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-            with tf.name_scope('cost'):
-                cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
-                tf.summary.scalar('cost', cost)
+            # Build reconstruction part
+            if cfg.WITH_RECONSTRUCTION:
+
+                # Reconstruction layers
+                reconstructed = self._reconstruct_layers(logits, labels)
+
+                # Reconstruction cost
+                with tf.name_scope('reconstruct_cost'):
+                    inputs_flatten = tf.contrib.layers.flatten(inputs)
+                    if cfg.DECODER_TYPE != 'fc':
+                        reconstructed = tf.contrib.layers.flatten(reconstructed)
+                    reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
+                    tf.summary.scalar('reconstruct_cost', reconstruct_cost)
+
+                # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
+                with tf.name_scope('train_cost'):
+                    train_cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
+                    tf.summary.scalar('train_cost', train_cost)
+
+                with tf.name_scope('cost'):
+                    cost = train_cost + cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
+                    tf.summary.scalar('cost', cost)
+
+            else:
+                # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
+                with tf.name_scope('cost'):
+                    cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
+                    tf.summary.scalar('cost', cost)
 
             # Optimizer
             optimizer = tf.train.AdamOptimizer(cfg.LEARNING_RATE).minimize(cost)
