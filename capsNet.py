@@ -86,8 +86,7 @@ class CapsNet(object):
                                                num_outputs=num_outputs,
                                                activation_fn=activation_fn,
                                                weights_initializer=weights_initializer,
-                                               weights_regularizer=biases_initializer,
-                                               biases_initializer=tf.zeros_initializer())
+                                               biases_initializer=biases_initializer)
 
         return fc
 
