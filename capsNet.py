@@ -75,8 +75,11 @@ class CapsNet(object):
             activation_fn = tf.nn.relu
         elif act_fn == 'sigmoid':
             activation_fn = tf.sigmoid
-        else:
+        elif act_fn is None:
             activation_fn = None
+        else:
+            raise ValueError('Wrong activation function!')
+
         weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer()
         fc = tf.contrib.layers.fully_connected(inputs=tensor,
@@ -91,7 +94,7 @@ class CapsNet(object):
     @staticmethod
     def _conv_transpose_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None):
 
-        # Convolution transpose layer
+        # Transpose convolution layer
         activation_fn = tf.nn.relu
         weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer()
@@ -155,14 +158,16 @@ class CapsNet(object):
 
         decoder_layers = [tensor]
 
-        if cfg.DECODER_TYPE == 'fc':
+        # Using full_connected layers
+        if cfg.DECODER_TYPE == 'FC':
             for iter_fc, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_fc)):
                     # decoder_param: {'num_outputs':None, 'act_fn': None}
                     decoder_layer = self._fc_layer(tensor=decoder_layers[iter_fc], **decoder_param)
                     decoder_layers.append(decoder_layer)
 
-        elif cfg.DECODER_TYPE == 'conv':
+        # Using convolution layers
+        elif cfg.DECODER_TYPE == 'CONV':
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param:
@@ -170,7 +175,8 @@ class CapsNet(object):
                     decoder_layer = self._conv_layer(tensor=decoder_layers[iter_conv], **decoder_param)
                     decoder_layers.append(decoder_layer)
 
-        elif cfg.DECODER_TYPE == 'conv_t':
+        # Using transpose convolution layers
+        elif cfg.DECODER_TYPE == 'CONV_T':
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
