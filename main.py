@@ -54,6 +54,9 @@ def add_summaries(sess, x_valid, y_valid, train_writer, valid_writer,
 def print_full_set_eval(sess, x_train, y_train, x_valid, y_valid, cost, accuracy,
                         inputs, labels, start_time, epoch_i, batch_counter):
 
+    utils.thick_line()
+    print('Calculating losses using full data set...')
+    utils.thick_line()
     cost_train_all = []
     cost_valid_all = []
     acc_train_all = []
@@ -77,16 +80,15 @@ def print_full_set_eval(sess, x_train, y_train, x_valid, y_valid, cost, accuracy
     acc_train = sum(acc_train_all) / len(acc_train_all)
     acc_valid = sum(acc_valid_all) / len(acc_valid_all)
 
-    utils.thick_line()
     print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
           'Batch: {} |'.format(batch_counter),
           'Time: {:.2f}s |'.format(time.time() - start_time))
     utils.thin_line()
     if cfg.EVAL_WITH_FULL_TRAIN_SET:
         print('Full_Set_Train_Loss: {:.4f}\n'.format(cost_train),
-              'Full_Set_Valid_Loss: {:.4f}\n'.format(cost_valid))
-    print('Full_Set_Train_Accuracy: {:.2f}%\n'.format(acc_train*100),
-          'Full_Set_Valid_Accuracy: {:.2f}%\n'.format(acc_valid*100))
+              'Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
+    print('Full_Set_Valid_Loss: {:.4f}\n'.format(cost_valid),
+          'Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
     utils.thick_line()
 
 

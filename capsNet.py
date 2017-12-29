@@ -244,7 +244,7 @@ class CapsNet(object):
                     inputs_flatten = tf.contrib.layers.flatten(inputs)
                     if cfg.DECODER_TYPE != 'fc':
                         reconstructed = tf.contrib.layers.flatten(reconstructed)
-                    reconstruct_cost = tf.reduce_mean(tf.square(tf.subtract(reconstructed, inputs_flatten)))
+                    reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
                     tf.summary.scalar('reconstruct_cost', reconstruct_cost)
 
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
