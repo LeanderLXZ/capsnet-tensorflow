@@ -67,6 +67,9 @@ __C.SUMMARY_STEP = 10
 __C.FULL_SET_EVAL_STEP = 500
 __C.EVAL_WITH_FULL_TRAIN_SET = True  # Calculate the train loss of full data set, which may take lots of time.
 
+# Show details of training progress
+__C.SHOW_TRAINING_DETAILS = True
+
 # Database name
 __C.DATABASE_NAME = 'mnist'
 

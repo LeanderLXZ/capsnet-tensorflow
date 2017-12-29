@@ -210,16 +210,22 @@ class CapsNet(object):
             inputs, labels = self._get_inputs(image_size, num_class)
 
             # Build convolution layers
-            inputs = tf.Print(inputs, [tf.constant(0)], message="[0] Passing convolution layers...")
+            if cfg.SHOW_TRAINING_DETAILS:
+                inputs = tf.Print(inputs, [tf.constant(1)],
+                                  message="\n[1] Passing CONVOLUTION layers...")
             conv = self._conv_layers(inputs)
 
             # Transform convolution layer's outputs to capsules
-            conv = tf.Print(conv, [tf.constant(1)], message="[1] Transforming convolution layer's outputs to capsules...")
+            if cfg.SHOW_TRAINING_DETAILS:
+                conv = tf.Print(conv, [tf.constant(2)],
+                                message="\n[2] Passing CON2CAPS layers...")
             conv2caps = self._conv2caps_layer(conv, cfg.CONV2CAPS_PARAMS)
 
             # Build capsule layers
             # logits shape: (batch_size, num_caps, vec_dim)
-            conv2caps = tf.Print(conv2caps, [tf.constant(2)], message="[2] Passing capsule layers...")
+            if cfg.SHOW_TRAINING_DETAILS:
+                conv2caps = tf.Print(conv2caps, [tf.constant(3)],
+                                     message="\n[3] Passing CAPSULE layers...")
             logits = self._caps_layers(conv2caps)
             logits = tf.identity(logits, name='logits')
 
@@ -228,7 +234,9 @@ class CapsNet(object):
 
                 # Reconstruction layers
                 # reconstructed shape: (batch_size, image_size*image_size)
-                logits = tf.Print(logits, [tf.constant(3)], message="[3] Passing reconstruction layers...")
+                if cfg.SHOW_TRAINING_DETAILS:
+                    logits = tf.Print(logits, [tf.constant(4)],
+                                      message="\n[4] Passing RECONSTRUCTION layers...")
                 reconstructed = self._reconstruct_layers(logits, labels)
 
                 # Reconstruction cost
@@ -245,7 +253,9 @@ class CapsNet(object):
                     tf.summary.scalar('train_cost', train_cost)
 
                 with tf.name_scope('cost'):
-                    train_cost = tf.Print(train_cost, [tf.constant(4)], message="[4] Calculating cost...")
+                    if cfg.SHOW_TRAINING_DETAILS:
+                        train_cost = tf.Print(train_cost, [tf.constant(5)],
+                                              message="\n[5] Calculating COST...")
                     cost = train_cost + cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
                     tf.summary.scalar('cost', cost)
 
@@ -256,7 +266,9 @@ class CapsNet(object):
                     tf.summary.scalar('cost', cost)
 
             # Optimizer
-            cost = tf.Print(cost, [tf.constant(5)], message="[5] Updating gradients...")
+            if cfg.SHOW_TRAINING_DETAILS:
+                cost = tf.Print(cost, [tf.constant(6)],
+                                message="\n[6] Updating GRADIENTS...")
             optimizer = tf.train.AdamOptimizer(cfg.LEARNING_RATE).minimize(cost)
 
             # Accuracy
