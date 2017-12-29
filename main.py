@@ -160,7 +160,7 @@ def train(model):
                     add_summaries(sess, x_valid, y_valid, train_writer, valid_writer,
                                   merged, inputs, labels, x_batch, y_batch, batch_counter)
 
-                if epoch_i % cfg.FULL_SET_EVAL_STEP == 0:
+                if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                     print_full_set_eval(sess, x_train, y_train, x_valid, y_valid, cost, accuracy,
                                         inputs, labels, start_time, epoch_i, batch_counter)
 
