@@ -58,7 +58,7 @@ __C.EPSILON = 1e-9
 __C.STDDEV = 0.01
 
 # Display step
-__C.DISPLAY_STEP = 1
+__C.DISPLAY_STEP = 10
 
 # Summary step
 __C.SUMMARY_STEP = 10

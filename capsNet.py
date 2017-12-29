@@ -210,34 +210,34 @@ class CapsNet(object):
             inputs, labels = self._get_inputs(image_size, num_class)
 
             # Build convolution layers
-            if cfg.SHOW_TRAINING_DETAILS:
-                inputs = tf.Print(inputs, [tf.constant(1)],
-                                  message="\n[1] Passing CONVOLUTION layers...")
             conv = self._conv_layers(inputs)
+            if cfg.SHOW_TRAINING_DETAILS:
+                conv = tf.Print(conv, [tf.constant(1)],
+                                message="\n[1] CONVOLUTION layers passed...")
 
             # Transform convolution layer's outputs to capsules
-            if cfg.SHOW_TRAINING_DETAILS:
-                conv = tf.Print(conv, [tf.constant(2)],
-                                message="\n[2] Passing CON2CAPS layers...")
             conv2caps = self._conv2caps_layer(conv, cfg.CONV2CAPS_PARAMS)
+            if cfg.SHOW_TRAINING_DETAILS:
+                conv2caps = tf.Print(conv2caps, [tf.constant(2)],
+                                     message="\n[2] CON2CAPS layers passed...")
 
             # Build capsule layers
             # logits shape: (batch_size, num_caps, vec_dim)
-            if cfg.SHOW_TRAINING_DETAILS:
-                conv2caps = tf.Print(conv2caps, [tf.constant(3)],
-                                     message="\n[3] Passing CAPSULE layers...")
             logits = self._caps_layers(conv2caps)
             logits = tf.identity(logits, name='logits')
+            if cfg.SHOW_TRAINING_DETAILS:
+                logits = tf.Print(logits, [tf.constant(3)],
+                                  message="\n[3] CAPSULE layers passed...")
 
             # Build reconstruction part
             if cfg.WITH_RECONSTRUCTION:
 
                 # Reconstruction layers
                 # reconstructed shape: (batch_size, image_size*image_size)
-                if cfg.SHOW_TRAINING_DETAILS:
-                    logits = tf.Print(logits, [tf.constant(4)],
-                                      message="\n[4] Passing RECONSTRUCTION layers...")
                 reconstructed = self._reconstruct_layers(logits, labels)
+                if cfg.SHOW_TRAINING_DETAILS:
+                    reconstructed = tf.Print(reconstructed, [tf.constant(4)],
+                                             message="\n[4] RECONSTRUCTION layers passed...")
 
                 # Reconstruction cost
                 with tf.name_scope('reconstruct_cost'):
@@ -253,11 +253,11 @@ class CapsNet(object):
                     tf.summary.scalar('train_cost', train_cost)
 
                 with tf.name_scope('cost'):
-                    if cfg.SHOW_TRAINING_DETAILS:
-                        train_cost = tf.Print(train_cost, [tf.constant(5)],
-                                              message="\n[5] Calculating COST...")
                     cost = train_cost + cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
                     tf.summary.scalar('cost', cost)
+                    if cfg.SHOW_TRAINING_DETAILS:
+                        cost = tf.Print(cost, [tf.constant(5)],
+                                        message="\n[5] COST calculated...")
 
             else:
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
