@@ -11,9 +11,6 @@ __C.EPOCHS = 50
 # Batch size
 __C.BATCH_SIZE = 128
 
-# Display step
-__C.DISPLAY_STEP = 1
-
 # Architecture parameters of convolution layers
 # [{'kernel_size': None, 'stride': None, 'depth': None}, ]
 __C.CONV_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 256, 'padding': 'VALID'},
@@ -59,6 +56,16 @@ __C.EPSILON = 1e-9
 
 # stddev of tf.truncated_normal_initializer()
 __C.STDDEV = 0.01
+
+# Display step
+__C.DISPLAY_STEP = 1
+
+# Summary step
+__C.SUMMARY_STEP = 10
+
+# Calculate train loss and valid loss using full data set
+__C.FULL_SET_EVAL_STEP = 500
+__C.EVAL_WITH_FULL_TRAIN_SET = True  # Calculate the train loss of full data set, which may take lots of time.
 
 # Database name
 __C.DATABASE_NAME = 'mnist'

@@ -141,6 +141,14 @@ def download_and_extract_mnist(url, save_path, extract_path, database_name, data
     os.remove(save_path)
 
 
+def thin_line():
+    print('------------------------------------------------------')
+
+
+def thick_line():
+    print('======================================================')
+
+
 class DLProgress(tqdm):
     """
     Handle Progress Bar while Downloading
