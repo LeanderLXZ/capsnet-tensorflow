@@ -142,7 +142,7 @@ def train(model):
         for epoch_i in range(cfg.EPOCHS):
 
             utils.thick_line()
-            print('Epoch: {}/{}'.format(epoch_i + 1, cfg.EPOCHS))
+            print('Start epoch: {}/{}'.format(epoch_i + 1, cfg.EPOCHS))
             utils.thin_line()
 
             for x_batch, y_batch in get_batches(x_train, y_train):
@@ -163,6 +163,9 @@ def train(model):
                 if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                     print_full_set_eval(sess, x_train, y_train, x_valid, y_valid, cost, accuracy,
                                         inputs, labels, start_time, epoch_i, batch_counter)
+
+            utils.thin_line()
+            print('Epoch done! Using time: {.2f}'.format(time.time() - start_time))
 
     utils.thick_line()
     print('Done! Total time: {.2f}'.format(time.time() - start_time))
