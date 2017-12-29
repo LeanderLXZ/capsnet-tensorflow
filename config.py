@@ -49,7 +49,7 @@ __C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
 __C.MARGIN_LOSS_PARAMS = {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
 
 # Scaling for reconstruction loss
-__C.RECONSTRUCT_COST_SCALE = 0.00005  # 0.0005*784=0.392
+__C.RECONSTRUCT_COST_SCALE = 0.0005  # 0.0005*784=0.392
 
 # Add epsilon(a very small number) to zeros
 __C.EPSILON = 1e-9

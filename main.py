@@ -167,10 +167,10 @@ def train(model):
                                         inputs, labels, start_time, epoch_i, batch_counter)
 
             utils.thin_line()
-            print('Epoch done! Using time: {.2f}'.format(time.time() - start_time))
+            print('Epoch done! Using time: {:.2f}'.format(time.time() - start_time))
 
     utils.thick_line()
-    print('Done! Total time: {.2f}'.format(time.time() - start_time))
+    print('Done! Total time: {:.2f}'.format(time.time() - start_time))
     utils.thick_line()
 
 
