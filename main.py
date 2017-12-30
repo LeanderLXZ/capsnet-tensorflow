@@ -35,12 +35,10 @@ class Main(object):
         utils.thin_line()
         x_train = utils.load_data_from_pickle('./data/source_data/mnist/train_image.p')
         y_train = utils.load_data_from_pickle('./data/source_data/mnist/train_label.p')
-        self.x_test = utils.load_data_from_pickle('./data/source_data/mnist/test_image.p')
-        self.y_test = utils.load_data_from_pickle('./data/source_data/mnist/test_label.p')
-        assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
-        assert self.y_test.shape == (10000, 10), self.y_test.shape
+        x_test = utils.load_data_from_pickle('./data/source_data/mnist/test_image.p')
+        y_test = utils.load_data_from_pickle('./data/source_data/mnist/test_label.p')
 
-        # Split training/validation set
+        # Split training/validation/test set
         x_train = x_train.reshape([-1, 28, 28, 1])
         self.x_valid = x_train[55000:60000]
         assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
@@ -50,6 +48,10 @@ class Main(object):
         assert self.y_valid.shape == (5000, 10), self.y_valid.shape
         self.y_train = y_train[:55000]
         assert self.y_train.shape == (55000, 10), self.y_train.shape
+        self.x_test = x_test.reshape([-1, 28, 28, 1])
+        assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
+        self.y_test = y_test
+        assert self.y_test.shape == (10000, 10), self.y_test.shape
 
         self.n_batch_train = len(self.y_train) // cfg.BATCH_SIZE
         self.n_batch_valid = len(self.y_valid) // cfg.BATCH_SIZE
