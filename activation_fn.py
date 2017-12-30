@@ -4,9 +4,6 @@ from config import cfg
 
 class ActivationFunc(object):
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def squash(tensor):
         """
