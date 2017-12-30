@@ -115,65 +115,82 @@ class Main(object):
                        batch_counter, time.time()-self.start_time,
                        cost_train, acc_train, cost_valid, acc_valid)
 
-    def _full_set_eval(self, sess, epoch_i, batch_counter):
+    def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, acc_all, silent=False):
+        """
+        Calculate losses and accuracies of full train set.
+        """
+        if not silent:
+            utils.thin_line()
+            print('Calculating loss and accuracy of full {} set...'.format(mode))
+            _batch_generator = self._get_batches(x, y)
+            for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit='batch'):
+                batch_x, batch_y = next(_batch_generator)
+                cost_i, acc_i = \
+                    sess.run([self.cost, self.accuracy],
+                             feed_dict={self.inputs: batch_x, self.labels: batch_y})
+                cost_all.append(cost_i)
+                acc_all.append(acc_i)
+        else:
+            for batch_x, batch_y in self._get_batches(x, y):
+                cost_i, acc_i = \
+                    sess.run([self.cost, self.accuracy],
+                             feed_dict={self.inputs: batch_x, self.labels: batch_y})
+                cost_all.append(cost_i)
+                acc_all.append(acc_i)
+
+        return cost_all, acc_all
+
+    def _full_set_eval(self, sess, epoch_i, batch_counter, silent=False):
         """
         Evaluate on the full data set and print information.
         """
         eval_start_time = time.time()
 
-        utils.thick_line()
-        print('Calculating losses using full data set...')
+        if not silent:
+            utils.thick_line()
+            print('Calculating losses using full data set...')
         cost_train_all = []
         cost_valid_all = []
         acc_train_all = []
         acc_valid_all = []
 
+        # Calculate losses and accuracies of full train set
         if cfg.EVAL_WITH_FULL_TRAIN_SET:
-            utils.thin_line()
-            print('Calculating loss and accuracy on full train set...')
-            _train_batch_generator = self._get_batches(self.x_train, self.y_train)
-            for _ in tqdm(range(self.n_batch_train), total=self.n_batch_train, ncols=100, unit='batch'):
-                train_batch_x, train_batch_y = next(_train_batch_generator)
-                cost_train_i, acc_train_i = \
-                    sess.run([self.cost, self.accuracy],
-                             feed_dict={self.inputs: train_batch_x, self.labels: train_batch_y})
-                cost_train_all.append(cost_train_i)
-                acc_train_all.append(acc_train_i)
+            cost_train_all, acc_train_all = \
+                self._eval_on_batches('train', sess, self.x_train, self.y_train, self.n_batch_train,
+                                      cost_train_all, acc_train_all, silent=silent)
 
-        utils.thin_line()
-        print('Calculating loss and accuracy on full valid set...')
-        _valid_batch_generator = self._get_batches(self.x_valid, self.y_valid)
-        for _ in tqdm(range(self.n_batch_valid), total=self.n_batch_valid, ncols=100, unit='batch'):
-            valid_batch_x, valid_batch_y = next(_valid_batch_generator)
-            cost_valid_i, acc_valid_i = \
-                sess.run([self.cost, self.accuracy],
-                         feed_dict={self.inputs: valid_batch_x, self.labels: valid_batch_y})
-            cost_valid_all.append(cost_valid_i)
-            acc_valid_all.append(acc_valid_i)
-        print('Evaluation done! Using time: {:.2f}'.format(time.time() - eval_start_time))
+        # Calculate losses and accuracies of full valid set
+        cost_valid_all, acc_valid_all = \
+            self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
+                                  cost_valid_all, acc_valid_all, silent=silent)
 
         cost_train = sum(cost_train_all) / len(cost_train_all)
         cost_valid = sum(cost_valid_all) / len(cost_valid_all)
         acc_train = sum(acc_train_all) / len(acc_train_all)
         acc_valid = sum(acc_valid_all) / len(acc_valid_all)
 
-        utils.thin_line()
-        print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
-              'Batch: {} |'.format(batch_counter),
-              'Time: {:.2f}s |'.format(time.time() - self.start_time))
-        utils.thin_line()
-        if cfg.EVAL_WITH_FULL_TRAIN_SET:
-            print('Full_Set_Train_Loss: {:.4f}\n'.format(cost_train),
-                  'Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
-        print('Full_Set_Valid_Loss: {:.4f}\n'.format(cost_valid),
-              'Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
+        if not silent:
+            utils.thin_line()
+            print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
+                  'Batch: {} |'.format(batch_counter),
+                  'Time: {:.2f}s |'.format(time.time() - self.start_time))
+            utils.thin_line()
+            if cfg.EVAL_WITH_FULL_TRAIN_SET:
+                print('Full_Set_Train_Loss: {:.4f}\n'.format(cost_train),
+                      'Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
+            print('Full_Set_Valid_Loss: {:.4f}\n'.format(cost_valid),
+                  'Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
 
-        file_path = self.log_path+'full_set_eval_log.csv'
-        utils.thin_line()
-        print('Saving {}...'.format(file_path))
+        file_path = self.log_path + 'full_set_eval_log.csv'
+        if not silent:
+            utils.thin_line()
+            print('Saving {}...'.format(file_path))
         utils.save_log(file_path, epoch_i, batch_counter, time.time()-self.start_time,
                        cost_train, acc_train, cost_valid, acc_valid)
-        utils.thick_line()
+        if not silent:
+            utils.thin_line()
+            print('Evaluation done! Using time: {:.2f}'.format(time.time() - eval_start_time))
 
     def _test_after_training(self, sess):
         """
@@ -226,11 +243,10 @@ class Main(object):
             train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
             valid_writer = tf.summary.FileWriter(valid_log_path)
 
+            full_set_eval_in_loop = False
             if cfg.FULL_SET_EVAL_STEP is not None:
-                if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
-                    full_set_eval_step = self.n_batch_train
-                else:
-                    full_set_eval_step = cfg.FULL_SET_EVAL_STEP
+                if cfg.FULL_SET_EVAL_STEP != 'per_epoch':
+                    full_set_eval_in_loop = True
 
             sess.run(tf.global_variables_initializer())
             batch_counter = 0
@@ -255,9 +271,10 @@ class Main(object):
                             if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
-                        if cfg.FULL_SET_EVAL_STEP is not None:
-                            if batch_counter % full_set_eval_step == 0:
+                        if full_set_eval_in_loop:
+                            if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                                 self._full_set_eval(sess, epoch_i, batch_counter)
+                                utils.thick_line()
                 else:
                     utils.thin_line()
                     train_batch_generator = self._get_batches(self.x_train, self.y_train)
@@ -273,9 +290,12 @@ class Main(object):
                             if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
-                        if cfg.FULL_SET_EVAL_STEP is not None:
-                            if batch_counter % full_set_eval_step == 0:
-                                self._full_set_eval(sess, epoch_i, batch_counter)
+                        if full_set_eval_in_loop:
+                            if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
+                                self._full_set_eval(sess, epoch_i, batch_counter, silent=True)
+
+                if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
+                    self._full_set_eval(sess, epoch_i, batch_counter)
 
                 utils.thin_line()
                 print('Epoch done! Using time: {:.2f}'.format(time.time() - epoch_start_time))
