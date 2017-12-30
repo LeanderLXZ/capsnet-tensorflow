@@ -1,3 +1,4 @@
+import os
 from easydict import EasyDict
 
 __C = EasyDict()
@@ -7,7 +8,7 @@ __C = EasyDict()
 # ===========================================
 
 # Database name
-__C.DATABASE_NAME = 'mnist'
+__C.VERSION = 'v_1.0'
 
 # Learning rate
 __C.LEARNING_RATE = 0.001
@@ -81,7 +82,7 @@ __C.DISPLAY_STEP = None  # per batch
 
 # Save summary step
 # Set None to not save summaries
-__C.SUMMARY_STEP = 10  # per batch
+__C.SAVE_LOG_STEP = 10  # per batch
 
 # Calculate train loss and valid loss using full data set
 # Set None to not display
@@ -95,11 +96,17 @@ __C.SHOW_TRAINING_DETAILS = False
 # #                  Others                 #
 # ===========================================
 
-# Data directory path
+# Database name
+__C.DATABASE_NAME = 'mnist'
+
+# Source data directory path
 __C.SOURCE_DATA_PATH = './data/source_data/'
 
-# Log directory path
-__C.LOG_PATH = './logs/'
+# Path for saving logs
+__C.LOG_PATH = os.path.join('./logs/', __C.VERSION)
+
+# Path for saving summaries
+__C.SUMMARY_PATH = './logs/summaries/'
 
 # get config by: from config import cfg
 cfg = __C

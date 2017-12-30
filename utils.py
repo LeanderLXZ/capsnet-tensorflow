@@ -1,4 +1,6 @@
 import os
+import csv
+import time
 import gzip
 import shutil
 import pickle
@@ -147,6 +149,51 @@ def thin_line():
 
 def thick_line():
     print('======================================================')
+
+
+def save_config_log(file_path):
+
+    file_path += 'config_log.txt'
+    thick_line()
+    print('Saving {}...'.format(file_path))
+    with open(file_path, 'w') as f:
+        f.write(cfg)
+
+
+def save_log(file_path, epoch_i, batch_counter, using_time,
+             cost_train, acc_train, cost_valid, acc_valid):
+
+    if not os.path.isfile(file_path):
+
+        with open(file_path, 'w') as f:
+            header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss',
+                      'Train_Accuracy', 'Valid_Loss', 'Valid_Accuracy']
+            writer = csv.writer(f)
+            writer.writerow(header)
+
+    with open(file_path, 'a') as f:
+
+        local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+        log = [local_time, epoch_i, batch_counter, using_time,
+               cost_train, acc_train, cost_valid, acc_valid]
+        writer = csv.writer(f)
+        writer.writerow(log)
+
+
+def save_test_log(file_path, cost_test, acc_test):
+
+    file_path += 'test_log.txt'
+    thick_line()
+    print('Saving {}...'.format(file_path))
+
+    with open(file_path, 'a') as f:
+        local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+        f.write('=====================================================\n')
+        f.write('Time: {}\n'.format(local_time))
+        f.write('------------------------------------------------------\n')
+        f.write('Test_Loss: {:.4f}\n'.format(cost_test))
+        f.write('Test_Accuracy: {:.2f}%'.format(acc_test * 100))
+        f.write('=====================================================')
 
 
 class DLProgress(tqdm):

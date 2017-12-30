@@ -294,7 +294,6 @@ class CapsNet(object):
 
             # Build reconstruction part
             if cfg.WITH_RECONSTRUCTION:
-
                 # Reconstruction layers
                 # reconstructed shape: (batch_size, image_size*image_size)
                 reconstructed = self._reconstruct_layers(logits, labels)
