@@ -8,6 +8,12 @@ class CapsNet(object):
 
     @staticmethod
     def _get_inputs(image_size, num_class):
+        """
+        Get input tensors.
+        :param image_size: the size of input images, should be 3 dimensional
+        :param num_class: number of class of label
+        :return: input tensors
+        """
 
         _inputs = tf.placeholder(tf.float32, shape=[cfg.BATCH_SIZE, *image_size], name='inputs')
         _labels = tf.placeholder(tf.float32, shape=[cfg.BATCH_SIZE, num_class], name='labels')
@@ -16,6 +22,15 @@ class CapsNet(object):
 
     @staticmethod
     def _margin_loss(logits, label, m_plus=0.9, m_minus=0.1, lambda_=0.5):
+        """
+        Calculate margin loss according to Hinton's paper.
+        :param logits: output tensor of capsule layers.
+        :param label: labels
+        :param m_plus: truncation of positive item
+        :param m_minus: truncation of negative item
+        :param lambda_: lambda
+        :return: margin loss
+        """
 
         # L = T_c * max(0, m_plus-||v_c||)^2 + lambda_ * (1-T_c) * max(0, ||v_c||-m_minus)^2
 
@@ -48,6 +63,16 @@ class CapsNet(object):
 
     @staticmethod
     def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, resize=None):
+        """
+        Single convolution layer.
+        :param tensor: input tensor
+        :param kernel_size: size of convolution kernel
+        :param stride: stride of convolution kernel
+        :param depth: depth of convolution kernel
+        :param padding: padding type of convolution kernel
+        :param resize: if resize, resize every image
+        :return: output tensor of convolution layer
+        """
 
         # Convolution layer
         activation_fn = tf.nn.relu
@@ -69,6 +94,13 @@ class CapsNet(object):
 
     @staticmethod
     def _fc_layer(tensor, num_outputs=None, act_fn='relu'):
+        """
+        Single full_connected layer.
+        :param tensor: input tensor
+        :param num_outputs: hidden units of full_connected layer
+        :param act_fn: activation function
+        :return: output tensor of full_connected layer
+        """
 
         # Full connected layer
         if act_fn == 'relu':
@@ -92,6 +124,15 @@ class CapsNet(object):
 
     @staticmethod
     def _conv_transpose_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None):
+        """
+        Single transpose convolution layer.
+        :param tensor: input tensor
+        :param kernel_size: size of convolution kernel
+        :param stride: stride of convolution kernel
+        :param depth: depth of convolution kernel
+        :param padding: padding type of convolution kernel
+        :return: output tensor of transpose convolution layer
+        """
 
         # Transpose convolution layer
         activation_fn = tf.nn.relu
@@ -110,12 +151,19 @@ class CapsNet(object):
 
     @staticmethod
     def _caps_layer(tensor, caps_param):
+        """
+        Single capsule layer.
+        :param tensor: input tensor
+        :param caps_param: parameters of capsule layer
+        :return: output tensor of capsule layer
+        """
 
         caps = capsule_layer.CapsuleLayer(**caps_param)
 
         return caps(tensor)
 
     def _conv_layers(self, tensor):
+        """Build multi-convolution layer."""
 
         conv_layers = [tensor]
 
@@ -129,6 +177,7 @@ class CapsNet(object):
 
     @staticmethod
     def _conv2caps_layer(tensor, conv2caps_params):
+        """Build convolution to capsule layer."""
 
         with tf.variable_scope('conv2caps'):
             # conv2caps_params: {'kernel_size': None, 'stride': None,
@@ -139,6 +188,7 @@ class CapsNet(object):
         return conv2caps
 
     def _caps_layers(self, tensor):
+        """Build multi-capsule layer."""
 
         caps_layers = [tensor]
 
@@ -154,6 +204,7 @@ class CapsNet(object):
         return caps_out
 
     def _decoder(self, tensor):
+        """Decoder of reconstruction layer"""
 
         decoder_layers = [tensor]
 
@@ -185,6 +236,12 @@ class CapsNet(object):
         return decoder_layers[-1]
 
     def _reconstruct_layers(self, tensor, labels):
+        """
+        Reconstruction layer.
+        :param tensor: input tensor
+        :param labels: labels
+        :return: output tensor of reconstruction layer
+        """
 
         with tf.variable_scope('masking'):
             # tensor shape: (batch_size, n_class, vec_dim_j)
@@ -199,6 +256,12 @@ class CapsNet(object):
         return _reconstructed
 
     def build_graph(self, image_size=(None, None, None), num_class=None):
+        """
+        Build the graph of CapsNet.
+        :param image_size: size of input images, should be 3 dimensional
+        :param num_class: number of class of label
+        :return: tuple of (train_graph, inputs, labels, cost, optimizer, accuracy)
+        """
 
         # Build graph
         tf.reset_default_graph()

@@ -8,18 +8,18 @@ class ActivationFunc(object):
         pass
 
     @staticmethod
-    def squash(vector):
+    def squash(tensor):
         """Squashing function
         Args:
-            vector: A tensor with shape shape: (batch_size, num_caps, vec_dim, 1).
+            tensor: A tensor with shape shape: (batch_size, num_caps, vec_dim, 1).
         Returns:
-            A tensor with the same shape as vector but squashed in 'vec_len' dimension.
+            A tensor with the same shape as input tensor but squashed in 'vec_dim' dimension.
         """
-        vec_shape = vector.get_shape().as_list()
+        vec_shape = tensor.get_shape().as_list()
         num_caps = vec_shape[1]
         vec_dim = vec_shape[2]
 
-        vec_squared_norm = tf.reduce_sum(tf.square(vector), -2, keep_dims=True)
+        vec_squared_norm = tf.reduce_sum(tf.square(tensor), -2, keep_dims=True)
         assert vec_squared_norm.get_shape() == (cfg.BATCH_SIZE, num_caps, 1, 1), \
             'Wrong shape of vec_squared_norm: {}'.format(vec_squared_norm.get_shape().as_list())
 
@@ -27,7 +27,7 @@ class ActivationFunc(object):
         assert scalar_factor.get_shape() == (cfg.BATCH_SIZE, num_caps, 1, 1), \
             'Wrong shape of scalar_factor: {}'.format(scalar_factor.get_shape().as_list())
 
-        unit_vec = tf.div(vector, tf.sqrt(vec_squared_norm + cfg.EPSILON))
+        unit_vec = tf.div(tensor, tf.sqrt(vec_squared_norm + cfg.EPSILON))
         assert unit_vec.get_shape() == (cfg.BATCH_SIZE, num_caps, vec_dim, 1), \
             'Wrong shape of unit_vec: {}'.format(unit_vec.get_shape().as_list())
 

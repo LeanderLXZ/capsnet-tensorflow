@@ -6,6 +6,14 @@ from config import cfg
 class Conv2Capsule(object):
 
     def __init__(self, kernel_size=None, stride=None, depth=None, vec_dim=None, padding=None):
+        """
+        Initialize conv2caps layer.
+        :param kernel_size: size of convolution kernel
+        :param stride: stride of convolution kernel
+        :param depth: depth of convolution kernel
+        :param vec_dim: dimensions of vectors of capsule
+        :param padding: padding type of convolution kernel
+        """
 
         self.kernel_size = kernel_size
         self.stride = stride
@@ -14,8 +22,11 @@ class Conv2Capsule(object):
         self.padding = padding
 
     def __call__(self, inputs):
-
-        # inputs shape: (batch_size, height, width, depth)
+        """
+        Convert a convolution layer to capsule layer.
+        :param inputs: input tensor with shape: (batch_size, height, width, depth)
+        :return: tensor of capsules with shape: (batch_size, num_caps_j, vec_dim_j, 1)
+        """
 
         # Convolution layer
         activation_fn = tf.nn.relu
@@ -50,22 +61,39 @@ class Conv2Capsule(object):
 class CapsuleLayer(object):
 
     def __init__(self, num_caps=None, vec_dim=None, route_epoch=None):
+        """
+        Initialize capsule layer.
+        :param num_caps: number of capsules of this layer
+        :param vec_dim: dimensions of vectors of capsules
+        :param route_epoch: number of dynamic routing iteration
+        """
 
         self.num_caps = num_caps
         self.vec_dim = vec_dim
         self.route_epoch = route_epoch
 
     def __call__(self, inputs):
+        """
+        Apply dynamic routing.
+        :param inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
+        :return: output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
+        """
 
-        # Applying dynamic routing
         self.v_j = self.dynamic_routing(inputs, self.num_caps, self.vec_dim, self.route_epoch)
 
         return self.v_j
 
     @staticmethod
     def dynamic_routing(inputs, num_caps_j, vec_dim_j, route_epoch):
+        """
+        Dynamic routing according to Hinton's paper.
+        :param inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
+        :param num_caps_j: number of capsules of upper layer
+        :param vec_dim_j: dimensions of vectors of upper layer
+        :param route_epoch: number of dynamic routing iteration
+        :return: output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
+        """
 
-        # inputs_shape: (batch_size, num_caps_i, vec_dim_i, 1)
         inputs_shape = inputs.get_shape().as_list()
         num_caps_i = inputs_shape[1]
         vec_dim_i = inputs_shape[2]
@@ -110,6 +138,7 @@ class CapsuleLayer(object):
             'Wrong shape of b_ij: {}'.format(b_ij.get_shape().as_list())
 
         def _sum_and_activate(_u_hat, _c_ij, name=None):
+            """Get sum of vectors and apply activation function."""
 
             # Calculating s_j(using u_hat)
             # Using u_hat but not u_hat_stop in order to transfer gradients.
