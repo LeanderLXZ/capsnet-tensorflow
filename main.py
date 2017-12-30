@@ -14,7 +14,7 @@ class Main(object):
 
         utils.thick_line()
         print('Loading data...')
-        utils.thick_line()
+        utils.thin_line()
 
         # Load data
         # import numpy as np
@@ -93,7 +93,7 @@ class Main(object):
         acc_valid_all = []
 
         if cfg.EVAL_WITH_FULL_TRAIN_SET:
-            utils.thick_line()
+            utils.thin_line()
             print('Calculating loss and accuracy on train set...')
             _train_batch_generator = self._get_batches(self.x_train, self.y_train)
             for _ in tqdm(range(self.n_batch_train), total=self.n_batch_train, ncols=100, unit='batch'):
@@ -103,7 +103,7 @@ class Main(object):
                 cost_train_all.append(cost_train_i)
                 acc_train_all.append(acc_train_i)
 
-        utils.thick_line()
+        utils.thin_line()
         print('Calculating loss and accuracy on valid set...')
         _valid_batch_generator = self._get_batches(self.x_valid, self.y_valid)
         for _ in tqdm(range(self.n_batch_valid), total=self.n_batch_valid, ncols=100, unit='batch'):
