@@ -111,7 +111,7 @@ class Main(object):
 
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
-        utils.save_log(self.log_path+'train_log.csv', epoch_i,
+        utils.save_log(os.path.join(self.log_path, 'train_log.csv'), epoch_i,
                        batch_counter, time.time()-self.start_time,
                        cost_train, acc_train, cost_valid, acc_valid)
 
@@ -182,7 +182,7 @@ class Main(object):
             print('Full_Set_Valid_Loss: {:.4f}\n'.format(cost_valid),
                   'Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
 
-        file_path = self.log_path + 'full_set_eval_log.csv'
+        file_path = os.path.join(self.log_path, 'full_set_eval_log.csv')
         if not silent:
             utils.thin_line()
             print('Saving {}...'.format(file_path))

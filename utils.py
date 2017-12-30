@@ -162,7 +162,7 @@ def save_config_log(file_path):
     """
     Save config of training.
     """
-    file_path += 'config_log.txt'
+    file_path = os.path.join(file_path, 'config_log.txt')
     thick_line()
     print('Saving {}...'.format(file_path))
 
@@ -202,7 +202,7 @@ def save_test_log(file_path, cost_test, acc_test):
     """
     Save losses and accuracies of testing.
     """
-    file_path += 'test_log.txt'
+    file_path = os.path.join(file_path, 'test_log.txt')
     thick_line()
     print('Saving {}...'.format(file_path))
 
