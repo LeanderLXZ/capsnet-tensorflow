@@ -9,11 +9,10 @@ class ActivationFunc(object):
 
     @staticmethod
     def squash(tensor):
-        """Squashing function
-        Args:
-            tensor: A tensor with shape shape: (batch_size, num_caps, vec_dim, 1).
-        Returns:
-            A tensor with the same shape as input tensor but squashed in 'vec_dim' dimension.
+        """
+        Squashing function
+        :param tensor: A tensor with shape shape: (batch_size, num_caps, vec_dim, 1).
+        :return: A tensor with the same shape as input tensor but squashed in 'vec_dim' dimension.
         """
         vec_shape = tensor.get_shape().as_list()
         num_caps = vec_shape[1]

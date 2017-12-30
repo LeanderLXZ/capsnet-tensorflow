@@ -5,8 +5,9 @@ from config import cfg
 
 # Download database
 def download_data():
-    """Download database"""
-
+    """
+    Download database.
+    """
     database_mnist_name = 'mnist'
 
     if cfg.DATABASE_NAME == database_mnist_name:

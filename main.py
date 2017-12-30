@@ -15,7 +15,6 @@ class Main(object):
         Load data and initialize model.
         :param model: the model which will be trained
         """
-
         # Global start time
         self.start_time = time.time()
 
@@ -64,14 +63,17 @@ class Main(object):
 
     @staticmethod
     def _get_batches(x, y):
-        """ Split features and labels into batches."""
+        """
+        Split features and labels into batches.
+        """
         for start in range(0, len(x)-cfg.BATCH_SIZE, cfg.BATCH_SIZE):
             end = start + cfg.BATCH_SIZE
             yield x[start:end], y[start:end]
 
     def _display_status(self, sess, x_batch, y_batch, epoch_i, batch_counter):
-        """Display information during training."""
-
+        """
+        Display information during training.
+        """
         valid_batch_idx = np.random.choice(range(len(self.x_valid)), cfg.BATCH_SIZE).tolist()
         x_valid_batch = self.x_valid[valid_batch_idx]
         y_valid_batch = self.y_valid[valid_batch_idx]
@@ -91,8 +93,9 @@ class Main(object):
 
     def _save_logs(self, sess, train_writer, valid_writer,
                    merged, x_batch, y_batch, epoch_i, batch_counter):
-        """Save logs and ddd summaries to TensorBoard while training."""
-
+        """
+        Save logs and ddd summaries to TensorBoard while training.
+        """
         valid_batch_idx = np.random.choice(range(len(self.x_valid)), cfg.BATCH_SIZE).tolist()
         x_valid_batch = self.x_valid[valid_batch_idx]
         y_valid_batch = self.y_valid[valid_batch_idx]
@@ -111,8 +114,9 @@ class Main(object):
                        cost_train, acc_train, cost_valid, acc_valid)
 
     def _full_set_eval(self, sess, epoch_i, batch_counter):
-        """Evaluate on the full data set and print information."""
-
+        """
+        Evaluate on the full data set and print information.
+        """
         eval_start_time = time.time()
 
         utils.thin_line()
@@ -169,8 +173,9 @@ class Main(object):
                        cost_train, acc_train, cost_valid, acc_valid)
 
     def _test_after_training(self, sess):
-        """Evaluate on the test set after training"""
-
+        """
+        Evaluate on the test set after training.
+        """
         test_start_time = time.time()
 
         utils.thick_line()
@@ -202,8 +207,9 @@ class Main(object):
         print('Testing finished! Using time: {:.2f}'.format(time.time() - test_start_time))
 
     def train(self):
-        """Training model."""
-
+        """
+        Training model
+        """
         with tf.Session(graph=self.train_graph) as sess:
 
             utils.thick_line()

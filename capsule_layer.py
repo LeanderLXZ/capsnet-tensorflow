@@ -14,7 +14,6 @@ class Conv2Capsule(object):
         :param vec_dim: dimensions of vectors of capsule
         :param padding: padding type of convolution kernel
         """
-
         self.kernel_size = kernel_size
         self.stride = stride
         self.depth = depth
@@ -27,7 +26,6 @@ class Conv2Capsule(object):
         :param inputs: input tensor with shape: (batch_size, height, width, depth)
         :return: tensor of capsules with shape: (batch_size, num_caps_j, vec_dim_j, 1)
         """
-
         # Convolution layer
         activation_fn = tf.nn.relu
         weights_initializer = tf.contrib.layers.xavier_initializer()
@@ -67,7 +65,6 @@ class CapsuleLayer(object):
         :param vec_dim: dimensions of vectors of capsules
         :param route_epoch: number of dynamic routing iteration
         """
-
         self.num_caps = num_caps
         self.vec_dim = vec_dim
         self.route_epoch = route_epoch
@@ -78,7 +75,6 @@ class CapsuleLayer(object):
         :param inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
         :return: output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
         """
-
         self.v_j = self.dynamic_routing(inputs, self.num_caps, self.vec_dim, self.route_epoch)
 
         return self.v_j
@@ -93,7 +89,6 @@ class CapsuleLayer(object):
         :param route_epoch: number of dynamic routing iteration
         :return: output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
         """
-
         inputs_shape = inputs.get_shape().as_list()
         num_caps_i = inputs_shape[1]
         vec_dim_i = inputs_shape[2]
@@ -138,8 +133,9 @@ class CapsuleLayer(object):
             'Wrong shape of b_ij: {}'.format(b_ij.get_shape().as_list())
 
         def _sum_and_activate(_u_hat, _c_ij, name=None):
-            """Get sum of vectors and apply activation function."""
-
+            """
+            Get sum of vectors and apply activation function.
+            """
             # Calculating s_j(using u_hat)
             # Using u_hat but not u_hat_stop in order to transfer gradients.
             _s_j = tf.reduce_sum(tf.multiply(_u_hat, _c_ij), axis=1)
