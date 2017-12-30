@@ -111,8 +111,8 @@ class Main(object):
 
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
-        utils.save_log(os.path.join(self.log_path, 'train_log.csv'), epoch_i,
-                       batch_counter, time.time()-self.start_time,
+        utils.save_log(os.path.join(self.log_path, 'train_log.csv'),
+                       epoch_i+1, batch_counter, time.time()-self.start_time,
                        cost_train, acc_train, cost_valid, acc_valid)
 
     def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, acc_all, silent=False):
@@ -186,7 +186,7 @@ class Main(object):
         if not silent:
             utils.thin_line()
             print('Saving {}...'.format(file_path))
-        utils.save_log(file_path, epoch_i, batch_counter, time.time()-self.start_time,
+        utils.save_log(file_path, epoch_i+1, batch_counter, time.time()-self.start_time,
                        cost_train, acc_train, cost_valid, acc_valid)
         if not silent:
             utils.thin_line()
