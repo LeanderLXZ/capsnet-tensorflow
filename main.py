@@ -237,9 +237,9 @@ class Main(object):
 
             # Merge all the summaries and create writers
             merged = tf.summary.merge_all()
-            train_log_path = cfg.SUMMARY_PATH + '/train'
-            valid_log_path = cfg.SUMMARY_PATH + '/valid'
-            utils.check_dir([cfg.SUMMARY_PATH, train_log_path, valid_log_path])
+            train_log_path = os.path.join(cfg.SUMMARY_PATH, 'train')
+            valid_log_path = os.path.join(cfg.SUMMARY_PATH, 'valid')
+            utils.check_dir([train_log_path, valid_log_path])
             train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
             valid_writer = tf.summary.FileWriter(valid_log_path)
 

@@ -115,7 +115,7 @@ __C.SOURCE_DATA_PATH = './data/source_data/'
 __C.LOG_PATH = os.path.join('./logs/', __C.VERSION)
 
 # Path for saving summaries
-__C.SUMMARY_PATH = './logs/summaries/'
+__C.SUMMARY_PATH = os.path.join(__C.LOG_PATH, 'summaries')
 
 # get config by: from config import cfg
 cfg = __C
