@@ -85,7 +85,7 @@ __C.SUMMARY_STEP = 10  # per batch
 
 # Calculate train loss and valid loss using full data set
 # Set None to not display
-__C.FULL_SET_EVAL_STEP = 10  # per epoch
+__C.FULL_SET_EVAL_STEP = 1  # per epoch
 __C.EVAL_WITH_FULL_TRAIN_SET = True  # Calculate the train loss of full data set, which may take lots of time.
 
 # Show details of training progress
