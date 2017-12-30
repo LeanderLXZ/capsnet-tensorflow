@@ -1,3 +1,4 @@
 from config import cfg
 
-print(cfg)
+for key in cfg.keys():
+    print('{}: {}'.format(key, cfg[key]))

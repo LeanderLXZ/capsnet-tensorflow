@@ -12,23 +12,29 @@ from tqdm import tqdm
 from urllib.request import urlretrieve
 
 
-# Save data to pickle file
 def save_data_to_pickle(data, data_path):
+    """
+    Save data to pickle file.
+    """
     with open(data_path, 'wb') as f:
         print('Saving {}...'.format(f.name))
         pickle.dump(data, f)
 
 
-# Load data from pickle file
 def load_data_from_pickle(data_path):
+    """
+    Load data from pickle file.
+    """
+
     with open(data_path, 'rb') as f:
         print('Loading {}...'.format(f.name))
         return pickle.load(f)
 
 
-# Get the length of a vector
 def get_vec_length(vec):
-
+    """
+    Get the length of a vector.
+    """
     vec_shape = vec.get_shape().as_list()
     num_caps = vec_shape[1]
     vec_dim = vec_shape[2]
@@ -46,9 +52,10 @@ def get_vec_length(vec):
     return vec_length
 
 
-# Check if directories exit or not
 def check_dir(path_list):
-
+    """
+    Check if directories exit or not.
+    """
     for dir_path in path_list:
         if not isdir(dir_path):
             os.makedirs(dir_path)
@@ -152,17 +159,28 @@ def thick_line():
 
 
 def save_config_log(file_path):
-
+    """
+    Save config of training.
+    """
     file_path += 'config_log.txt'
     thick_line()
     print('Saving {}...'.format(file_path))
-    with open(file_path, 'w') as f:
-        f.write(cfg)
+
+    with open(file_path, 'a') as f:
+        local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+        f.write('=====================================================\n')
+        f.write('Time: {}\n'.format(local_time))
+        f.write('------------------------------------------------------\n')
+        for key in cfg.keys():
+            f.write('{}: {}\n'.format(key, cfg[key]))
+        f.write('=====================================================')
 
 
 def save_log(file_path, epoch_i, batch_counter, using_time,
              cost_train, acc_train, cost_valid, acc_valid):
-
+    """
+    Save losses and accuracies while training.
+    """
     if not os.path.isfile(file_path):
 
         with open(file_path, 'w') as f:
@@ -181,7 +199,9 @@ def save_log(file_path, epoch_i, batch_counter, using_time,
 
 
 def save_test_log(file_path, cost_test, acc_test):
-
+    """
+    Save losses and accuracies of testing.
+    """
     file_path += 'test_log.txt'
     thick_line()
     print('Saving {}...'.format(file_path))
