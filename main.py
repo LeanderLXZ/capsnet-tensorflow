@@ -256,7 +256,7 @@ class Main(object):
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
                         if cfg.FULL_SET_EVAL_STEP is not None:
-                            if (epoch_i + 1) % full_set_eval_step == 0:
+                            if batch_counter % full_set_eval_step == 0:
                                 self._full_set_eval(sess, epoch_i, batch_counter)
                 else:
                     utils.thin_line()
@@ -274,7 +274,7 @@ class Main(object):
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
                         if cfg.FULL_SET_EVAL_STEP is not None:
-                            if (epoch_i+1) % full_set_eval_step == 0:
+                            if batch_counter % full_set_eval_step == 0:
                                 self._full_set_eval(sess, epoch_i, batch_counter)
 
                 utils.thin_line()

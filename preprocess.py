@@ -1,4 +1,4 @@
 from config import cfg
+import utils
 
-for key in cfg.keys():
-    print('{}: {}'.format(key, cfg[key]))
+utils.check_dir(['./ll/l1/l2/l4'])

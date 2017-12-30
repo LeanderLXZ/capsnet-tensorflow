@@ -84,7 +84,7 @@ def _dense_to_one_hot(labels_dense, num_classes):
 
 def extract_image(save_path, extract_path):
     """
-    Extract the images into a 4D uint8 numpy array [index, y, x, depth].
+    Extract the images into a 4D unit8 numpy array [index, y, x, depth].
     """
     # Get data from save_path
     with open(save_path, 'rb') as f:
