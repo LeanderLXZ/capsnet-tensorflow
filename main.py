@@ -20,10 +20,14 @@ class Main(object):
 
         # Get log path, append information if the directory exist.
         self.log_path = cfg.LOG_PATH
-        i_append_info = 1
+        i_append_info = 0
         while os.path.isdir(self.log_path):
-            self.log_path = cfg.LOG_PATH + '({})'.format(i_append_info)
             i_append_info += 1
+            self.log_path = cfg.LOG_PATH + '({})'.format(i_append_info)
+        if i_append_info > 0:
+            self.summary_path = cfg.SUMMARY_PATH + '({})'.format(i_append_info)
+        else:
+            self.summary_path = cfg.SUMMARY_PATH
 
         # Save config
         utils.check_dir([self.log_path])
@@ -237,8 +241,8 @@ class Main(object):
 
             # Merge all the summaries and create writers
             merged = tf.summary.merge_all()
-            train_log_path = os.path.join(cfg.SUMMARY_PATH, 'train')
-            valid_log_path = os.path.join(cfg.SUMMARY_PATH, 'valid')
+            train_log_path = os.path.join(self.summary_path, 'train')
+            valid_log_path = os.path.join(self.summary_path, 'valid')
             utils.check_dir([train_log_path, valid_log_path])
             train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
             valid_writer = tf.summary.FileWriter(valid_log_path)

@@ -109,13 +109,13 @@ __C.SHOW_TRAINING_DETAILS = False
 __C.DATABASE_NAME = 'mnist'
 
 # Source data directory path
-__C.SOURCE_DATA_PATH = './data/source_data/'
+__C.SOURCE_DATA_PATH = './data/source_data'
 
 # Path for saving logs
-__C.LOG_PATH = os.path.join('./logs/', __C.VERSION)
+__C.LOG_PATH = os.path.join('./logs', __C.VERSION)
 
 # Path for saving summaries
-__C.SUMMARY_PATH = os.path.join(__C.LOG_PATH, 'summaries')
+__C.SUMMARY_PATH = os.path.join('./logs/summaries', __C.VERSION)
 
 # get config by: from config import cfg
 cfg = __C
