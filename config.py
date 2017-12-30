@@ -72,6 +72,12 @@ __C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
 # Scaling for reconstruction loss
 __C.RECONSTRUCT_COST_SCALE = 0.0005  # 0.0005*784=0.392
 
+# -------------------------------------------
+# Test
+
+# Evaluate on test set after training
+__C.TEST_AFTER_TRAINING = True
+
 # ===========================================
 # #                 Display                 #
 # ===========================================
@@ -85,9 +91,12 @@ __C.DISPLAY_STEP = None  # per batch
 __C.SAVE_LOG_STEP = 10  # per batch
 
 # Calculate train loss and valid loss using full data set
-# Set None to not display
-__C.FULL_SET_EVAL_STEP = 1  # per epoch
-__C.EVAL_WITH_FULL_TRAIN_SET = True  # Calculate the train loss of full data set, which may take lots of time.
+# None: not display
+# 'per_epoch': evaluate when every epoch finished
+__C.FULL_SET_EVAL_STEP = 'per_epoch'  # per batch
+
+# Calculate the train loss of full data set, which may take lots of time.
+__C.EVAL_WITH_FULL_TRAIN_SET = True
 
 # Show details of training progress
 __C.SHOW_TRAINING_DETAILS = False

@@ -119,7 +119,7 @@ class Main(object):
         """
         eval_start_time = time.time()
 
-        utils.thin_line()
+        utils.thick_line()
         print('Calculating losses using full data set...')
         cost_train_all = []
         cost_valid_all = []
@@ -171,6 +171,7 @@ class Main(object):
         print('Saving {}...'.format(file_path))
         utils.save_log(file_path, epoch_i, batch_counter, time.time()-self.start_time,
                        cost_train, acc_train, cost_valid, acc_valid)
+        utils.thick_line()
 
     def _test_after_training(self, sess):
         """
@@ -223,6 +224,12 @@ class Main(object):
             train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
             valid_writer = tf.summary.FileWriter(valid_log_path)
 
+            if cfg.FULL_SET_EVAL_STEP is not None:
+                if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
+                    full_set_eval_step = self.n_batch_train
+                else:
+                    full_set_eval_step = cfg.FULL_SET_EVAL_STEP
+
             sess.run(tf.global_variables_initializer())
             batch_counter = 0
 
@@ -242,11 +249,13 @@ class Main(object):
 
                         if batch_counter % cfg.DISPLAY_STEP == 0:
                             self._display_status(sess, x_batch, y_batch, epoch_i, batch_counter)
-
                         if cfg.SUMMARY_STEP is not None:
                             if batch_counter % cfg.SUMMARY_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
+                        if cfg.FULL_SET_EVAL_STEP is not None:
+                            if (epoch_i + 1) % full_set_eval_step == 0:
+                                self._full_set_eval(sess, epoch_i, batch_counter)
                 else:
                     utils.thin_line()
                     train_batch_generator = self._get_batches(self.x_train, self.y_train)
@@ -262,10 +271,9 @@ class Main(object):
                             if batch_counter % cfg.SUMMARY_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
-
-                if cfg.FULL_SET_EVAL_STEP is not None:
-                    if (epoch_i+1) % cfg.FULL_SET_EVAL_STEP == 0:
-                        self._full_set_eval(sess, epoch_i, batch_counter)
+                        if cfg.FULL_SET_EVAL_STEP is not None:
+                            if (epoch_i+1) % full_set_eval_step == 0:
+                                self._full_set_eval(sess, epoch_i, batch_counter)
 
                 utils.thin_line()
                 print('Epoch done! Using time: {:.2f}'.format(time.time() - epoch_start_time))
