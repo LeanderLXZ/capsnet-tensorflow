@@ -251,8 +251,8 @@ class Main(object):
 
                         if batch_counter % cfg.DISPLAY_STEP == 0:
                             self._display_status(sess, x_batch, y_batch, epoch_i, batch_counter)
-                        if cfg.SUMMARY_STEP is not None:
-                            if batch_counter % cfg.SUMMARY_STEP == 0:
+                        if cfg.SAVE_LOG_STEP is not None:
+                            if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
                         if cfg.FULL_SET_EVAL_STEP is not None:
@@ -270,7 +270,7 @@ class Main(object):
                         sess.run(self.optimizer, feed_dict={self.inputs: x_batch, self.labels: y_batch})
 
                         if cfg.SAVE_LOG_STEP is not None:
-                            if batch_counter % cfg.SUMMARY_STEP == 0:
+                            if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
                         if cfg.FULL_SET_EVAL_STEP is not None:
