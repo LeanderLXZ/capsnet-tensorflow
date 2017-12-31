@@ -163,15 +163,16 @@ class Main(object):
             cost_train_all, acc_train_all = \
                 self._eval_on_batches('train', sess, self.x_train, self.y_train, self.n_batch_train,
                                       cost_train_all, acc_train_all, silent=silent)
+            cost_train = sum(cost_train_all) / len(cost_train_all)
+            acc_train = sum(acc_train_all) / len(acc_train_all)
+        else:
+            cost_train, acc_train = None, None
 
         # Calculate losses and accuracies of full valid set
         cost_valid_all, acc_valid_all = \
             self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
                                   cost_valid_all, acc_valid_all, silent=silent)
-
-        cost_train = sum(cost_train_all) / len(cost_train_all)
         cost_valid = sum(cost_valid_all) / len(cost_valid_all)
-        acc_train = sum(acc_train_all) / len(acc_train_all)
         acc_valid = sum(acc_valid_all) / len(acc_valid_all)
 
         if not silent:

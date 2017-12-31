@@ -93,10 +93,10 @@ __C.SAVE_LOG_STEP = 10  # per batch
 # Calculate train loss and valid loss using full data set
 # None: not display
 # 'per_epoch': evaluate when every epoch finished
-__C.FULL_SET_EVAL_STEP = 'per_epoch'  # per batch
+__C.FULL_SET_EVAL_STEP = 50  # per batch
 
 # Calculate the train loss of full data set, which may take lots of time.
-__C.EVAL_WITH_FULL_TRAIN_SET = True
+__C.EVAL_WITH_FULL_TRAIN_SET = False
 
 # Show details of training progress
 __C.SHOW_TRAINING_DETAILS = False
