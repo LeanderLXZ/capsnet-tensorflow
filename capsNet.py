@@ -227,7 +227,7 @@ class CapsNet(object):
         # Using convolution layers
         elif cfg.DECODER_TYPE == 'CONV':
             decoder_layers[0] = \
-                tf.reshape(tensor, (cfg.BATCH_SIZE, -1, 1, 1), name='reshape')
+                tf.reshape(tensor, (cfg.BATCH_SIZE, 4, 4, 1), name='reshape')
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param:
