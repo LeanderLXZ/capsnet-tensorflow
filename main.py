@@ -43,6 +43,7 @@ class Main(object):
         y_test = utils.load_data_from_pickle('./data/source_data/mnist/test_label.p')
 
         # Split training/validation/test set
+        x_train /= 255.
         x_train = x_train.reshape([-1, 28, 28, 1])
         self.x_valid = x_train[55000:60000]
         assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
@@ -52,6 +53,7 @@ class Main(object):
         assert self.y_valid.shape == (5000, 10), self.y_valid.shape
         self.y_train = y_train[:55000]
         assert self.y_train.shape == (55000, 10), self.y_train.shape
+        x_test /= 255.
         self.x_test = x_test.reshape([-1, 28, 28, 1])
         assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
         self.y_test = y_test
@@ -169,19 +171,11 @@ class Main(object):
             cost_train, acc_train = None, None
 
         # Calculate losses and accuracies of full valid set
-        if cfg.EVAL_VALID_USE_BATCH:
-            cost_valid_all, acc_valid_all = \
-                self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
-                                      cost_valid_all, acc_valid_all, silent=silent)
-            cost_valid = sum(cost_valid_all) / len(cost_valid_all)
-            acc_valid = sum(acc_valid_all) / len(acc_valid_all)
-        else:
-            if not silent:
-                utils.thick_line()
-                print('Calculating loss and accuracy of full valid set...')
-            cost_valid, acc_valid = \
-                sess.run([self.cost, self.accuracy],
-                         feed_dict={self.inputs: self.x_valid, self.labels: self.y_valid})
+        cost_valid_all, acc_valid_all = \
+            self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
+                                  cost_valid_all, acc_valid_all, silent=silent)
+        cost_valid = sum(cost_valid_all) / len(cost_valid_all)
+        acc_valid = sum(acc_valid_all) / len(acc_valid_all)
 
         if not silent:
             utils.thin_line()

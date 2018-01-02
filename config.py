@@ -98,9 +98,6 @@ __C.FULL_SET_EVAL_STEP = 50  # per batch
 # Calculate the train loss of full data set, which may take lots of time.
 __C.EVAL_WITH_FULL_TRAIN_SET = False
 
-# Split validation set to batches to calculate loss and accuracies of validation set.
-__C.EVAL_VALID_USE_BATCH = False
-
 # Show details of training progress
 __C.SHOW_TRAINING_DETAILS = False
 
