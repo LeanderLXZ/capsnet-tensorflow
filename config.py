@@ -84,7 +84,7 @@ __C.TEST_AFTER_TRAINING = True
 
 # Display step
 # Set None to not display
-__C.DISPLAY_STEP = 10  # per batch
+__C.DISPLAY_STEP = 1  # per batch
 
 # Save summary step
 # Set None to not save summaries
@@ -92,7 +92,7 @@ __C.SAVE_LOG_STEP = 20  # per batch
 
 # Save reconstructed images
 # Set None to not save images
-__C.SAVE_IMAGE_STEP = 50
+__C.SAVE_IMAGE_STEP = 1
 
 # Calculate train loss and valid loss using full data set
 # None: not display

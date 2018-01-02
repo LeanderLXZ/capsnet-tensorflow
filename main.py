@@ -243,7 +243,6 @@ class Main(object):
 
         rec_images = sess.run(self.reconstructed_images,
                               feed_dict={self.inputs: x_batch, self.labels: y_batch})
-        real_images = x_batch
 
         # Get maximum size for square grid of images
         save_col_size = math.floor(np.sqrt(rec_images.shape[0] * 2))
@@ -252,6 +251,8 @@ class Main(object):
         # Scale to 0-255
         rec_images = np.divide(((rec_images - rec_images.min()) * 255),
                                (rec_images.max() - rec_images.min()))
+        real_images = np.divide(((x_batch - x_batch.min()) * 255),
+                                (x_batch.max() - x_batch.min()))
 
         # Put images in a square arrangement
         rec_images_in_square = np.reshape(rec_images[: save_row_size*save_col_size],
@@ -278,12 +279,12 @@ class Main(object):
                     if mode == 'L':
                         image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :]
                     else:
-                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :, :]
+                        image = rec_images_in_square[(row_i+1)//2 - 1, col_i, :, :, :]
                 else:
                     if mode == 'L':
                         image = real_images_in_square[int((row_i+1)//2), col_i, :, :]
                     else:
-                        image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :, :]
+                        image = real_images_in_square[int((row_i+1)//2), col_i, :, :, :]
                 im = Image.fromarray(image, mode)
                 new_im.paste(im, (row_i*(rec_images.shape[1]+gap)-gap,
                                   col_i*(rec_images.shape[2]+gap)-gap))
