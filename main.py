@@ -241,26 +241,30 @@ class Main(object):
 
         if cfg.DATABASE_NAME == 'mnist':
             mode = 'L'
-            # rec_images_in_square = np.squeeze(rec_images_in_square, 4)
-            # real_images_in_square = np.squeeze(real_images_in_square, 4)
+            rec_images_in_square = np.squeeze(rec_images_in_square, 4)
+            real_images_in_square = np.squeeze(real_images_in_square, 4)
         else:
             mode = 'RGB'
 
         # Combine images to grid image
         gap = 2
         new_im = Image.new(mode, ((rec_images.shape[1]++gap) * save_row_size * 2 - gap,
-                                  (rec_images.shape[2]+gap) * save_col_size - gap,
-                                  real_images.shape[3]))
+                                  (rec_images.shape[2]+gap) * save_col_size - gap))
         for row_i in range(save_row_size*2):
             for col_i in range(save_col_size):
                 if (row_i+1) % 2 == 0:
-                    image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :]
+                    if mode == 'L':
+                        image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :]
+                    else:
+                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :, :]
                 else:
-                    image = real_images_in_square[int((row_i+1)//2), col_i, :, :, :]
+                    if mode == 'L':
+                        image = real_images_in_square[int((row_i+1)//2), col_i, :, :]
+                    else:
+                        image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :, :]
                 im = Image.fromarray(image, mode)
                 new_im.paste(im, (row_i*(rec_images.shape[1]+gap)-gap,
-                                  col_i*(rec_images.shape[2]+gap)-gap,
-                                  eal_images.shape[3]))
+                                  col_i*(rec_images.shape[2]+gap)-gap))
 
         img_path = os.path.join(self.log_path, 'images')
         new_im.save(os.path.join(img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
