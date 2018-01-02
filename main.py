@@ -43,7 +43,7 @@ class Main(object):
         y_test = utils.load_data_from_pickle('./data/source_data/mnist/test_label.p')
 
         # Split training/validation/test set
-        x_train /= 255.
+        x_train = np.divide(x_train, 255.)
         x_train = x_train.reshape([-1, 28, 28, 1])
         self.x_valid = x_train[55000:60000]
         assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
@@ -53,7 +53,7 @@ class Main(object):
         assert self.y_valid.shape == (5000, 10), self.y_valid.shape
         self.y_train = y_train[:55000]
         assert self.y_train.shape == (55000, 10), self.y_train.shape
-        x_test /= 255.
+        x_test = np.divide(x_test, 255.)
         self.x_test = x_test.reshape([-1, 28, 28, 1])
         assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
         self.y_test = y_test
