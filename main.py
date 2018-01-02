@@ -248,8 +248,9 @@ class Main(object):
 
         # Combine images to grid image
         gap = 2
-        new_im = Image.new(mode, ((rec_images.shape[2]++gap) * save_row_size * 2 - gap,
-                                  (rec_images.shape[1]+gap) * save_col_size - gap))
+        new_im = Image.new(mode, ((rec_images.shape[1]++gap) * save_row_size * 2 - gap,
+                                  (rec_images.shape[2]+gap) * save_col_size - gap,
+                                  real_images.shape[3]))
         for row_i in range(save_row_size*2):
             for col_i in range(save_col_size):
                 if (row_i+1) % 2 == 0:
