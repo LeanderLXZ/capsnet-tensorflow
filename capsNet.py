@@ -323,9 +323,10 @@ class CapsNet(object):
                             reconstructed = tf.contrib.layers.flatten(reconstructed)
                         reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
                     elif cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
-                        reconstruct_cost = \
-                            tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs, logits=reconstructed)
+                        reconstruct_cost = tf.reduce_mean(
+                            tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs, logits=reconstructed))
                     else:
+                        reconstruct_cost = None
                         raise ValueError("Wrong RECONSTRUCTION_LOSS!")
 
                     tf.summary.scalar('reconstruct_cost', reconstruct_cost)

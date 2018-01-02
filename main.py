@@ -3,7 +3,6 @@ import utils
 import os
 import math
 from PIL import Image
-from matplotlib import pyplot as plt
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
