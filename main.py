@@ -257,10 +257,10 @@ class Main(object):
         # Put images in a square arrangement
         rec_images_in_square = np.reshape(rec_images[: save_row_size*save_col_size],
                                           (save_row_size, save_col_size, rec_images.shape[1],
-                                           rec_images.shape[2], rec_images.shape[3]))
-        real_images_in_square = np.reshape(real_images[:save_col_size * save_row_size],
+                                           rec_images.shape[2], rec_images.shape[3])).astype(np.uint8)
+        real_images_in_square = np.reshape(real_images[: save_row_size*save_col_size],
                                            (save_row_size, save_col_size, real_images.shape[1],
-                                            real_images.shape[2], real_images.shape[3]))
+                                            real_images.shape[2], real_images.shape[3])).astype(np.uint8)
 
         if cfg.DATABASE_NAME == 'mnist':
             mode = 'L'
@@ -272,7 +272,7 @@ class Main(object):
         # Combine images to grid image
         gap = 2
         new_im = Image.new(mode, ((rec_images.shape[1]++gap) * save_row_size * 2 - gap,
-                                  (rec_images.shape[2]+gap) * save_col_size - gap))
+                                  (rec_images.shape[2]+gap) * save_col_size - gap), 'white')
         for row_i in range(save_row_size*2):
             for col_i in range(save_col_size):
                 if (row_i+1) % 2 == 0:
@@ -286,8 +286,8 @@ class Main(object):
                     else:
                         image = real_images_in_square[int((row_i+1)//2), col_i, :, :, :]
                 im = Image.fromarray(image, mode)
-                new_im.paste(im, (row_i*(rec_images.shape[1]+gap)-gap,
-                                  col_i*(rec_images.shape[2]+gap)-gap))
+                new_im.paste(im, (col_i*(rec_images.shape[2]+gap),
+                                  row_i*(rec_images.shape[1]+gap)))
 
         new_im.save(os.path.join(self.img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
 
