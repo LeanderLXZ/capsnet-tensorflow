@@ -226,6 +226,8 @@ class CapsNet(object):
 
         # Using convolution layers
         elif cfg.DECODER_TYPE == 'CONV':
+            decoder_layers[0] = \
+                tf.reshape(tensor, (cfg.BATCH_SIZE, -1, tensor.get_shape().as_list()[1], 1, 1), name='reshape')
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param:
@@ -233,14 +235,20 @@ class CapsNet(object):
                     #  'padding': 'VALID', 'act_fn':None, 'resize': None}
                     decoder_layer = self._conv_layer(tensor=decoder_layers[iter_conv], **decoder_param)
                     decoder_layers.append(decoder_layer)
+            decoder_layer = tf.reshape(decoder_layers[-1], (cfg.BATCH_SIZE, -1), name='flatten')
+            decoder_layers.append(decoder_layer)
 
         # Using transpose convolution layers
         elif cfg.DECODER_TYPE == 'CONV_T':
+            decoder_layers[0] = \
+                tf.reshape(tensor, (cfg.BATCH_SIZE, -1, tensor.get_shape().as_list()[1], 1, 1), name='reshape')
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
                     decoder_layer = self._conv_transpose_layer(tensor=decoder_layers[iter_conv], **decoder_param)
                     decoder_layers.append(decoder_layer)
+            decoder_layer = tf.reshape(decoder_layers[-1], (cfg.BATCH_SIZE, -1), name='flatten')
+            decoder_layers.append(decoder_layer)
 
         return decoder_layers[-1]
 
