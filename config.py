@@ -53,7 +53,7 @@ __C.STDDEV = 0.01
 # Reconstruction
 
 # Training with reconstruction
-__C.WITH_RECONSTRUCTION = False
+__C.WITH_RECONSTRUCTION = True
 
 # Type of decoder of reconstruction:
 # 'FC': full_connected layers
@@ -70,7 +70,7 @@ __C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
                       {'num_outputs': 784, 'act_fn': 'sigmoid'}]
 
 # Scaling for reconstruction loss
-__C.RECONSTRUCT_COST_SCALE = 0.0005  # 0.0005*784=0.392
+__C.RECONSTRUCT_COST_SCALE = 0.392  # 0.0005*784=0.392
 
 # -------------------------------------------
 # Test
