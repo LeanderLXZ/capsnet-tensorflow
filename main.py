@@ -241,8 +241,8 @@ class Main(object):
 
         if cfg.DATABASE_NAME == 'mnist':
             mode = 'L'
-            rec_images_in_square = np.squeeze(rec_images_in_square, 4)
-            real_images_in_square = np.squeeze(real_images_in_square, 4)
+            # rec_images_in_square = np.squeeze(rec_images_in_square, 4)
+            # real_images_in_square = np.squeeze(real_images_in_square, 4)
         else:
             mode = 'RGB'
 
