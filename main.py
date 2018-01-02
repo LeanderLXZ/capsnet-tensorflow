@@ -169,11 +169,19 @@ class Main(object):
             cost_train, acc_train = None, None
 
         # Calculate losses and accuracies of full valid set
-        cost_valid_all, acc_valid_all = \
-            self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
-                                  cost_valid_all, acc_valid_all, silent=silent)
-        cost_valid = sum(cost_valid_all) / len(cost_valid_all)
-        acc_valid = sum(acc_valid_all) / len(acc_valid_all)
+        if cfg.EVAL_VALID_USE_BATCH:
+            cost_valid_all, acc_valid_all = \
+                self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
+                                      cost_valid_all, acc_valid_all, silent=silent)
+            cost_valid = sum(cost_valid_all) / len(cost_valid_all)
+            acc_valid = sum(acc_valid_all) / len(acc_valid_all)
+        else:
+            if not silent:
+                utils.thick_line()
+                print('Calculating loss and accuracy of full valid set...')
+            cost_valid, acc_valid = \
+                sess.run([self.cost, self.accuracy],
+                         feed_dict={self.inputs: self.x_valid, self.labels: self.y_valid})
 
         if not silent:
             utils.thin_line()
