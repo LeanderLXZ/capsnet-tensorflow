@@ -254,12 +254,13 @@ class Main(object):
         for row_i in range(save_row_size*2):
             for col_i in range(save_col_size):
                 if (row_i+1) % 2 == 0:
-                    image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :, :]
+                    image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :]
                 else:
                     image = real_images_in_square[int((row_i+1)//2), col_i, :, :, :]
                 im = Image.fromarray(image, mode)
                 new_im.paste(im, (row_i*(rec_images.shape[1]+gap)-gap,
-                                  col_i*(rec_images.shape[2]+gap)-gap))
+                                  col_i*(rec_images.shape[2]+gap)-gap,
+                                  eal_images.shape[3]))
 
         img_path = os.path.join(self.log_path, 'images')
         new_im.save(os.path.join(img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
