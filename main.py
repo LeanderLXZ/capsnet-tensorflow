@@ -32,8 +32,11 @@ class Main(object):
         else:
             self.summary_path = cfg.SUMMARY_PATH
 
+        # Images saving path
+        self.img_path = os.path.join(self.log_path, 'images')
+
         # Save config
-        utils.check_dir([self.log_path])
+        utils.check_dir([self.log_path, self.img_path])
         utils.save_config_log(self.log_path)
 
         # Load data
@@ -139,7 +142,7 @@ class Main(object):
                        cost_train, cost_rec_train, acc_train,
                        cost_valid, cost_rec_valid, acc_valid)
 
-    def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, acc_all, silent=False):
+    def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, rec_cost_all, acc_all, silent=False):
         """
         Calculate losses and accuracies of full train set.
         """
@@ -147,22 +150,43 @@ class Main(object):
             utils.thin_line()
             print('Calculating loss and accuracy of full {} set...'.format(mode))
             _batch_generator = self._get_batches(x, y)
-            for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
-                x_batch, y_batch = next(_batch_generator)
-                cost_i, acc_i = \
-                    sess.run([self.cost, self.accuracy],
-                             feed_dict={self.inputs: x_batch, self.labels: y_batch})
-                cost_all.append(cost_i)
-                acc_all.append(acc_i)
+            if cfg.WITH_RECONSTRUCTION:
+                for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
+                    x_batch, y_batch = next(_batch_generator)
+                    cost_i, rec_cost_i, acc_i = \
+                        sess.run([self.cost, self.reconstruct_cost, self.accuracy],
+                                 feed_dict={self.inputs: x_batch, self.labels: y_batch})
+                    cost_all.append(cost_i)
+                    rec_cost_all.append(rec_cost_i)
+                    acc_all.append(acc_i)
+            else:
+                for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
+                    x_batch, y_batch = next(_batch_generator)
+                    cost_i, acc_i = \
+                        sess.run([self.cost, self.accuracy],
+                                 feed_dict={self.inputs: x_batch, self.labels: y_batch})
+                    cost_all.append(cost_i)
+                    acc_all.append(acc_i)
+                rec_cost_all = None
         else:
-            for x_batch, y_batch in self._get_batches(x, y):
-                cost_i, acc_i = \
-                    sess.run([self.cost, self.accuracy],
-                             feed_dict={self.inputs: x_batch, self.labels: y_batch})
-                cost_all.append(cost_i)
-                acc_all.append(acc_i)
+            if cfg.WITH_RECONSTRUCTION:
+                for x_batch, y_batch in self._get_batches(x, y):
+                    cost_i, rec_cost_i, acc_i = \
+                        sess.run([self.cost, self.reconstruct_cost, self.accuracy],
+                                 feed_dict={self.inputs: x_batch, self.labels: y_batch})
+                    cost_all.append(cost_i)
+                    rec_cost_all.append(rec_cost_i)
+                    acc_all.append(acc_i)
+            else:
+                for x_batch, y_batch in self._get_batches(x, y):
+                    cost_i, acc_i = \
+                        sess.run([self.cost, self.accuracy],
+                                 feed_dict={self.inputs: x_batch, self.labels: y_batch})
+                    cost_all.append(cost_i)
+                    acc_all.append(acc_i)
+                rec_cost_all = None
 
-        return cost_all, acc_all
+        return cost_all, rec_cost_all, acc_all
 
     def _eval_on_full_set(self, sess, epoch_i, batch_counter, silent=False):
         """
@@ -175,25 +199,29 @@ class Main(object):
             print('Calculating losses using full data set...')
         cost_train_all = []
         cost_valid_all = []
+        rec_cost_train_all = []
+        rec_cost_valid_all = []
         acc_train_all = []
         acc_valid_all = []
 
         # Calculate losses and accuracies of full train set
         if cfg.EVAL_WITH_FULL_TRAIN_SET:
-            cost_train_all, acc_train_all = \
+            cost_train_all, rec_cost_train_all, acc_train_all = \
                 self._eval_on_batches('train', sess, self.x_train, self.y_train, self.n_batch_train,
-                                      cost_train_all, acc_train_all, silent=silent)
+                                      cost_train_all, rec_cost_train_all, acc_train_all, silent=silent)
             cost_train = sum(cost_train_all) / len(cost_train_all)
             acc_train = sum(acc_train_all) / len(acc_train_all)
+            rec_cost_train = sum(rec_cost_train_all) / len(rec_cost_train_all)
         else:
-            cost_train, acc_train = None, None
+            cost_train, rec_cost_train, acc_train = None, None, None
 
         # Calculate losses and accuracies of full valid set
-        cost_valid_all, acc_valid_all = \
+        cost_valid_all, rec_cost_valid_all, acc_valid_all = \
             self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
-                                  cost_valid_all, acc_valid_all, silent=silent)
+                                  cost_valid_all, rec_cost_valid_all, acc_valid_all, silent=silent)
         cost_valid = sum(cost_valid_all) / len(cost_valid_all)
         acc_valid = sum(acc_valid_all) / len(acc_valid_all)
+        rec_cost_valid = sum(rec_cost_valid_all) / len(rec_cost_valid_all)
 
         if not silent:
             utils.thin_line()
@@ -202,17 +230,22 @@ class Main(object):
                   'Time: {:.2f}s |'.format(time.time() - self.start_time))
             utils.thin_line()
             if cfg.EVAL_WITH_FULL_TRAIN_SET:
-                print('Full_Set_Train_Loss: {:.4f}\n'.format(cost_train),
-                      'Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
-            print('Full_Set_Valid_Loss: {:.4f}\n'.format(cost_valid),
-                  'Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
+                print('Full_Set_Train_Loss: {:.4f}'.format(cost_train))
+                if cfg.WITH_RECONSTRUCTION:
+                    print('Reconstruction_Train_Loss: {:.4f}'.format(rec_cost_train))
+                print('Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
+            print('Full_Set_Valid_Loss: {:.4f}'.format(cost_valid))
+            if cfg.WITH_RECONSTRUCTION:
+                print('Reconstruction_Valid_Loss: {:.4f}'.format(rec_cost_valid))
+            print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
 
         file_path = os.path.join(self.log_path, 'full_set_eval_log.csv')
         if not silent:
             utils.thin_line()
             print('Saving {}...'.format(file_path))
         utils.save_log(file_path, epoch_i+1, batch_counter, time.time()-self.start_time,
-                       cost_train, acc_train, cost_valid, acc_valid)
+                       cost_train, rec_cost_train, acc_train,
+                       cost_valid, rec_cost_valid, acc_valid)
         if not silent:
             utils.thin_line()
             print('Evaluation done! Using time: {:.2f}'.format(time.time() - eval_start_time))
@@ -266,8 +299,7 @@ class Main(object):
                 new_im.paste(im, (row_i*(rec_images.shape[1]+gap)-gap,
                                   col_i*(rec_images.shape[2]+gap)-gap))
 
-        img_path = os.path.join(self.log_path, 'images')
-        new_im.save(os.path.join(img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
+        new_im.save(os.path.join(self.img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
 
     def _test_after_training(self, sess):
         """
