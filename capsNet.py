@@ -117,7 +117,6 @@ class CapsNet(object):
             activation_fn = None
         else:
             raise ValueError('Wrong activation function!')
-
         weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer()
         fc = tf.contrib.layers.fully_connected(inputs=tensor,
@@ -129,7 +128,7 @@ class CapsNet(object):
         return fc
 
     @staticmethod
-    def _conv_transpose_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None):
+    def _conv_transpose_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, act_fn='relu'):
         """
         Single transpose convolution layer
         :param tensor: input tensor
@@ -140,7 +139,14 @@ class CapsNet(object):
         :return: output tensor of transpose convolution layer
         """
         # Transpose convolution layer
-        activation_fn = tf.nn.relu
+        if act_fn == 'relu':
+            activation_fn = tf.nn.relu
+        elif act_fn == 'sigmoid':
+            activation_fn = tf.sigmoid
+        elif act_fn is None:
+            activation_fn = None
+        else:
+            raise ValueError('Wrong activation function!')
         weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer()
         conv_t = tf.contrib.layers.conv2d_transpose(inputs=tensor,
@@ -239,10 +245,11 @@ class CapsNet(object):
         # Using transpose convolution layers
         elif cfg.DECODER_TYPE == 'CONV_T':
             decoder_layers[0] = \
-                tf.reshape(tensor, (cfg.BATCH_SIZE, -1, 1, 1), name='reshape')
+                tf.reshape(tensor, (cfg.BATCH_SIZE,  *cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
-                    # decoder_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
+                    # decoder_param:
+                    # {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
                     decoder_layer = self._conv_transpose_layer(tensor=decoder_layers[iter_conv], **decoder_param)
                     decoder_layers.append(decoder_layer)
 

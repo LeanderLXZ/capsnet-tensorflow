@@ -55,34 +55,43 @@ __C.STDDEV = 0.01
 # Training with reconstruction
 __C.WITH_RECONSTRUCTION = True
 
-# Type of decoder of reconstruction:
-# 'FC': full_connected layers
-# 'CONV': convolution layers
-# 'CONV_T': transpose convolution layers
-__C.DECODER_TYPE = 'CONV'  # 'FC'
-
-# Architecture parameters of decoders of reconstruction
-# 'FC': [{'num_outputs':None, 'act_fn': None}, ]  # 'act_fn': 'relu', 'sigmoid'
-# 'CONV': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None, 'resize': None}, ]
-# 'CONV_T': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}, ]
-
+# # Type of decoder of reconstruction:
+# # 'FC': full_connected layers
+# # 'CONV': convolution layers
+# # 'CONV_T': transpose convolution layers
+# __C.DECODER_TYPE = 'FC'
+#
+# # Architecture parameters of decoders of reconstruction
+# # 'FC': [{'num_outputs':None, 'act_fn': None}, ]  # 'act_fn': 'relu', 'sigmoid'
+# # 'CONV': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None, 'resize': None}, ]
+# # 'CONV_T': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}, ]
 # __C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
 #                       {'num_outputs': 1024, 'act_fn': 'relu'},
 #                       {'num_outputs': 784, 'act_fn': 'sigmoid'}]
-
-__C.CONV_RESHAPE_SIZE = (4, 4)
-__C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'depth': 16, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 7},
-                      {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
-                      {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
-                      {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
-
-# Reconstruction loss
-# 'mse': Mean Square Error
-# 'cross_entropy' : sigmoid_cross_entropy_with_logits
-__C.RECONSTRUCTION_LOSS = 'cross_entropy'  # 'mse'
+#
+# # Reconstruction loss
+# # 'mse': Mean Square Error
+# # 'cross_entropy' : sigmoid_cross_entropy_with_logits
+# __C.RECONSTRUCTION_LOSS = 'mse'
 
 # Scaling for reconstruction loss
 __C.RECONSTRUCT_COST_SCALE = 0.392  # 0.0005*784=0.392
+
+# __C.DECODER_TYPE = 'CONV'
+# __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+# __C.CONV_RESHAPE_SIZE = (4, 4)
+# __C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'depth': 16, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 7},
+#                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
+#                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
+#                       {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
+
+__C.DECODER_TYPE = 'CONV_T'
+__C.RECONSTRUCTION_LOSS = 'mse'
+__C.CONV_RESHAPE_SIZE = (4, 4)
+__C.DECODER_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 12x12
+                      {'kernel_size': 9, 'stride': 1, 'depth': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
+                      {'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
+                      {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': 'sigmoid'}]
 
 # -------------------------------------------
 # Test
