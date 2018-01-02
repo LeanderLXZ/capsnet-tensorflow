@@ -60,7 +60,7 @@ class CapsNet(object):
         return margin_loss
 
     @staticmethod
-    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, resize=None):
+    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, act_fn='relu', resize=None):
         """
         Single convolution layer
         :param tensor: input tensor
@@ -71,11 +71,24 @@ class CapsNet(object):
         :param resize: if resize, resize every image
         :return: output tensor of convolution layer
         """
+        # Resize image
+        if resize is not None:
+            conv = tf.image.resize_nearest_neighbor(tensor, (resize, resize))
+        else:
+            conv = tensor
+
         # Convolution layer
-        activation_fn = tf.nn.relu
+        if act_fn == 'relu':
+            activation_fn = tf.nn.relu
+        elif act_fn == 'sigmoid':
+            activation_fn = tf.sigmoid
+        elif act_fn is None:
+            activation_fn = None
+        else:
+            raise ValueError('Wrong activation function!')
         weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer()
-        conv = tf.contrib.layers.conv2d(inputs=tensor,
+        conv = tf.contrib.layers.conv2d(inputs=conv,
                                         num_outputs=depth,
                                         kernel_size=kernel_size,
                                         stride=stride,
@@ -83,9 +96,6 @@ class CapsNet(object):
                                         activation_fn=activation_fn,
                                         weights_initializer=weights_initializer,
                                         biases_initializer=biases_initializer)
-
-        if resize is not None:
-            conv = tf.image.resize_nearest_neighbor(conv, (resize, resize))
 
         return conv
 
@@ -164,7 +174,7 @@ class CapsNet(object):
 
         for iter_conv, conv_param in enumerate(cfg.CONV_PARAMS):
             with tf.variable_scope('conv_{}'.format(iter_conv)):
-                # conv_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}
+                # conv_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
                 conv_layer = self._conv_layer(tensor=conv_layers[iter_conv], **conv_param)
                 conv_layers.append(conv_layer)
 
@@ -219,7 +229,8 @@ class CapsNet(object):
             for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param:
-                    # {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'resize': None}
+                    # {'kernel_size': None, 'stride': None, 'depth': None,
+                    #  'padding': 'VALID', 'act_fn':None, 'resize': None}
                     decoder_layer = self._conv_layer(tensor=decoder_layers[iter_conv], **decoder_param)
                     decoder_layers.append(decoder_layer)
 
