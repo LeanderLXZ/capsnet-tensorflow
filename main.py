@@ -216,17 +216,16 @@ class Main(object):
         cost_test_all = []
         acc_test_all = []
 
-        if cfg.EVAL_WITH_FULL_TRAIN_SET:
-            utils.thin_line()
-            print('Calculating loss and accuracy on test set...')
-            _test_batch_generator = self._get_batches(self.x_test, self.y_test)
-            for _ in tqdm(range(self.n_batch_test), total=self.n_batch_test, ncols=100, unit='batch'):
-                test_batch_x, test_batch_y = next(_test_batch_generator)
-                cost_test_i, acc_test_i = \
-                    sess.run([self.cost, self.accuracy],
-                             feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
-                cost_test_all.append(cost_test_i)
-                acc_test_all.append(acc_test_i)
+        utils.thin_line()
+        print('Calculating loss and accuracy on test set...')
+        _test_batch_generator = self._get_batches(self.x_test, self.y_test)
+        for _ in tqdm(range(self.n_batch_test), total=self.n_batch_test, ncols=100, unit='batch'):
+            test_batch_x, test_batch_y = next(_test_batch_generator)
+            cost_test_i, acc_test_i = \
+                sess.run([self.cost, self.accuracy],
+                         feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
+            cost_test_all.append(cost_test_i)
+            acc_test_all.append(acc_test_i)
 
         cost_test = sum(cost_test_all) / len(cost_test_all)
         acc_test = sum(acc_test_all) / len(acc_test_all)
