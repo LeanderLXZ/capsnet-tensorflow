@@ -1,6 +1,9 @@
 import time
 import utils
 import os
+import math
+from PIL import Image
+from matplotlib import pyplot as plt
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
@@ -66,7 +69,8 @@ class Main(object):
         # Build graph
         utils.thick_line()
         print('Building graph...')
-        self.train_graph, self.inputs, self.labels, self.cost, self.optimizer, self.accuracy = \
+        self.train_graph, self.inputs, self.labels, self.cost, self.optimizer, \
+            self.accuracy, self.reconstruct_cost, self.reconstructed_images = \
             model.build_graph(image_size=self.x_train.shape[1:], num_class=self.y_train.shape[1])
 
     @staticmethod
@@ -86,18 +90,22 @@ class Main(object):
         x_valid_batch = self.x_valid[valid_batch_idx]
         y_valid_batch = self.y_valid[valid_batch_idx]
 
-        cost_train, acc_train = sess.run([self.cost, self.accuracy],
-                                         feed_dict={self.inputs: x_batch, self.labels: y_batch})
-        cost_valid, acc_valid = sess.run([self.cost, self.accuracy],
-                                         feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
+        if cfg.WITH_RECONSTRUCTION:
+            cost_train, cost_rec_train, acc_train = \
+                sess.run([self.cost, self.reconstruct_cost, self.accuracy],
+                         feed_dict={self.inputs: x_batch, self.labels: y_batch})
+            cost_valid, cost_rec_valid, acc_valid = \
+                sess.run([self.cost, self.reconstruct_cost, self.accuracy],
+                         feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
+        else:
+            cost_train, acc_train = sess.run([self.cost, self.accuracy],
+                                             feed_dict={self.inputs: x_batch, self.labels: y_batch})
+            cost_valid, acc_valid = sess.run([self.cost, self.accuracy],
+                                             feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
+            cost_rec_train, cost_rec_valid = None
 
-        print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
-              'Batch: {} |'.format(batch_counter),
-              'Time: {:.2f}s |'.format(time.time() - self.start_time),
-              'Train_Loss: {:.4f} |'.format(cost_train),
-              'Train_Accuracy: {:.2f}% |'.format(acc_train * 100),
-              'Valid_Loss: {:.4f} |'.format(cost_valid),
-              'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
+        utils.print_status(epoch_i, batch_counter, self.start_time, cost_train,
+                           cost_rec_train, acc_train, cost_valid, cost_rec_valid, acc_valid)
 
     def _save_logs(self, sess, train_writer, valid_writer,
                    merged, x_batch, y_batch, epoch_i, batch_counter):
@@ -108,18 +116,28 @@ class Main(object):
         x_valid_batch = self.x_valid[valid_batch_idx]
         y_valid_batch = self.y_valid[valid_batch_idx]
 
-        summary_train, cost_train, acc_train = \
-            sess.run([merged, self.cost, self.accuracy],
-                     feed_dict={self.inputs: x_batch, self.labels: y_batch})
-        summary_valid, cost_valid, acc_valid = \
-            sess.run([merged, self.cost, self.accuracy],
-                     feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
+        if cfg.WITH_RECONSTRUCTION:
+            summary_train, cost_train, cost_rec_train, acc_train = \
+                sess.run([merged, self.cost, self.reconstruct_cost, self.accuracy],
+                         feed_dict={self.inputs: x_batch, self.labels: y_batch})
+            summary_valid, cost_valid, cost_rec_valid, acc_valid = \
+                sess.run([merged, self.cost, self.reconstruct_cost, self.accuracy],
+                         feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
+        else:
+            summary_train, cost_train, acc_train = \
+                sess.run([merged, self.cost, self.accuracy],
+                         feed_dict={self.inputs: x_batch, self.labels: y_batch})
+            summary_valid, cost_valid, acc_valid = \
+                sess.run([merged, self.cost, self.accuracy],
+                         feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
+            cost_rec_train, cost_rec_valid = None
 
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
         utils.save_log(os.path.join(self.log_path, 'train_log.csv'),
                        epoch_i+1, batch_counter, time.time()-self.start_time,
-                       cost_train, acc_train, cost_valid, acc_valid)
+                       cost_train, cost_rec_train, acc_train,
+                       cost_valid, cost_rec_valid, acc_valid)
 
     def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, acc_all, silent=False):
         """
@@ -129,24 +147,24 @@ class Main(object):
             utils.thin_line()
             print('Calculating loss and accuracy of full {} set...'.format(mode))
             _batch_generator = self._get_batches(x, y)
-            for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit='batch'):
-                batch_x, batch_y = next(_batch_generator)
+            for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
+                x_batch, y_batch = next(_batch_generator)
                 cost_i, acc_i = \
                     sess.run([self.cost, self.accuracy],
-                             feed_dict={self.inputs: batch_x, self.labels: batch_y})
+                             feed_dict={self.inputs: x_batch, self.labels: y_batch})
                 cost_all.append(cost_i)
                 acc_all.append(acc_i)
         else:
-            for batch_x, batch_y in self._get_batches(x, y):
+            for x_batch, y_batch in self._get_batches(x, y):
                 cost_i, acc_i = \
                     sess.run([self.cost, self.accuracy],
-                             feed_dict={self.inputs: batch_x, self.labels: batch_y})
+                             feed_dict={self.inputs: x_batch, self.labels: y_batch})
                 cost_all.append(cost_i)
                 acc_all.append(acc_i)
 
         return cost_all, acc_all
 
-    def _full_set_eval(self, sess, epoch_i, batch_counter, silent=False):
+    def _eval_on_full_set(self, sess, epoch_i, batch_counter, silent=False):
         """
         Evaluate on the full data set and print information.
         """
@@ -199,6 +217,52 @@ class Main(object):
             utils.thin_line()
             print('Evaluation done! Using time: {:.2f}'.format(time.time() - eval_start_time))
 
+    def _save_images(self, sess, x_batch, y_batch, epoch_i, batch_counter):
+
+        rec_images = sess.run(self.reconstructed_images,
+                              feed_dict={self.inputs: x_batch, self.labels: y_batch})
+        real_images = x_batch
+
+        # Get maximum size for square grid of images
+        save_col_size = math.floor(np.sqrt(rec_images.shape[0] * 2))
+        save_row_size = save_col_size // 2
+
+        # Scale to 0-255
+        rec_images = np.divide(((rec_images - rec_images.min()) * 255),
+                               (rec_images.max() - rec_images.min()))
+
+        # Put images in a square arrangement
+        rec_images_in_square = np.reshape(rec_images[: save_row_size, save_col_size],
+                                          (save_row_size, save_col_size, rec_images.shape[1],
+                                           rec_images.shape[2], rec_images.shape[3]))
+        real_images_in_square = np.reshape(real_images[:save_col_size * save_row_size],
+                                           (save_row_size, save_col_size, real_images.shape[1],
+                                            real_images.shape[2], real_images.shape[3]))
+
+        if cfg.DATABASE_NAME == 'mnist':
+            mode = 'L'
+            rec_images_in_square = np.squeeze(rec_images_in_square, 4)
+            real_images_in_square = np.squeeze(real_images_in_square, 4)
+        else:
+            mode = 'RGB'
+
+        # Combine images to grid image
+        gap = 2
+        new_im = Image.new(mode, ((rec_images.shape[2]++gap) * save_row_size * 2 - gap,
+                                  (rec_images.shape[1]+gap) * save_col_size - gap))
+        for row_i in range(save_row_size*2):
+            for col_i in range(save_col_size):
+                if (row_i+1) % 2 == 0:
+                    image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :, :]
+                else:
+                    image = real_images_in_square[int((row_i+1)//2), col_i, :, :, :]
+                im = Image.fromarray(image, mode)
+                new_im.paste(im, (row_i*(rec_images.shape[1]+gap)-gap,
+                                  col_i*(rec_images.shape[2]+gap)-gap))
+
+        img_path = os.path.join(self.log_path, 'images')
+        new_im.save(os.path.join(img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
+
     def _test_after_training(self, sess):
         """
         Evaluate on the test set after training.
@@ -213,7 +277,7 @@ class Main(object):
         utils.thin_line()
         print('Calculating loss and accuracy on test set...')
         _test_batch_generator = self._get_batches(self.x_test, self.y_test)
-        for _ in tqdm(range(self.n_batch_test), total=self.n_batch_test, ncols=100, unit='batch'):
+        for _ in tqdm(range(self.n_batch_test), total=self.n_batch_test, ncols=100, unit=' batches'):
             test_batch_x, test_batch_y = next(_test_batch_generator)
             cost_test_i, acc_test_i = \
                 sess.run([self.cost, self.accuracy],
@@ -277,14 +341,18 @@ class Main(object):
                             if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
+                        if cfg.WITH_RECONSTRUCTION:
+                            if cfg.SAVE_IMAGE_STEP is not None:
+                                if batch_counter % cfg.SAVE_IMAGE_STEP == 0:
+                                    self._save_images(sess, x_batch, y_batch, epoch_i, batch_counter)
                         if full_set_eval_in_loop:
                             if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
-                                self._full_set_eval(sess, epoch_i, batch_counter)
+                                self._eval_on_full_set(sess, epoch_i, batch_counter)
                                 utils.thick_line()
                 else:
                     utils.thin_line()
                     train_batch_generator = self._get_batches(self.x_train, self.y_train)
-                    for _ in tqdm(range(self.n_batch_train), total=self.n_batch_train, ncols=100, unit='batch'):
+                    for _ in tqdm(range(self.n_batch_train), total=self.n_batch_train, ncols=100, unit=' batches'):
 
                         batch_counter += 1
                         x_batch, y_batch = next(train_batch_generator)
@@ -296,12 +364,16 @@ class Main(object):
                             if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
+                        if cfg.WITH_RECONSTRUCTION:
+                            if cfg.SAVE_IMAGE_STEP is not None:
+                                if batch_counter % cfg.SAVE_IMAGE_STEP == 0:
+                                    self._save_images(sess, x_batch, y_batch, epoch_i, batch_counter)
                         if full_set_eval_in_loop:
                             if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
-                                self._full_set_eval(sess, epoch_i, batch_counter, silent=True)
+                                self._eval_on_full_set(sess, epoch_i, batch_counter, silent=True)
 
                 if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
-                    self._full_set_eval(sess, epoch_i, batch_counter)
+                    self._eval_on_full_set(sess, epoch_i, batch_counter)
 
                 utils.thin_line()
                 print('Epoch done! Using time: {:.2f}'.format(time.time() - epoch_start_time))

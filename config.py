@@ -90,6 +90,10 @@ __C.DISPLAY_STEP = 10  # per batch
 # Set None to not save summaries
 __C.SAVE_LOG_STEP = 20  # per batch
 
+# Save reconstructed images
+# Set None to not save images
+__C.SAVE_IMAGE_STEP = 50
+
 # Calculate train loss and valid loss using full data set
 # None: not display
 # 'per_epoch': evaluate when every epoch finished

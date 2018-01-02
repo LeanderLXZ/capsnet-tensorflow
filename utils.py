@@ -158,6 +158,29 @@ def thick_line():
     print('======================================================')
 
 
+def print_status(epoch_i, batch_counter, start_time, cost_train,
+                 cost_rec_train, acc_train, cost_valid, cost_rec_valid, acc_valid):
+
+    if cfg.WITH_RECONSTRUCTION:
+        print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
+              'Batch: {} |'.format(batch_counter),
+              'Time: {:.2f}s |'.format(time.time() - start_time),
+              'Train_Loss: {:.4f} |'.format(cost_train),
+              'Reconstruction_Train_Loss: {:.4f} |'.format(cost_rec_train),
+              'Train_Accuracy: {:.2f}% |'.format(acc_train * 100),
+              'Valid_Loss: {:.4f} |'.format(cost_valid),
+              'Reconstruction_Valid_Loss: {:.4f} |'.format(cost_rec_valid),
+              'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
+    else:
+        print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
+              'Batch: {} |'.format(batch_counter),
+              'Time: {:.2f}s |'.format(time.time() - start_time),
+              'Train_Loss: {:.4f} |'.format(cost_train),
+              'Train_Accuracy: {:.2f}% |'.format(acc_train * 100),
+              'Valid_Loss: {:.4f} |'.format(cost_valid),
+              'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
+
+
 def save_config_log(file_path):
     """
     Save config of training.
@@ -176,26 +199,39 @@ def save_config_log(file_path):
         f.write('=====================================================')
 
 
-def save_log(file_path, epoch_i, batch_counter, using_time,
-             cost_train, acc_train, cost_valid, acc_valid):
+def save_log(file_path, epoch_i, batch_counter, using_time, cost_train,
+             cost_rec_train, acc_train, cost_valid, cost_rec_valid, acc_valid):
     """
     Save losses and accuracies while training.
     """
-    if not os.path.isfile(file_path):
+    if cfg.WITH_RECONSTRUCTION:
+        if not os.path.isfile(file_path):
+            with open(file_path, 'w') as f:
+                header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss', 'Reconstruction_Train_Loss',
+                          'Train_Accuracy', 'Valid_Loss', 'Reconstruction_Valid_Loss', 'Valid_Accuracy']
+                writer = csv.writer(f)
+                writer.writerow(header)
 
-        with open(file_path, 'w') as f:
-            header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss',
-                      'Train_Accuracy', 'Valid_Loss', 'Valid_Accuracy']
+        with open(file_path, 'a') as f:
+            local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+            log = [local_time, epoch_i, batch_counter, using_time, cost_train,
+                   cost_rec_train, acc_train, cost_valid,  cost_rec_valid, acc_valid]
             writer = csv.writer(f)
-            writer.writerow(header)
+            writer.writerow(log)
+    else:
+        if not os.path.isfile(file_path):
+            with open(file_path, 'w') as f:
+                header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss',
+                          'Train_Accuracy', 'Valid_Loss', 'Valid_Accuracy']
+                writer = csv.writer(f)
+                writer.writerow(header)
 
-    with open(file_path, 'a') as f:
-
-        local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
-        log = [local_time, epoch_i, batch_counter, using_time,
-               cost_train, acc_train, cost_valid, acc_valid]
-        writer = csv.writer(f)
-        writer.writerow(log)
+        with open(file_path, 'a') as f:
+            local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+            log = [local_time, epoch_i, batch_counter, using_time,
+                   cost_train, acc_train, cost_valid, acc_valid]
+            writer = csv.writer(f)
+            writer.writerow(log)
 
 
 def save_test_log(file_path, cost_test, acc_test):
