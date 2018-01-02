@@ -232,7 +232,7 @@ class Main(object):
                                (rec_images.max() - rec_images.min()))
 
         # Put images in a square arrangement
-        rec_images_in_square = np.reshape(rec_images[: save_row_size, save_col_size],
+        rec_images_in_square = np.reshape(rec_images[: save_row_size*save_col_size],
                                           (save_row_size, save_col_size, rec_images.shape[1],
                                            rec_images.shape[2], rec_images.shape[3]))
         real_images_in_square = np.reshape(real_images[:save_col_size * save_row_size],
