@@ -94,10 +94,10 @@ class Main(object):
         y_valid_batch = self.y_valid[valid_batch_idx]
 
         if cfg.WITH_RECONSTRUCTION:
-            cost_train, cost_rec_train, acc_train = \
+            cost_train, rec_cost_train, acc_train = \
                 sess.run([self.cost, self.reconstruct_cost, self.accuracy],
                          feed_dict={self.inputs: x_batch, self.labels: y_batch})
-            cost_valid, cost_rec_valid, acc_valid = \
+            cost_valid, rec_cost_valid, acc_valid = \
                 sess.run([self.cost, self.reconstruct_cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
         else:
@@ -105,10 +105,10 @@ class Main(object):
                                              feed_dict={self.inputs: x_batch, self.labels: y_batch})
             cost_valid, acc_valid = sess.run([self.cost, self.accuracy],
                                              feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
-            cost_rec_train, cost_rec_valid = None
+            rec_cost_train, rec_cost_valid = None
 
         utils.print_status(epoch_i, batch_counter, self.start_time, cost_train,
-                           cost_rec_train, acc_train, cost_valid, cost_rec_valid, acc_valid)
+                           rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid)
 
     def _save_logs(self, sess, train_writer, valid_writer,
                    merged, x_batch, y_batch, epoch_i, batch_counter):
@@ -120,10 +120,10 @@ class Main(object):
         y_valid_batch = self.y_valid[valid_batch_idx]
 
         if cfg.WITH_RECONSTRUCTION:
-            summary_train, cost_train, cost_rec_train, acc_train = \
+            summary_train, cost_train, rec_cost_train, acc_train = \
                 sess.run([merged, self.cost, self.reconstruct_cost, self.accuracy],
                          feed_dict={self.inputs: x_batch, self.labels: y_batch})
-            summary_valid, cost_valid, cost_rec_valid, acc_valid = \
+            summary_valid, cost_valid, rec_cost_valid, acc_valid = \
                 sess.run([merged, self.cost, self.reconstruct_cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
         else:
@@ -133,14 +133,14 @@ class Main(object):
             summary_valid, cost_valid, acc_valid = \
                 sess.run([merged, self.cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
-            cost_rec_train, cost_rec_valid = None
+            rec_cost_train, rec_cost_valid = None
 
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
         utils.save_log(os.path.join(self.log_path, 'train_log.csv'),
                        epoch_i+1, batch_counter, time.time()-self.start_time,
-                       cost_train, cost_rec_train, acc_train,
-                       cost_valid, cost_rec_valid, acc_valid)
+                       cost_train, rec_cost_train, acc_train,
+                       cost_valid, rec_cost_valid, acc_valid)
 
     def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, rec_cost_all, acc_all, silent=False):
         """
@@ -224,20 +224,9 @@ class Main(object):
         rec_cost_valid = sum(rec_cost_valid_all) / len(rec_cost_valid_all)
 
         if not silent:
-            utils.thin_line()
-            print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
-                  'Batch: {} |'.format(batch_counter),
-                  'Time: {:.2f}s |'.format(time.time() - self.start_time))
-            utils.thin_line()
-            if cfg.EVAL_WITH_FULL_TRAIN_SET:
-                print('Full_Set_Train_Loss: {:.4f}'.format(cost_train))
-                if cfg.WITH_RECONSTRUCTION:
-                    print('Reconstruction_Train_Loss: {:.4f}'.format(rec_cost_train))
-                print('Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
-            print('Full_Set_Valid_Loss: {:.4f}'.format(cost_valid))
-            if cfg.WITH_RECONSTRUCTION:
-                print('Reconstruction_Valid_Loss: {:.4f}'.format(rec_cost_valid))
-            print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid*100))
+            utils.print_full_set_eval(epoch_i, batch_counter, self.start_time,
+                                      cost_train, rec_cost_train, acc_train,
+                                      cost_valid, rec_cost_valid, acc_valid)
 
         file_path = os.path.join(self.log_path, 'full_set_eval_log.csv')
         if not silent:
