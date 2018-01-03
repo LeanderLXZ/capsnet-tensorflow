@@ -144,14 +144,19 @@ class Main(object):
                        cost_train, rec_cost_train, acc_train,
                        cost_valid, rec_cost_valid, acc_valid)
 
-    def _eval_on_batches(self, mode, sess, x, y, n_batch, cost_all, rec_cost_all, acc_all, silent=False):
+    def _eval_on_batches(self, mode, sess, x, y, n_batch, silent=False):
         """
         Calculate losses and accuracies of full train set.
         """
+        cost_all = []
+        acc_all = []
+        rec_cost_all = []
+
         if not silent:
             utils.thin_line()
             print('Calculating loss and accuracy of full {} set...'.format(mode))
             _batch_generator = self._get_batches(x, y)
+
             if cfg.WITH_RECONSTRUCTION:
                 for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
                     x_batch, y_batch = next(_batch_generator)
@@ -161,6 +166,7 @@ class Main(object):
                     cost_all.append(cost_i)
                     rec_cost_all.append(rec_cost_i)
                     acc_all.append(acc_i)
+                rec_cost = sum(rec_cost_all) / len(rec_cost_all)
             else:
                 for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
                     x_batch, y_batch = next(_batch_generator)
@@ -169,7 +175,8 @@ class Main(object):
                                  feed_dict={self.inputs: x_batch, self.labels: y_batch})
                     cost_all.append(cost_i)
                     acc_all.append(acc_i)
-                rec_cost_all = None
+                rec_cost = None
+
         else:
             if cfg.WITH_RECONSTRUCTION:
                 for x_batch, y_batch in self._get_batches(x, y):
@@ -179,6 +186,7 @@ class Main(object):
                     cost_all.append(cost_i)
                     rec_cost_all.append(rec_cost_i)
                     acc_all.append(acc_i)
+                rec_cost = sum(rec_cost_all) / len(rec_cost_all)
             else:
                 for x_batch, y_batch in self._get_batches(x, y):
                     cost_i, acc_i = \
@@ -186,9 +194,12 @@ class Main(object):
                                  feed_dict={self.inputs: x_batch, self.labels: y_batch})
                     cost_all.append(cost_i)
                     acc_all.append(acc_i)
-                rec_cost_all = None
+                rec_cost = None
 
-        return cost_all, rec_cost_all, acc_all
+        cost = sum(cost_all) / len(cost_all)
+        acc = sum(acc_all) / len(acc_all)
+
+        return cost, rec_cost, acc
 
     def _eval_on_full_set(self, sess, epoch_i, batch_counter, silent=False):
         """
@@ -199,31 +210,19 @@ class Main(object):
         if not silent:
             utils.thick_line()
             print('Calculating losses using full data set...')
-        cost_train_all = []
-        cost_valid_all = []
-        rec_cost_train_all = []
-        rec_cost_valid_all = []
-        acc_train_all = []
-        acc_valid_all = []
 
         # Calculate losses and accuracies of full train set
         if cfg.EVAL_WITH_FULL_TRAIN_SET:
-            cost_train_all, rec_cost_train_all, acc_train_all = \
-                self._eval_on_batches('train', sess, self.x_train, self.y_train, self.n_batch_train,
-                                      cost_train_all, rec_cost_train_all, acc_train_all, silent=silent)
-            cost_train = sum(cost_train_all) / len(cost_train_all)
-            acc_train = sum(acc_train_all) / len(acc_train_all)
-            rec_cost_train = sum(rec_cost_train_all) / len(rec_cost_train_all)
+            cost_train, rec_cost_train, acc_train = \
+                self._eval_on_batches('train', sess, self.x_train, self.y_train,
+                                      self.n_batch_train, silent=silent)
         else:
             cost_train, rec_cost_train, acc_train = None, None, None
 
         # Calculate losses and accuracies of full valid set
-        cost_valid_all, rec_cost_valid_all, acc_valid_all = \
-            self._eval_on_batches('valid', sess, self.x_valid, self.y_valid, self.n_batch_valid,
-                                  cost_valid_all, rec_cost_valid_all, acc_valid_all, silent=silent)
-        cost_valid = sum(cost_valid_all) / len(cost_valid_all)
-        acc_valid = sum(acc_valid_all) / len(acc_valid_all)
-        rec_cost_valid = sum(rec_cost_valid_all) / len(rec_cost_valid_all)
+        cost_valid, rec_cost_valid, acc_valid = \
+            self._eval_on_batches('valid', sess, self.x_valid, self.y_valid,
+                                  self.n_batch_valid, silent=silent)
 
         if not silent:
             utils.print_full_set_eval(epoch_i, batch_counter, self.start_time,
