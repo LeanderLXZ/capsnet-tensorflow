@@ -1,4 +1,5 @@
 import os
+from copy import copy
 from easydict import EasyDict
 
 __C = EasyDict()
@@ -168,7 +169,7 @@ __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 # ===========================================
 
 # get config by: from config import cfg
-config = __C.copy()
+config = copy(__C)
 
 # ===========================================
 # #                 Pipeline                #
@@ -186,7 +187,7 @@ __C.FULL_SET_EVAL_MODE = 'per_batch'
 __C.FULL_SET_EVAL_STEP = 25
 __C.SAVE_MODEL_MODE = 'per_epoch'
 __C.SAVE_MODEL_STEP = 5
-cfg_1 = __C.copy()
+cfg_1 = copy(__C)
 
 __C.VERSION = 'with_fc_rec_mse'
 __C.LEARNING_RATE = 0.001
@@ -200,11 +201,11 @@ __C.FULL_SET_EVAL_MODE = 'per_batch'
 __C.FULL_SET_EVAL_STEP = 25
 __C.SAVE_MODEL_MODE = 'per_epoch'
 __C.SAVE_MODEL_STEP = 5
-cfg_2 = __C.copy()
+cfg_2 = copy(__C)
 
 __C.VERSION = 'with_fc_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
-cfg_3 = __C.copy()
+cfg_3 = copy(__C)
 
 __C.VERSION = 'with_conv_rec_mse'
 __C.LEARNING_RATE = 0.001
@@ -225,11 +226,11 @@ __C.FULL_SET_EVAL_MODE = 'per_batch'
 __C.FULL_SET_EVAL_STEP = 25
 __C.SAVE_MODEL_MODE = 'per_epoch'
 __C.SAVE_MODEL_STEP = 5
-cfg_4 = __C.copy()
+cfg_4 = copy(__C)
 
 __C.VERSION = 'with_conv_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
-cfg_5 = __C.copy()
+cfg_5 = copy(__C)
 
 __C.VERSION = 'with_conv_t_rec_mse'
 __C.LEARNING_RATE = 0.001
@@ -250,8 +251,8 @@ __C.FULL_SET_EVAL_MODE = 'per_batch'
 __C.FULL_SET_EVAL_STEP = 25
 __C.SAVE_MODEL_MODE = 'per_epoch'
 __C.SAVE_MODEL_STEP = 5
-cfg_6 = __C.copy()
+cfg_6 = copy(__C)
 
 __C.VERSION = 'with_conv_t_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
-cfg_7 = __C.copy()
+cfg_7 = copy(__C)
