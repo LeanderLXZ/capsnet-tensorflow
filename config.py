@@ -14,7 +14,7 @@ __C.VERSION = 'no_rec'
 __C.LEARNING_RATE = 0.001
 
 # Epochs
-__C.EPOCHS = 50
+__C.EPOCHS = 30
 
 # Batch size
 __C.BATCH_SIZE = 128
@@ -116,14 +116,20 @@ __C.SAVE_LOG_STEP = 20  # batches
 __C.SAVE_IMAGE_STEP = 50  # batches
 
 # Calculate train loss and valid loss using full data set
+# 'per_epoch': evaluate on full set when n epochs finished
+# 'per_batch': evaluate on full set when n batches finished
+__C.FULL_SET_EVAL_MODE = 'per_batch'
 # None: not evaluate
-# 'per_epoch': evaluate when every epoch finished
-__C.FULL_SET_EVAL_STEP = 50  # batches
+__C.FULL_SET_EVAL_STEP = 50
 
-# Save model per batch
+# Save model
+# 'per_epoch': save model when n epochs finished
+# 'per_batch': save model when n batches finished
+__C.SAVE_MODEL_MODE = 'per_epoch'
 # None: not save model
-# 'per_epoch': save model when every epoch finished
-__C.SAVE_MODEL_STEP = 'per_epoch'  # batches
+__C.SAVE_MODEL_STEP = 5
+# Maximum number of recent checkpoints to keep.
+__C.MAX_TO_KEEP_CKP = 5
 
 # Calculate the train loss of full data set, which may take lots of time.
 __C.EVAL_WITH_FULL_TRAIN_SET = False

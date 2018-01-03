@@ -420,16 +420,7 @@ class Main(object):
             valid_writer = tf.summary.FileWriter(valid_log_path)
 
             # Model saver
-            saver = tf.train.Saver()
-
-            full_set_eval_in_loop = False
-            if cfg.FULL_SET_EVAL_STEP is not None:
-                if cfg.FULL_SET_EVAL_STEP != 'per_epoch':
-                    full_set_eval_in_loop = True
-            save_model_in_loop = False
-            if cfg.SAVE_MODEL_STEP is not None:
-                if cfg.SAVE_MODEL_STEP != 'per_epoch':
-                    save_model_in_loop = True
+            saver = tf.train.Saver(max_to_keep=cfg.MAX_TO_KEEP_CKP)
 
             sess.run(tf.global_variables_initializer())
             batch_counter = 0
@@ -467,12 +458,12 @@ class Main(object):
                                                       y_batch, batch_counter, epoch_i=epoch_i)
 
                         # Save model
-                        if save_model_in_loop:
+                        if cfg.SAVE_MODEL_MODE == 'per_batch':
                             if batch_counter % cfg.SAVE_MODEL_STEP == 0:
                                 self._save_model(sess, saver, batch_counter)
 
                         # Evaluate on full set
-                        if full_set_eval_in_loop:
+                        if cfg.FULL_SET_EVAL_MODE == 'per_batch':
                             if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                                 self._eval_on_full_set(sess, epoch_i, batch_counter)
                                 utils.thick_line()
@@ -503,19 +494,21 @@ class Main(object):
                                                       batch_counter, silent=True, epoch_i=epoch_i)
 
                         # Save model
-                        if save_model_in_loop:
+                        if cfg.SAVE_MODEL_MODE == 'per_batch':
                             if batch_counter % cfg.SAVE_MODEL_STEP == 0:
                                 self._save_model(sess, saver, batch_counter, silent=True)
 
                         # Evaluate on full set
-                        if full_set_eval_in_loop:
+                        if cfg.FULL_SET_EVAL_MODE == 'per_batch':
                             if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                                 self._eval_on_full_set(sess, epoch_i, batch_counter, silent=True)
 
-                if cfg.SAVE_MODEL_STEP == 'per_epoch':
-                    self._save_model(sess, saver, epoch_i)
-                if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
-                    self._eval_on_full_set(sess, epoch_i, batch_counter)
+                if cfg.SAVE_MODEL_MODE == 'per_epoch':
+                    if (epoch_i+1) % cfg.SAVE_MODEL_STEP == 0:
+                        self._save_model(sess, saver, epoch_i)
+                if cfg.FULL_SET_EVAL_MODE == 'per_epoch':
+                    if (epoch_i+1) % cfg.FULL_SET_EVAL_MODE == 0:
+                        self._eval_on_full_set(sess, epoch_i, batch_counter)
 
                 utils.thin_line()
                 print('Epoch done! Using time: {:.2f}'.format(time.time() - epoch_start_time))
