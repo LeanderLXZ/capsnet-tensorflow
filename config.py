@@ -53,7 +53,7 @@ __C.STDDEV = 0.01
 # Reconstruction
 
 # Training with reconstruction
-__C.WITH_RECONSTRUCTION = True
+__C.WITH_RECONSTRUCTION = False
 
 # Type of decoder of reconstruction:
 # 'FC': full_connected layers
@@ -105,20 +105,25 @@ __C.TEST_AFTER_TRAINING = True
 
 # Display step
 # Set None to not display
-__C.DISPLAY_STEP = 10  # per batch
+__C.DISPLAY_STEP = 10  # batches
 
 # Save summary step
 # Set None to not save summaries
-__C.SAVE_LOG_STEP = 20  # per batch
+__C.SAVE_LOG_STEP = 20  # batches
 
 # Save reconstructed images
 # Set None to not save images
-__C.SAVE_IMAGE_STEP = 50
+__C.SAVE_IMAGE_STEP = 50  # batches
 
 # Calculate train loss and valid loss using full data set
-# None: not display
+# None: not evaluate
 # 'per_epoch': evaluate when every epoch finished
-__C.FULL_SET_EVAL_STEP = 50  # per batch
+__C.FULL_SET_EVAL_STEP = 50  # batches
+
+# Save model per batch
+# None: not save model
+# 'per_epoch': save model when every epoch finished
+__C.SAVE_MODEL_STEP = 'per_epoch'  # batches
 
 # Calculate the train loss of full data set, which may take lots of time.
 __C.EVAL_WITH_FULL_TRAIN_SET = False
@@ -141,6 +146,9 @@ __C.LOG_PATH = os.path.join('./logs', __C.VERSION)
 
 # Path for saving summaries
 __C.SUMMARY_PATH = os.path.join('./logs/summaries', __C.VERSION)
+
+# Path for saving model
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 
 # get config by: from config import cfg
 cfg = __C

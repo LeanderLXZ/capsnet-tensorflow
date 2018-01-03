@@ -26,10 +26,13 @@ class Main(object):
         while os.path.isdir(self.log_path):
             i_append_info += 1
             self.log_path = cfg.LOG_PATH + '({})'.format(i_append_info)
+
         if i_append_info > 0:
             self.summary_path = cfg.SUMMARY_PATH + '({})'.format(i_append_info)
+            self.checkpoint_path = cfg.CHECKPOINT_PATH + '({})'.format(i_append_info)
         else:
             self.summary_path = cfg.SUMMARY_PATH
+            self.checkpoint_path = cfg.CHECKPOINT_PATH
 
         # Images saving path
         self.img_path = os.path.join(self.log_path, 'images')
@@ -74,6 +77,9 @@ class Main(object):
         self.train_graph, self.inputs, self.labels, self.cost, self.optimizer, \
             self.accuracy, self.reconstruct_cost, self.reconstructed_images = \
             model.build_graph(image_size=self.x_train.shape[1:], num_class=self.y_train.shape[1])
+
+        # Model saver
+        self.saver = tf.train.Saver()
 
     @staticmethod
     def _get_batches(x, y):
@@ -238,7 +244,7 @@ class Main(object):
             utils.thin_line()
             print('Evaluation done! Using time: {:.2f}'.format(time.time() - eval_start_time))
 
-    def _save_images(self, sess, x_batch, y_batch, epoch_i, batch_counter):
+    def _save_images(self, sess, x_batch, y_batch, epoch_i, batch_counter, silent=False):
 
         rec_images = sess.run(self.reconstructed_images,
                               feed_dict={self.inputs: x_batch, self.labels: y_batch})
@@ -288,7 +294,21 @@ class Main(object):
                 new_im.paste(im, (col_i*(rec_images.shape[2]+gap),
                                   row_i*(rec_images.shape[1]+gap)))
 
-        new_im.save(os.path.join(self.img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter)))
+        save_image_path = os.path.join(self.img_path, 'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_counter))
+        if not silent:
+            utils.thin_line()
+            print('Saving image to {}...'.format(save_image_path))
+        new_im.save(save_image_path)
+
+    def _save_model(self, sess, step, silent=False):
+        """
+        Save model.
+        """
+        save_path = os.path.join(self.checkpoint_path, 'model.ckpt')
+        if not silent:
+            utils.thin_line()
+            print('Saving model to {}...'.format(save_path))
+        self.saver.save(sess, save_path, global_step=step)
 
     def _test_after_training(self, sess):
         """
@@ -344,6 +364,10 @@ class Main(object):
             if cfg.FULL_SET_EVAL_STEP is not None:
                 if cfg.FULL_SET_EVAL_STEP != 'per_epoch':
                     full_set_eval_in_loop = True
+            save_model_in_loop = False
+            if cfg.SAVE_MODEL_STEP is not None:
+                if cfg.SAVE_MODEL_STEP != 'per_epoch':
+                    save_model_in_loop = True
 
             sess.run(tf.global_variables_initializer())
             batch_counter = 0
@@ -360,18 +384,31 @@ class Main(object):
                         batch_counter += 1
 
                         # Training optimizer
-                        sess.run(self.optimizer, feed_dict={self.inputs: x_batch, self.labels: y_batch})
+                        sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
+                                                            self.labels: y_batch})
 
+                        # Display training information
                         if batch_counter % cfg.DISPLAY_STEP == 0:
                             self._display_status(sess, x_batch, y_batch, epoch_i, batch_counter)
+
+                        # Save training logs
                         if cfg.SAVE_LOG_STEP is not None:
                             if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
-                        if cfg.WITH_RECONSTRUCTION:
-                            if cfg.SAVE_IMAGE_STEP is not None:
+
+                        # Save reconstruction images
+                        if cfg.SAVE_IMAGE_STEP is not None:
+                            if cfg.WITH_RECONSTRUCTION:
                                 if batch_counter % cfg.SAVE_IMAGE_STEP == 0:
                                     self._save_images(sess, x_batch, y_batch, epoch_i, batch_counter)
+
+                        # Save model
+                        if save_model_in_loop:
+                            if batch_counter % cfg.SAVE_MODEL_STEP == 0:
+                                self._save_model(sess, batch_counter)
+
+                        # Evaluate on full set
                         if full_set_eval_in_loop:
                             if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                                 self._eval_on_full_set(sess, epoch_i, batch_counter)
@@ -379,26 +416,41 @@ class Main(object):
                 else:
                     utils.thin_line()
                     train_batch_generator = self._get_batches(self.x_train, self.y_train)
-                    for _ in tqdm(range(self.n_batch_train), total=self.n_batch_train, ncols=100, unit=' batches'):
+                    for _ in tqdm(range(self.n_batch_train), total=self.n_batch_train,
+                                  ncols=100, unit=' batches'):
 
                         batch_counter += 1
                         x_batch, y_batch = next(train_batch_generator)
 
                         # Training optimizer
-                        sess.run(self.optimizer, feed_dict={self.inputs: x_batch, self.labels: y_batch})
+                        sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
+                                                            self.labels: y_batch})
 
+                        # Save training logs
                         if cfg.SAVE_LOG_STEP is not None:
                             if batch_counter % cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(sess, train_writer, valid_writer, merged,
                                                 x_batch, y_batch, epoch_i, batch_counter)
-                        if cfg.WITH_RECONSTRUCTION:
-                            if cfg.SAVE_IMAGE_STEP is not None:
+
+                        # Save reconstruction images
+                        if cfg.SAVE_IMAGE_STEP is not None:
+                            if cfg.WITH_RECONSTRUCTION:
                                 if batch_counter % cfg.SAVE_IMAGE_STEP == 0:
-                                    self._save_images(sess, x_batch, y_batch, epoch_i, batch_counter)
+                                    self._save_images(sess, x_batch, y_batch,
+                                                      epoch_i, batch_counter, silent=True)
+
+                        # Save model
+                        if save_model_in_loop:
+                            if batch_counter % cfg.SAVE_MODEL_STEP == 0:
+                                self._save_model(sess, batch_counter, silent=True)
+
+                        # Evaluate on full set
                         if full_set_eval_in_loop:
                             if batch_counter % cfg.FULL_SET_EVAL_STEP == 0:
                                 self._eval_on_full_set(sess, epoch_i, batch_counter, silent=True)
 
+                if cfg.SAVE_MODEL_STEP == 'per_epoch':
+                    self._save_model(sess, epoch_i)
                 if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
                     self._eval_on_full_set(sess, epoch_i, batch_counter)
 
