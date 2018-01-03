@@ -107,7 +107,7 @@ class Main(object):
                                              feed_dict={self.inputs: x_batch, self.labels: y_batch})
             cost_valid, acc_valid = sess.run([self.cost, self.accuracy],
                                              feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
-            rec_cost_train, rec_cost_valid = None
+            rec_cost_train, rec_cost_valid = None, None
 
         utils.print_status(epoch_i, batch_counter, self.start_time, cost_train,
                            rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid)
