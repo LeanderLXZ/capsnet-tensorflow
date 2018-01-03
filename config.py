@@ -8,7 +8,7 @@ __C = EasyDict()
 # ===========================================
 
 # Database name
-__C.VERSION = 'fc_rec_cross_entropy'
+__C.VERSION = 'no_rec'
 
 # Learning rate
 __C.LEARNING_RATE = 0.001
