@@ -79,7 +79,7 @@ class Main(object):
         utils.thick_line()
         print('Building graph...')
         self.train_graph, self.inputs, self.labels, self.cost, self.optimizer, \
-            self.accuracy, self.train_cost, self.rec_cost, self.rec_images = \
+            self.accuracy, self.cls_cost, self.rec_cost, self.rec_images = \
             model.build_graph(image_size=self.x_train.shape[1:], num_class=self.y_train.shape[1])
 
     def _display_status(self, sess, x_batch, y_batch, epoch_i, batch_counter):
@@ -91,11 +91,11 @@ class Main(object):
         y_valid_batch = self.y_valid[valid_batch_idx]
 
         if self.cfg.WITH_RECONSTRUCTION:
-            cost_train, rec_cost_train, acc_train = \
-                sess.run([self.cost, self.rec_cost, self.accuracy],
+            cost_train, cls_cost_train, rec_cost_train, acc_train = \
+                sess.run([self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                          feed_dict={self.inputs: x_batch, self.labels: y_batch})
-            cost_valid, rec_cost_valid, acc_valid = \
-                sess.run([self.cost, self.rec_cost, self.accuracy],
+            cost_valid, cls_cost_valid, rec_cost_valid, acc_valid = \
+                sess.run([self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
         else:
             cost_train, acc_train = \
@@ -104,11 +104,11 @@ class Main(object):
             cost_valid, acc_valid = \
                 sess.run([self.cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
-            rec_cost_train, rec_cost_valid = None, None
+            cls_cost_train, rec_cost_train, cls_cost_valid, rec_cost_valid = None, None, None, None
 
         utils.print_status(epoch_i, self.cfg.EPOCHS, batch_counter, self.start_time,
-                           cost_train, rec_cost_train, acc_train, cost_valid,
-                           rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
+                           cost_train, cls_cost_train, rec_cost_train, acc_train, cost_valid,
+                           cls_cost_valid, rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
 
     def _save_logs(self, sess, train_writer, valid_writer,
                    merged, x_batch, y_batch, epoch_i, batch_counter):
@@ -120,11 +120,11 @@ class Main(object):
         y_valid_batch = self.y_valid[valid_batch_idx]
 
         if self.cfg.WITH_RECONSTRUCTION:
-            summary_train, cost_train, rec_cost_train, acc_train = \
-                sess.run([merged, self.cost, self.rec_cost, self.accuracy],
+            summary_train, cost_train, cls_cost_train, rec_cost_train, acc_train = \
+                sess.run([merged, self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                          feed_dict={self.inputs: x_batch, self.labels: y_batch})
-            summary_valid, cost_valid, rec_cost_valid, acc_valid = \
-                sess.run([merged, self.cost, self.rec_cost, self.accuracy],
+            summary_valid, cost_valid, cls_cost_valid, rec_cost_valid, acc_valid = \
+                sess.run([merged, self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
         else:
             summary_train, cost_train, acc_train = \
@@ -133,14 +133,14 @@ class Main(object):
             summary_valid, cost_valid, acc_valid = \
                 sess.run([merged, self.cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
-            rec_cost_train, rec_cost_valid = None, None
+            cls_cost_train, rec_cost_train, cls_cost_valid, rec_cost_valid = None, None, None, None
 
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
         utils.save_log(os.path.join(self.log_path, 'train_log.csv'),
                        epoch_i+1, batch_counter, time.time()-self.start_time,
-                       cost_train, rec_cost_train, acc_train, cost_valid,
-                       rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
+                       cost_train, cls_cost_train, rec_cost_train, acc_train, cost_valid,
+                       cls_cost_valid, rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
 
     def _eval_on_batches(self, mode, sess, x, y, n_batch, silent=False):
         """
@@ -148,6 +148,7 @@ class Main(object):
         """
         cost_all = []
         acc_all = []
+        cls_cost_all = []
         rec_cost_all = []
 
         if not silent:
@@ -158,12 +159,14 @@ class Main(object):
             if self.cfg.WITH_RECONSTRUCTION:
                 for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
                     x_batch, y_batch = next(_batch_generator)
-                    cost_i, rec_cost_i, acc_i = \
-                        sess.run([self.cost, self.rec_cost, self.accuracy],
+                    cost_i, cls_cost_i, rec_cost_i, acc_i = \
+                        sess.run([self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                                  feed_dict={self.inputs: x_batch, self.labels: y_batch})
                     cost_all.append(cost_i)
+                    cls_cost_all.append(cls_cost_i)
                     rec_cost_all.append(rec_cost_i)
                     acc_all.append(acc_i)
+                cls_cost = sum(cls_cost_all) / len(cls_cost_all)
                 rec_cost = sum(rec_cost_all) / len(rec_cost_all)
             else:
                 for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
@@ -173,17 +176,19 @@ class Main(object):
                                  feed_dict={self.inputs: x_batch, self.labels: y_batch})
                     cost_all.append(cost_i)
                     acc_all.append(acc_i)
-                rec_cost = None
+                cls_cost, rec_cost = None, None
 
         else:
             if self.cfg.WITH_RECONSTRUCTION:
                 for x_batch, y_batch in utils.get_batches(x, y, self.cfg.BATCH_SIZE):
-                    cost_i, rec_cost_i, acc_i = \
-                        sess.run([self.cost, self.rec_cost, self.accuracy],
+                    cost_i, cls_cost_i, rec_cost_i, acc_i = \
+                        sess.run([self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                                  feed_dict={self.inputs: x_batch, self.labels: y_batch})
                     cost_all.append(cost_i)
+                    cls_cost_all.append(cls_cost_i)
                     rec_cost_all.append(rec_cost_i)
                     acc_all.append(acc_i)
+                cls_cost = sum(cls_cost_all) / len(cls_cost_all)
                 rec_cost = sum(rec_cost_all) / len(rec_cost_all)
             else:
                 for x_batch, y_batch in utils.get_batches(x, y, self.cfg.BATCH_SIZE):
@@ -192,12 +197,12 @@ class Main(object):
                                  feed_dict={self.inputs: x_batch, self.labels: y_batch})
                     cost_all.append(cost_i)
                     acc_all.append(acc_i)
-                rec_cost = None
+                cls_cost, rec_cost = None, None
 
         cost = sum(cost_all) / len(cost_all)
         accuracy = sum(acc_all) / len(acc_all)
 
-        return cost, rec_cost, accuracy
+        return cost, cls_cost, rec_cost, accuracy
 
     def _eval_on_full_set(self, sess, epoch_i, batch_counter, silent=False):
         """
@@ -211,30 +216,30 @@ class Main(object):
 
         # Calculate losses and accuracies of full train set
         if self.cfg.EVAL_WITH_FULL_TRAIN_SET:
-            cost_train, rec_cost_train, acc_train = \
+            cost_train, cls_cost_train, rec_cost_train, acc_train = \
                 self._eval_on_batches('train', sess, self.x_train, self.y_train,
                                       self.n_batch_train, silent=silent)
         else:
-            cost_train, rec_cost_train, acc_train = None, None, None
+            cost_train, cls_cost_train, rec_cost_train, acc_train = None, None, None, None
 
         # Calculate losses and accuracies of full valid set
-        cost_valid, rec_cost_valid, acc_valid = \
+        cost_valid, cls_cost_valid, rec_cost_valid, acc_valid = \
             self._eval_on_batches('valid', sess, self.x_valid, self.y_valid,
                                   self.n_batch_valid, silent=silent)
 
         if not silent:
             utils.print_full_set_eval(epoch_i, self.cfg.EPOCHS, batch_counter, self.start_time,
-                                      cost_train, rec_cost_train, acc_train, cost_valid,
-                                      rec_cost_valid, acc_valid, self.cfg.EVAL_WITH_FULL_TRAIN_SET,
-                                      self.cfg.WITH_RECONSTRUCTION)
+                                      cost_train, cls_cost_train, rec_cost_train, acc_train,
+                                      cost_valid, cls_cost_valid, rec_cost_valid, acc_valid,
+                                      self.cfg.EVAL_WITH_FULL_TRAIN_SET, self.cfg.WITH_RECONSTRUCTION)
 
         file_path = os.path.join(self.log_path, 'full_set_eval_log.csv')
         if not silent:
             utils.thin_line()
             print('Saving {}...'.format(file_path))
         utils.save_log(file_path, epoch_i+1, batch_counter, time.time()-self.start_time,
-                       cost_train, rec_cost_train, acc_train, cost_valid,
-                       rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
+                       cost_train, cls_cost_train, rec_cost_train, acc_train, cost_valid,
+                       cls_cost_valid, rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
         if not silent:
             utils.thin_line()
             print('Evaluation done! Using time: {:.2f}'.format(time.time() - eval_start_time))
@@ -244,7 +249,6 @@ class Main(object):
         """
         Save reconstruction images.
         """
-
         rec_images = sess.run(self.rec_images,
                               feed_dict={self.inputs: x_batch, self.labels: y_batch})
 
@@ -344,7 +348,7 @@ class Main(object):
         print('Calculating loss and accuracy on test set...')
         cost_test_all = []
         acc_test_all = []
-        train_cost_test_all = []
+        cls_cost_test_all = []
         rec_cost_test_all = []
         batch_counter = 0
         _test_batch_generator = utils.get_batches(x_test, y_test, self.cfg.BATCH_SIZE)
@@ -353,12 +357,12 @@ class Main(object):
             for _ in tqdm(range(n_batch_test), total=n_batch_test, ncols=100, unit=' batches'):
                 batch_counter += 1
                 test_batch_x, test_batch_y = next(_test_batch_generator)
-                cost_test_i, train_cost_i, rec_cost_i, acc_test_i = \
-                    sess.run([self.cost, self.train_cost, self.rec_cost, self.accuracy],
+                cost_test_i, cls_cost_i, rec_cost_i, acc_test_i = \
+                    sess.run([self.cost, self.cls_cost, self.rec_cost, self.accuracy],
                              feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
                 cost_test_all.append(cost_test_i)
                 acc_test_all.append(acc_test_i)
-                train_cost_test_all.append(train_cost_i)
+                cls_cost_test_all.append(cls_cost_i)
                 rec_cost_test_all.append(rec_cost_i)
 
                 # Save reconstruct images
@@ -367,7 +371,7 @@ class Main(object):
                         self._save_images(sess, self.test_image_path, test_batch_x,
                                           test_batch_y, batch_counter, silent=False)
 
-            train_cost_test = sum(train_cost_test_all) / len(train_cost_test_all)
+            cls_cost_test = sum(cls_cost_test_all) / len(cls_cost_test_all)
             rec_cost_test = sum(rec_cost_test_all) / len(rec_cost_test_all)
 
         else:
@@ -378,7 +382,7 @@ class Main(object):
                              feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
                 cost_test_all.append(cost_test_i)
                 acc_test_all.append(acc_test_i)
-            train_cost_test, rec_cost_test = None, None
+            cls_cost_test, rec_cost_test = None, None
 
         cost_test = sum(cost_test_all) / len(cost_test_all)
         acc_test = sum(acc_test_all) / len(acc_test_all)
@@ -389,11 +393,11 @@ class Main(object):
               'Test_Accuracy: {:.2f}%'.format(acc_test * 100))
         if self.cfg.TEST_WITH_RECONSTRUCTION:
             utils.thin_line()
-            print('Test_Train_Loss: {:.4f}\n'.format(train_cost_test),
+            print('Test_Train_Loss: {:.4f}\n'.format(cls_cost_test),
                   'Test_Reconstruction_Loss: {:.4f}'.format(rec_cost_test))
 
         # Save test log
-        utils.save_test_log(self.test_log_path, cost_test, acc_test, train_cost_test,
+        utils.save_test_log(self.test_log_path, cost_test, acc_test, cls_cost_test,
                             rec_cost_test, self.cfg.TEST_WITH_RECONSTRUCTION)
 
         utils.thin_line()

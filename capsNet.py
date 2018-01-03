@@ -340,11 +340,11 @@ class CapsNet(object):
                 tf.summary.scalar('reconstruct_cost', reconstruct_cost)
 
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-                train_cost = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
-                train_cost = tf.identity(train_cost, name='train_cost')
-                tf.summary.scalar('train_cost', train_cost)
+                classifier_cost = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
+                classifier_cost = tf.identity(classifier_cost, name='classifier_cost')
+                tf.summary.scalar('classifier_cost', classifier_cost)
 
-                cost = train_cost + self.cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
+                cost = classifier_cost + self.cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
                 cost = tf.identity(cost, name='cost')
                 tf.summary.scalar('cost', cost)
                 if self.cfg.SHOW_TRAINING_DETAILS:
@@ -356,7 +356,7 @@ class CapsNet(object):
                 cost = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
                 cost = tf.identity(cost, name='cost')
                 tf.summary.scalar('cost', cost)
-                train_cost = None
+                classifier_cost = None
                 reconstruct_cost = None
                 reconstructed_images = None
 
@@ -373,4 +373,4 @@ class CapsNet(object):
             tf.summary.scalar('accuracy', accuracy)
 
         return train_graph, inputs, labels, cost, optimizer, accuracy, \
-            train_cost, reconstruct_cost, reconstructed_images
+            classifier_cost, reconstruct_cost, reconstructed_images

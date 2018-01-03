@@ -166,8 +166,9 @@ def get_batches(x, y, batch_size):
         yield x[start:end], y[start:end]
 
 
-def print_status(epoch_i, epochs, batch_counter, start_time, cost_train,
-                 rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid, with_rec):
+def print_status(epoch_i, epochs, batch_counter, start_time,
+                 cost_train, cls_cost_train, rec_cost_train, acc_train,
+                 cost_valid, cls_cost_valid, rec_cost_valid, acc_valid, with_rec):
     """
     Print information while training.
     """
@@ -175,25 +176,28 @@ def print_status(epoch_i, epochs, batch_counter, start_time, cost_train,
         print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
               'Batch: {} |'.format(batch_counter),
               'Time: {:.2f}s |'.format(time.time() - start_time),
-              'Train_Loss: {:.4f} |'.format(cost_train),
-              'Rec_Train_Loss: {:.4f} |'.format(rec_cost_train),
-              'Train_Accuracy: {:.2f}% |'.format(acc_train * 100),
-              'Valid_Loss: {:.4f} |'.format(cost_valid),
-              'Rec_Valid_Loss: {:.4f} |'.format(rec_cost_valid),
-              'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
+              'T_Lo: {:.4f} |'.format(cost_train),
+              'T_Cls_Lo: {:.4f} |'.format(cls_cost_train),
+              'T_Rec_Lo: {:.4f} |'.format(rec_cost_train),
+              'T_Acc: {:.2f}% |'.format(acc_train * 100),
+              'V_Lo: {:.4f} |'.format(cost_valid),
+              'V_Cls_Lo: {:.4f} |'.format(cls_cost_valid),
+              'V_Rec_Lo: {:.4f} |'.format(rec_cost_valid),
+              'V_Acc: {:.2f}% |'.format(acc_valid * 100))
     else:
         print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
               'Batch: {} |'.format(batch_counter),
               'Time: {:.2f}s |'.format(time.time() - start_time),
               'Train_Loss: {:.4f} |'.format(cost_train),
-              'Train_Accuracy: {:.2f}% |'.format(acc_train * 100),
+              'Train_Acc: {:.2f}% |'.format(acc_train * 100),
               'Valid_Loss: {:.4f} |'.format(cost_valid),
-              'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
+              'Valid_Acc: {:.2f}% |'.format(acc_valid * 100))
 
 
-def print_full_set_eval(epoch_i, epochs, batch_counter, start_time, cost_train,
-                        rec_cost_train, acc_train, cost_valid, rec_cost_valid,
-                        acc_valid, with_full_set_eval, with_rec):
+def print_full_set_eval(epoch_i, epochs, batch_counter, start_time,
+                        cost_train, cls_cost_train, rec_cost_train, acc_train,
+                        cost_valid, cls_cost_valid, rec_cost_valid, acc_valid,
+                        with_full_set_eval, with_rec):
     """
     Print information of full set evaluation.
     """
@@ -205,11 +209,13 @@ def print_full_set_eval(epoch_i, epochs, batch_counter, start_time, cost_train,
     if with_full_set_eval:
         print('Full_Set_Train_Loss: {:.4f}'.format(cost_train))
         if with_rec:
-            print('Reconstruction_Train_Loss: {:.4f}'.format(rec_cost_train))
+            print('Train_Classifier_Loss: {:.4f}\n'.format(cls_cost_train),
+                  'Train_Reconstruction_Loss: {:.4f}'.format(rec_cost_train))
         print('Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
     print('Full_Set_Valid_Loss: {:.4f}'.format(cost_valid))
     if with_rec:
-        print('Reconstruction_Valid_Loss: {:.4f}'.format(rec_cost_valid))
+        print('Valid_Classifier_Loss: {:.4f}\n'.format(cls_cost_valid),
+              'Reconstruction_Valid_Loss: {:.4f}'.format(rec_cost_valid))
     print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid * 100))
 
 
@@ -225,29 +231,33 @@ def save_config_log(file_path, cfg):
         local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
         f.write('=====================================================\n')
         f.write('Time: {}\n'.format(local_time))
-        f.write('------------------------------------------------------\n')
+        f.write('-----------------------------------------------------\n')
         for key in cfg.keys():
             f.write('{}: {}\n'.format(key, cfg[key]))
         f.write('=====================================================')
 
 
-def save_log(file_path, epoch_i, batch_counter, using_time, cost_train,
-             rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid, with_rec):
+def save_log(file_path, epoch_i, batch_counter, using_time,
+             cost_train, cls_cost_train, rec_cost_train, acc_train,
+             cost_valid, cls_cost_valid, rec_cost_valid, acc_valid, with_rec):
     """
     Save losses and accuracies while training.
     """
     if with_rec:
         if not os.path.isfile(file_path):
             with open(file_path, 'w') as f:
-                header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss', 'Reconstruction_Train_Loss',
-                          'Train_Accuracy', 'Valid_Loss', 'Reconstruction_Valid_Loss', 'Valid_Accuracy']
+                header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss',
+                          'Train_Classifier_loss', 'Train_Reconstruction_Loss',
+                          'Train_Accuracy', 'Valid_Loss', 'Valid_Classifier_loss',
+                          'Valid_Reconstruction_Loss', 'Valid_Accuracy']
                 writer = csv.writer(f)
                 writer.writerow(header)
 
         with open(file_path, 'a') as f:
             local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
-            log = [local_time, epoch_i, batch_counter, using_time, cost_train,
-                   rec_cost_train, acc_train, cost_valid,  rec_cost_valid, acc_valid]
+            log = [local_time, epoch_i, batch_counter, using_time,
+                   cost_train, cls_cost_train, rec_cost_train, acc_train,
+                   cost_valid, cls_cost_valid, rec_cost_valid, acc_valid]
             writer = csv.writer(f)
             writer.writerow(log)
     else:
@@ -266,7 +276,7 @@ def save_log(file_path, epoch_i, batch_counter, using_time, cost_train,
             writer.writerow(log)
 
 
-def save_test_log(file_path, cost_test, acc_test, train_cost_test, rec_cost_test, with_rec):
+def save_test_log(file_path, cost_test, acc_test, cls_cost_test, rec_cost_test, with_rec):
     """
     Save losses and accuracies of testing.
     """
@@ -282,7 +292,7 @@ def save_test_log(file_path, cost_test, acc_test, train_cost_test, rec_cost_test
         f.write('Test_Loss: {:.4f}\n'.format(cost_test))
         f.write('Test_Accuracy: {:.2f}%\n'.format(acc_test * 100))
         if with_rec:
-            f.write('Test_Train_Loss: {:.4f}\n'.format(train_cost_test))
+            f.write('Test_Train_Loss: {:.4f}\n'.format(cls_cost_test))
             f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_cost_test))
         f.write('=====================================================')
 
