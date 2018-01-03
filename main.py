@@ -78,9 +78,6 @@ class Main(object):
             self.accuracy, self.reconstruct_cost, self.reconstructed_images = \
             model.build_graph(image_size=self.x_train.shape[1:], num_class=self.y_train.shape[1])
 
-        # Model saver
-        self.saver = tf.train.Saver()
-
     @staticmethod
     def _get_batches(x, y):
         """
@@ -300,7 +297,7 @@ class Main(object):
             print('Saving image to {}...'.format(save_image_path))
         new_im.save(save_image_path)
 
-    def _save_model(self, sess, step, silent=False):
+    def _save_model(self, sess, saver, step, silent=False):
         """
         Save model.
         """
@@ -308,7 +305,7 @@ class Main(object):
         if not silent:
             utils.thin_line()
             print('Saving model to {}...'.format(save_path))
-        self.saver.save(sess, save_path, global_step=step)
+        saver.save(sess, save_path, global_step=step)
 
     def _test_after_training(self, sess):
         """
@@ -360,6 +357,9 @@ class Main(object):
             train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
             valid_writer = tf.summary.FileWriter(valid_log_path)
 
+            # Model saver
+            saver = tf.train.Saver()
+
             full_set_eval_in_loop = False
             if cfg.FULL_SET_EVAL_STEP is not None:
                 if cfg.FULL_SET_EVAL_STEP != 'per_epoch':
@@ -406,7 +406,7 @@ class Main(object):
                         # Save model
                         if save_model_in_loop:
                             if batch_counter % cfg.SAVE_MODEL_STEP == 0:
-                                self._save_model(sess, batch_counter)
+                                self._save_model(sess, saver, batch_counter)
 
                         # Evaluate on full set
                         if full_set_eval_in_loop:
@@ -442,7 +442,7 @@ class Main(object):
                         # Save model
                         if save_model_in_loop:
                             if batch_counter % cfg.SAVE_MODEL_STEP == 0:
-                                self._save_model(sess, batch_counter, silent=True)
+                                self._save_model(sess, saver, batch_counter, silent=True)
 
                         # Evaluate on full set
                         if full_set_eval_in_loop:
@@ -450,7 +450,7 @@ class Main(object):
                                 self._eval_on_full_set(sess, epoch_i, batch_counter, silent=True)
 
                 if cfg.SAVE_MODEL_STEP == 'per_epoch':
-                    self._save_model(sess, epoch_i)
+                    self._save_model(sess, saver, epoch_i)
                 if cfg.FULL_SET_EVAL_STEP == 'per_epoch':
                     self._eval_on_full_set(sess, epoch_i, batch_counter)
 
