@@ -160,7 +160,7 @@ __C.TEST_BATCH_SIZE = 128
 
 # Path for saving testing logs
 __C.TEST_LOG_PATH = os.path.join(
-    './test_results', '{}-{}'.format(__C.TEST_VERSION, __C.TEST_CKP_IDX))
+    './test_logs', '{}-{}'.format(__C.TEST_VERSION, __C.TEST_CKP_IDX))
 
 # ===========================================
 # #                  Others                 #
