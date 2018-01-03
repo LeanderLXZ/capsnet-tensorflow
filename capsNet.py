@@ -1,26 +1,28 @@
 import utils
 import capsule_layer
 import tensorflow as tf
-from config import cfg
 
 
 class CapsNet(object):
 
-    @staticmethod
-    def _get_inputs(image_size, num_class):
+    def __init__(self, cfg):
+
+        # Config
+        self.cfg = cfg
+
+    def _get_inputs(self, image_size, num_class):
         """
         Get input tensors.
         :param image_size: the size of input images, should be 3 dimensional
         :param num_class: number of class of label
         :return: input tensors
         """
-        _inputs = tf.placeholder(tf.float32, shape=[cfg.BATCH_SIZE, *image_size], name='inputs')
-        _labels = tf.placeholder(tf.float32, shape=[cfg.BATCH_SIZE, num_class], name='labels')
+        _inputs = tf.placeholder(tf.float32, shape=[self.cfg.BATCH_SIZE, *image_size], name='inputs')
+        _labels = tf.placeholder(tf.float32, shape=[self.cfg.BATCH_SIZE, num_class], name='labels')
 
         return _inputs, _labels
 
-    @staticmethod
-    def _margin_loss(logits, label, m_plus=0.9, m_minus=0.1, lambda_=0.5):
+    def _margin_loss(self, logits, label, m_plus=0.9, m_minus=0.1, lambda_=0.5):
         """
         Calculate margin loss according to Hinton's paper.
         :param logits: output tensor of capsule layers.
@@ -38,18 +40,20 @@ class CapsNet(object):
         vec_dim = logits_shape[2]
 
         # logits shape: (batch_size, num_caps, vec_dim)
-        assert logits.get_shape() == (cfg.BATCH_SIZE, num_caps, vec_dim), \
+        assert logits.get_shape() == (self.cfg.BATCH_SIZE, num_caps, vec_dim), \
             'Wrong shape of logits: {}'.format(logits.get_shape().as_list())
 
-        max_square_plus = tf.square(tf.maximum(0., m_plus - utils.get_vec_length(logits)))
-        max_square_minus = tf.square(tf.maximum(0., utils.get_vec_length(logits) - m_minus))
+        max_square_plus = tf.square(tf.maximum(
+            0., m_plus - utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON)))
+        max_square_minus = tf.square(tf.maximum(
+            0., utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON) - m_minus))
         # max_square_plus & max_plus shape: (batch_size, num_caps)
-        assert max_square_plus.get_shape() == (cfg.BATCH_SIZE, num_caps), \
+        assert max_square_plus.get_shape() == (self.cfg.BATCH_SIZE, num_caps), \
             'Wrong shape of max_square_plus: {}'.format(max_square_plus.get_shape().as_list())
 
         # label should be one-hot-encoded
         # label shape: (batch_size, num_caps)
-        assert label.get_shape() == (cfg.BATCH_SIZE, num_caps)
+        assert label.get_shape() == (self.cfg.BATCH_SIZE, num_caps)
 
         loss_c = tf.multiply(label, max_square_plus) + \
             lambda_ * tf.multiply((1-label), max_square_minus)
@@ -160,15 +164,14 @@ class CapsNet(object):
 
         return conv_t
 
-    @staticmethod
-    def _caps_layer(tensor, caps_param):
+    def _caps_layer(self, tensor, caps_param):
         """
         Single capsule layer
         :param tensor: input tensor
         :param caps_param: parameters of capsule layer
         :return: output tensor of capsule layer
         """
-        caps = capsule_layer.CapsuleLayer(**caps_param)
+        caps = capsule_layer.CapsuleLayer(self.cfg, **caps_param)
 
         return caps(tensor)
 
@@ -178,7 +181,7 @@ class CapsNet(object):
         """
         conv_layers = [tensor]
 
-        for iter_conv, conv_param in enumerate(cfg.CONV_PARAMS):
+        for iter_conv, conv_param in enumerate(self.cfg.CONV_PARAMS):
             with tf.variable_scope('conv_{}'.format(iter_conv)):
                 # conv_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
                 conv_layer = self._conv_layer(tensor=conv_layers[iter_conv], **conv_param)
@@ -186,15 +189,14 @@ class CapsNet(object):
 
         return conv_layers[-1]
 
-    @staticmethod
-    def _conv2caps_layer(tensor, conv2caps_params):
+    def _conv2caps_layer(self, tensor, conv2caps_params):
         """
         Build convolution to capsule layer.
         """
         with tf.variable_scope('conv2caps'):
             # conv2caps_params: {'kernel_size': None, 'stride': None,
             #                    'depth': None, 'vec_dim': None, 'padding': 'VALID'}
-            conv2caps_layer = capsule_layer.Conv2Capsule(**conv2caps_params)
+            conv2caps_layer = capsule_layer.Conv2Capsule(self.cfg, **conv2caps_params)
             conv2caps = conv2caps_layer(tensor)
 
         return conv2caps
@@ -205,7 +207,7 @@ class CapsNet(object):
         """
         caps_layers = [tensor]
 
-        for iter_caps, caps_param in enumerate(cfg.CAPS_PARAMS):
+        for iter_caps, caps_param in enumerate(self.cfg.CAPS_PARAMS):
             with tf.variable_scope('caps_{}'.format(iter_caps)):
                 # caps_param: {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
                 caps_layer = self._caps_layer(caps_layers[iter_caps], caps_param)
@@ -223,18 +225,18 @@ class CapsNet(object):
         decoder_layers = [tensor]
 
         # Using full_connected layers
-        if cfg.DECODER_TYPE == 'FC':
-            for iter_fc, decoder_param in enumerate(cfg.DECODER_PARAMS):
+        if self.cfg.DECODER_TYPE == 'FC':
+            for iter_fc, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_fc)):
                     # decoder_param: {'num_outputs':None, 'act_fn': None}
                     decoder_layer = self._fc_layer(tensor=decoder_layers[iter_fc], **decoder_param)
                     decoder_layers.append(decoder_layer)
 
         # Using convolution layers
-        elif cfg.DECODER_TYPE == 'CONV':
+        elif self.cfg.DECODER_TYPE == 'CONV':
             decoder_layers[0] = \
-                tf.reshape(tensor, (cfg.BATCH_SIZE, *cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
-            for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
+                tf.reshape(tensor, (self.cfg.BATCH_SIZE, *self.cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
+            for iter_conv, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param:
                     # {'kernel_size': None, 'stride': None, 'depth': None,
@@ -243,10 +245,10 @@ class CapsNet(object):
                     decoder_layers.append(decoder_layer)
 
         # Using transpose convolution layers
-        elif cfg.DECODER_TYPE == 'CONV_T':
+        elif self.cfg.DECODER_TYPE == 'CONV_T':
             decoder_layers[0] = \
-                tf.reshape(tensor, (cfg.BATCH_SIZE,  *cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
-            for iter_conv, decoder_param in enumerate(cfg.DECODER_PARAMS):
+                tf.reshape(tensor, (self.cfg.BATCH_SIZE,  *self.cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
+            for iter_conv, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
                 with tf.variable_scope('decoder_{}'.format(iter_conv)):
                     # decoder_param:
                     # {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
@@ -292,13 +294,13 @@ class CapsNet(object):
 
             # Build convolution layers
             conv = self._conv_layers(inputs)
-            if cfg.SHOW_TRAINING_DETAILS:
+            if self.cfg.SHOW_TRAINING_DETAILS:
                 conv = tf.Print(conv, [tf.constant(1)],
                                 message="\n[1] CONVOLUTION layers passed...")
 
             # Transform convolution layer's outputs to capsules
-            conv2caps = self._conv2caps_layer(conv, cfg.CONV2CAPS_PARAMS)
-            if cfg.SHOW_TRAINING_DETAILS:
+            conv2caps = self._conv2caps_layer(conv, self.cfg.CONV2CAPS_PARAMS)
+            if self.cfg.SHOW_TRAINING_DETAILS:
                 conv2caps = tf.Print(conv2caps, [tf.constant(2)],
                                      message="\n[2] CON2CAPS layers passed...")
 
@@ -306,28 +308,30 @@ class CapsNet(object):
             # logits shape: (batch_size, num_caps, vec_dim)
             logits = self._caps_layers(conv2caps)
             logits = tf.identity(logits, name='logits')
-            if cfg.SHOW_TRAINING_DETAILS:
+            if self.cfg.SHOW_TRAINING_DETAILS:
                 logits = tf.Print(logits, [tf.constant(3)],
                                   message="\n[3] CAPSULE layers passed...")
 
             # Build reconstruction part
-            if cfg.WITH_RECONSTRUCTION:
+            if self.cfg.WITH_RECONSTRUCTION:
                 # Reconstruction layers
                 # reconstructed shape: (batch_size, image_size*image_size)
                 reconstructed = self._reconstruct_layers(logits, labels)
-                if cfg.SHOW_TRAINING_DETAILS:
+                if self.cfg.SHOW_TRAINING_DETAILS:
                     reconstructed = tf.Print(reconstructed, [tf.constant(4)],
                                              message="\n[4] RECONSTRUCTION layers passed...")
 
                 reconstructed_images = tf.reshape(reconstructed, shape=[-1, *image_size], name='rec_images')
 
                 # Reconstruction cost
-                if cfg.RECONSTRUCTION_LOSS == 'mse':
+                if self.cfg.RECONSTRUCTION_LOSS == 'mse':
                     inputs_flatten = tf.contrib.layers.flatten(inputs)
-                    if cfg.DECODER_TYPE != 'fc':
+                    if self.cfg.DECODER_TYPE != 'fc':
                         reconstructed = tf.contrib.layers.flatten(reconstructed)
                     reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
-                elif cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
+                elif self.cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
+                    if self.cfg.DECODER_TYPE == 'fc':
+                        inputs = tf.contrib.layers.flatten(inputs)
                     reconstruct_cost = tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs, logits=reconstructed))
                 else:
@@ -336,20 +340,20 @@ class CapsNet(object):
                 tf.summary.scalar('reconstruct_cost', reconstruct_cost)
 
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-                train_cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
+                train_cost = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
                 train_cost = tf.identity(train_cost, name='train_cost')
                 tf.summary.scalar('train_cost', train_cost)
 
-                cost = train_cost + cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
+                cost = train_cost + self.cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
                 cost = tf.identity(cost, name='cost')
                 tf.summary.scalar('cost', cost)
-                if cfg.SHOW_TRAINING_DETAILS:
+                if self.cfg.SHOW_TRAINING_DETAILS:
                     cost = tf.Print(cost, [tf.constant(5)],
                                     message="\n[5] COST calculated...")
 
             else:
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-                cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
+                cost = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
                 cost = tf.identity(cost, name='cost')
                 tf.summary.scalar('cost', cost)
                 train_cost = None
@@ -357,13 +361,14 @@ class CapsNet(object):
                 reconstructed_images = None
 
                 # Optimizer
-            if cfg.SHOW_TRAINING_DETAILS:
+            if self.cfg.SHOW_TRAINING_DETAILS:
                 cost = tf.Print(cost, [tf.constant(6)],
                                 message="\n[6] Updating GRADIENTS...")
-            optimizer = tf.train.AdamOptimizer(cfg.LEARNING_RATE).minimize(cost)
+            optimizer = tf.train.AdamOptimizer(self.cfg.LEARNING_RATE).minimize(cost)
 
             # Accuracy
-            correct_pred = tf.equal(tf.argmax(utils.get_vec_length(logits), axis=1), tf.argmax(labels, axis=1))
+            correct_pred = tf.equal(tf.argmax(utils.get_vec_length(
+                logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON), axis=1), tf.argmax(labels, axis=1))
             accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32), name='accuracy')
             tf.summary.scalar('accuracy', accuracy)
 

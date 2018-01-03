@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from os.path import isdir
-from config import cfg
 from tqdm import tqdm
 from urllib.request import urlretrieve
 
@@ -31,7 +30,7 @@ def load_data_from_pickle(data_path):
         return pickle.load(f)
 
 
-def get_vec_length(vec):
+def get_vec_length(vec, batch_size, epsilon):
     """
     Get the length of a vector.
     """
@@ -40,13 +39,13 @@ def get_vec_length(vec):
     vec_dim = vec_shape[2]
 
     # vec shape: (batch_size, num_caps, vec_dim)
-    assert vec.get_shape() == (cfg.BATCH_SIZE, num_caps, vec_dim), \
+    assert vec.get_shape() == (batch_size, num_caps, vec_dim), \
         'Wrong shape of vec: {}'.format(vec.get_shape().as_list())
 
-    vec_length = tf.reduce_sum(tf.square(vec), axis=2, keep_dims=True) + cfg.EPSILON
+    vec_length = tf.reduce_sum(tf.square(vec), axis=2, keep_dims=True) + epsilon
     vec_length = tf.sqrt(tf.squeeze(vec_length))
     # vec_length shape: (batch_size, num_caps)
-    assert vec_length.get_shape() == (cfg.BATCH_SIZE, num_caps), \
+    assert vec_length.get_shape() == (batch_size, num_caps), \
         'Wrong shape of vec_length: {}'.format(vec_length.get_shape().as_list())
 
     return vec_length
@@ -158,13 +157,22 @@ def thick_line():
     print('======================================================')
 
 
-def print_status(epoch_i, batch_counter, start_time, cost_train,
-                 rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid):
+def get_batches(x, y, batch_size):
+    """
+    Split features and labels into batches.
+    """
+    for start in range(0, len(x) - batch_size, batch_size):
+        end = start + batch_size
+        yield x[start:end], y[start:end]
+
+
+def print_status(epoch_i, epochs, batch_counter, start_time, cost_train,
+                 rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid, with_rec):
     """
     Print information while training.
     """
-    if cfg.WITH_RECONSTRUCTION:
-        print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
+    if with_rec:
+        print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
               'Batch: {} |'.format(batch_counter),
               'Time: {:.2f}s |'.format(time.time() - start_time),
               'Train_Loss: {:.4f} |'.format(cost_train),
@@ -174,7 +182,7 @@ def print_status(epoch_i, batch_counter, start_time, cost_train,
               'Rec_Valid_Loss: {:.4f} |'.format(rec_cost_valid),
               'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
     else:
-        print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
+        print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
               'Batch: {} |'.format(batch_counter),
               'Time: {:.2f}s |'.format(time.time() - start_time),
               'Train_Loss: {:.4f} |'.format(cost_train),
@@ -183,29 +191,29 @@ def print_status(epoch_i, batch_counter, start_time, cost_train,
               'Valid_Accuracy: {:.2f}% |'.format(acc_valid * 100))
 
 
-def print_full_set_eval(epoch_i, batch_counter, start_time,
-                        cost_train, rec_cost_train, acc_train,
-                        cost_valid, rec_cost_valid, acc_valid):
+def print_full_set_eval(epoch_i, epochs, batch_counter, start_time, cost_train,
+                        rec_cost_train, acc_train, cost_valid, rec_cost_valid,
+                        acc_valid, with_full_set_eval, with_rec):
     """
     Print information of full set evaluation.
     """
     thin_line()
-    print('Epoch: {}/{} |'.format(epoch_i + 1, cfg.EPOCHS),
+    print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
           'Batch: {} |'.format(batch_counter),
           'Time: {:.2f}s |'.format(time.time() - start_time))
     thin_line()
-    if cfg.EVAL_WITH_FULL_TRAIN_SET:
+    if with_full_set_eval:
         print('Full_Set_Train_Loss: {:.4f}'.format(cost_train))
-        if cfg.WITH_RECONSTRUCTION:
+        if with_rec:
             print('Reconstruction_Train_Loss: {:.4f}'.format(rec_cost_train))
         print('Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
     print('Full_Set_Valid_Loss: {:.4f}'.format(cost_valid))
-    if cfg.WITH_RECONSTRUCTION:
+    if with_rec:
         print('Reconstruction_Valid_Loss: {:.4f}'.format(rec_cost_valid))
     print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid * 100))
 
 
-def save_config_log(file_path):
+def save_config_log(file_path, cfg):
     """
     Save config of training.
     """
@@ -224,11 +232,11 @@ def save_config_log(file_path):
 
 
 def save_log(file_path, epoch_i, batch_counter, using_time, cost_train,
-             rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid):
+             rec_cost_train, acc_train, cost_valid, rec_cost_valid, acc_valid, with_rec):
     """
     Save losses and accuracies while training.
     """
-    if cfg.WITH_RECONSTRUCTION:
+    if with_rec:
         if not os.path.isfile(file_path):
             with open(file_path, 'w') as f:
                 header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss', 'Reconstruction_Train_Loss',
@@ -258,7 +266,7 @@ def save_log(file_path, epoch_i, batch_counter, using_time, cost_train,
             writer.writerow(log)
 
 
-def save_test_log(file_path, cost_test, acc_test, train_cost_test, rec_cost_test):
+def save_test_log(file_path, cost_test, acc_test, train_cost_test, rec_cost_test, with_rec):
     """
     Save losses and accuracies of testing.
     """
@@ -273,7 +281,7 @@ def save_test_log(file_path, cost_test, acc_test, train_cost_test, rec_cost_test
         f.write('------------------------------------------------------\n')
         f.write('Test_Loss: {:.4f}\n'.format(cost_test))
         f.write('Test_Accuracy: {:.2f}%\n'.format(acc_test * 100))
-        if cfg.TEST_WITH_RECONSTRUCTION:
+        if with_rec:
             f.write('Test_Train_Loss: {:.4f}\n'.format(train_cost_test))
             f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_cost_test))
         f.write('=====================================================')

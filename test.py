@@ -6,31 +6,37 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
-from config import cfg
+from config import config
 
 
 class Test(object):
 
-    def __init__(self):
+    def __init__(self, cfg):
+
+        # Config
+        self.cfg = cfg
 
         # Get checkpoint path
-        self.checkpoint_path = './checkpoints/{}/model.ckpt-{}'.format(cfg.TEST_VERSION, cfg.TEST_CKP_IDX)
+        self.checkpoint_path = './checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
 
         # Get log path, append information if the directory exist.
-        self.test_log_path = cfg.TEST_LOG_PATH
+        self.test_log_path = self.cfg.TEST_LOG_PATH
         i_append_info = 0
         while os.path.isdir(self.test_log_path):
             i_append_info += 1
-            self.test_log_path = cfg.TEST_LOG_PATH + '({})'.format(i_append_info)
+            self.test_log_path = self.cfg.TEST_LOG_PATH + '({})'.format(i_append_info)
 
         # Path for saving images
         self.test_image_path = os.path.join(self.test_log_path, 'images')
 
         # Check directory of paths
         utils.check_dir([self.test_log_path])
-        if cfg.TEST_WITH_RECONSTRUCTION:
-            if cfg.TEST_SAVE_IMAGE_STEP is not None:
+        if self.cfg.TEST_WITH_RECONSTRUCTION:
+            if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
                 utils.check_dir([self.test_image_path])
+
+        # Save config
+        utils.save_config_log(self.test_log_path, self.cfg)
 
         # Load data
         utils.thick_line()
@@ -46,10 +52,9 @@ class Test(object):
         assert self.y_test.shape == (10000, 10), self.y_test.shape
 
         # Calculate number of batches
-        self.n_batch_test = len(self.y_test) // cfg.TEST_BATCH_SIZE
+        self.n_batch_test = len(self.y_test) // self.cfg.TEST_BATCH_SIZE
 
-    @staticmethod
-    def _get_tensors(loaded_graph):
+    def _get_tensors(self, loaded_graph):
         """
         Get inputs, labels, cost, and accuracy tensor from <loaded_graph>
         """
@@ -63,22 +68,13 @@ class Test(object):
             cost_ = loaded_graph.get_tensor_by_name("cost:0")
             accuracy_ = loaded_graph.get_tensor_by_name("accuracy:0")
 
-            if cfg.TEST_WITH_RECONSTRUCTION:
+            if self.cfg.TEST_WITH_RECONSTRUCTION:
                 train_cost_ = loaded_graph.get_tensor_by_name("train_cost:0")
                 rec_cost_ = loaded_graph.get_tensor_by_name("rec_images:0")
                 rec_images_ = loaded_graph.get_tensor_by_name("rec_images:0")
                 return inputs_, labels_, cost_, accuracy_, train_cost_, rec_cost_, rec_images_
             else:
                 return inputs_, labels_, cost_, accuracy_
-
-    @staticmethod
-    def _get_batches(x, y):
-        """
-        Split features and labels into batches.
-        """
-        for start in range(0, len(x) - cfg.TEST_BATCH_SIZE, cfg.TEST_BATCH_SIZE):
-            end = start + cfg.TEST_BATCH_SIZE
-            yield x[start:end], y[start:end]
 
     def _save_images(self, sess, rec_images, inputs, labels,
                      x_batch, y_batch, batch_counter):
@@ -105,7 +101,7 @@ class Test(object):
                                            (save_row_size, save_col_size, real_images.shape[1],
                                             real_images.shape[2], real_images.shape[3])).astype(np.uint8)
 
-        if cfg.DATABASE_NAME == 'mnist':
+        if self.cfg.DATABASE_NAME == 'mnist':
             mode = 'L'
             rec_images_in_square = np.squeeze(rec_images_in_square, 4)
             real_images_in_square = np.squeeze(real_images_in_square, 4)
@@ -145,9 +141,9 @@ class Test(object):
         train_cost_all = []
         rec_cost_all = []
         batch_counter = 0
-        _batch_generator = self._get_batches(x, y)
+        _batch_generator = utils.get_batches(x, y, self.cfg.TEST_BATCH_SIZE)
 
-        if cfg.TEST_WITH_RECONSTRUCTION:
+        if self.cfg.TEST_WITH_RECONSTRUCTION:
             for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
                 batch_counter += 1
                 x_batch, y_batch = next(_batch_generator)
@@ -160,8 +156,8 @@ class Test(object):
                 acc_all.append(acc_i)
 
                 # Save reconstruct images
-                if cfg.TEST_SAVE_IMAGE_STEP is not None:
-                    if batch_counter % cfg.TEST_SAVE_IMAGE_STEP == 0:
+                if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
+                    if batch_counter % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
                         self._save_images(sess, rec_images, inputs, labels,
                                           x_batch, y_batch, batch_counter)
 
@@ -197,7 +193,7 @@ class Test(object):
             loader.restore(sess, self.checkpoint_path)
 
             # Get Tensors from loaded model
-            if cfg.TEST_WITH_RECONSTRUCTION:
+            if self.cfg.TEST_WITH_RECONSTRUCTION:
                 inputs, labels, cost, accuracy, \
                     train_cost, rec_cost, rec_images = self._get_tensors(loaded_graph)
             else:
@@ -219,13 +215,14 @@ class Test(object):
             utils.thin_line()
             print('Test_Loss: {:.4f}\n'.format(cost_test),
                   'Test_Accuracy: {:.2f}%'.format(acc_test * 100))
-            if cfg.TEST_WITH_RECONSTRUCTION:
+            if self.cfg.TEST_WITH_RECONSTRUCTION:
                 utils.thin_line()
                 print('Test_Train_Loss: {:.4f}\n'.format(train_cost_test),
                       'Test_Reconstruction_Loss: {:.4f}'.format(rec_cost_test))
 
             # Save test log
-            utils.save_test_log(self.test_log_path, cost_test, acc_test, train_cost_test, rec_cost_test)
+            utils.save_test_log(self.test_log_path, cost_test, acc_test, train_cost_test,
+                                rec_cost_test, self.cfg.TEST_WITH_RECONSTRUCTION)
 
             utils.thin_line()
             print('Testing finished! Using time: {:.2f}'.format(time.time() - start_time))
@@ -234,5 +231,5 @@ class Test(object):
 
 if __name__ == '__main__':
 
-    Test_ = Test()
+    Test_ = Test(config)
     Test_.test()
