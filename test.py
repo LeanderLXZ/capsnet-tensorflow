@@ -17,10 +17,12 @@ class Test(object):
         self.cfg = cfg
 
         # Get checkpoint path
-        self.checkpoint_path = './checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
+        self.checkpoint_path = \
+            './checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
 
         # Get log path, append information if the directory exist.
-        self.test_log_path = self.cfg.TEST_LOG_PATH
+        self.test_log_path = os.path.join(
+            self.cfg.TEST_LOG_PATH, '{}-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
         i_append_info = 0
         while os.path.isdir(self.test_log_path):
             i_append_info += 1

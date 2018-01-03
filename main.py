@@ -25,6 +25,7 @@ class Main(object):
 
         # Get log path, append information if the directory exist.
         self.log_path = self.cfg.LOG_PATH
+        test_log_path_ = os.path.join(self.cfg.TEST_LOG_PATH, self.cfg.TEST_VERSION)
         i_append_info = 0
         while os.path.isdir(self.log_path):
             i_append_info += 1
@@ -33,11 +34,11 @@ class Main(object):
         if i_append_info > 0:
             self.summary_path = self.cfg.SUMMARY_PATH + '({})'.format(i_append_info)
             self.checkpoint_path = self.cfg.CHECKPOINT_PATH + '({})'.format(i_append_info)
-            self.test_log_path = self.cfg.TEST_LOG_PATH + '({})'.format(i_append_info)
+            self.test_log_path = test_log_path_ + '({})'.format(i_append_info)
         else:
             self.summary_path = self.cfg.SUMMARY_PATH
             self.checkpoint_path = self.cfg.CHECKPOINT_PATH
-            self.test_log_path = self.cfg.TEST_LOG_PATH
+            self.test_log_path = test_log_path_
 
         # Images saving path
         self.train_image_path = os.path.join(self.log_path, 'images')

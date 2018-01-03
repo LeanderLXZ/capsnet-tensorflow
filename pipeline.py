@@ -12,7 +12,7 @@ def training_capsnet(cfg):
 
 def pipeline():
 
-    training_capsnet(cfg_1)
+    # training_capsnet(cfg_1)
     training_capsnet(cfg_2)
     training_capsnet(cfg_3)
     training_capsnet(cfg_4)
