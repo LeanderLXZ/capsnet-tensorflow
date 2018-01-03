@@ -7,9 +7,9 @@
 /.idea/
 /preprocessed_data/
 /inputs/
+/tf_logs/
+/test_logs/
+/train_logs/
 /logs/
 /data/
-*.jpg
-*.csv
 *.html
-*.txt
