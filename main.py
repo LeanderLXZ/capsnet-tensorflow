@@ -135,7 +135,7 @@ class Main(object):
             summary_valid, cost_valid, acc_valid = \
                 sess.run([merged, self.cost, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch, self.labels: y_valid_batch})
-            rec_cost_train, rec_cost_valid = None
+            rec_cost_train, rec_cost_valid = None, None
 
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
