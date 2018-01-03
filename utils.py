@@ -258,7 +258,7 @@ def save_log(file_path, epoch_i, batch_counter, using_time, cost_train,
             writer.writerow(log)
 
 
-def save_test_log(file_path, cost_test, acc_test):
+def save_test_log(file_path, cost_test, acc_test, train_cost_test, rec_cost_test):
     """
     Save losses and accuracies of testing.
     """
@@ -272,7 +272,10 @@ def save_test_log(file_path, cost_test, acc_test):
         f.write('Time: {}\n'.format(local_time))
         f.write('------------------------------------------------------\n')
         f.write('Test_Loss: {:.4f}\n'.format(cost_test))
-        f.write('Test_Accuracy: {:.2f}%'.format(acc_test * 100))
+        f.write('Test_Accuracy: {:.2f}%\n'.format(acc_test * 100))
+        if cfg.TEST_WITH_RECONSTRUCTION:
+            f.write('Test_Train_Loss: {:.4f}\n'.format(train_cost_test))
+            f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_cost_test))
         f.write('=====================================================')
 
 

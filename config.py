@@ -7,7 +7,7 @@ __C = EasyDict()
 # #             Hyperparameters             #
 # ===========================================
 
-# Database name
+# Training version
 __C.VERSION = 'no_rec'
 
 # Learning rate
@@ -100,7 +100,7 @@ __C.RECONSTRUCT_COST_SCALE = 0.392  # 0.0005*784=0.392
 __C.TEST_AFTER_TRAINING = True
 
 # ===========================================
-# #                 Display                 #
+# #             Training Config             #
 # ===========================================
 
 # Display step
@@ -132,6 +132,31 @@ __C.EVAL_WITH_FULL_TRAIN_SET = False
 __C.SHOW_TRAINING_DETAILS = False
 
 # ===========================================
+# #             Testing Config              #
+# ===========================================
+
+# Testing version name
+__C.TEST_VERSION = 'no_rec'
+
+# Testing checkpoint index
+__C.TEST_CKP_IDX = 20
+
+# Testing with reconstruction
+__C.TEST_WITH_RECONSTRUCTION = False
+
+# Saving testing reconstruction images
+# None: not save images
+__C.TEST_SAVE_IMAGE_STEP = 100  # batches
+
+# Batch size of testing
+# should be same as training batch_size
+__C.TEST_BATCH_SIZE = 128
+
+# Path for saving testing logs
+__C.TEST_LOG_PATH = os.path.join(
+    './test_results', '{}-{}'.format(__C.TEST_VERSION, __C.TEST_CKP_IDX))
+
+# ===========================================
 # #                  Others                 #
 # ===========================================
 
@@ -142,13 +167,15 @@ __C.DATABASE_NAME = 'mnist'
 __C.SOURCE_DATA_PATH = './data/source_data'
 
 # Path for saving logs
-__C.LOG_PATH = os.path.join('./logs', __C.VERSION)
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
 
 # Path for saving summaries
-__C.SUMMARY_PATH = os.path.join('./logs/summaries', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
 
 # Path for saving model
 __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
+
+# ===========================================
 
 # get config by: from config import cfg
 cfg = __C

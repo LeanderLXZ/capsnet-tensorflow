@@ -319,41 +319,40 @@ class CapsNet(object):
                     reconstructed = tf.Print(reconstructed, [tf.constant(4)],
                                              message="\n[4] RECONSTRUCTION layers passed...")
 
-                with tf.name_scope('reconstructed_images'):
-                    reconstructed_images = tf.reshape(reconstructed, shape=[-1, *image_size])
+                reconstructed_images = tf.reshape(reconstructed, shape=[-1, *image_size], name='rec_images')
 
                 # Reconstruction cost
-                with tf.name_scope('reconstruct_cost'):
-                    if cfg.RECONSTRUCTION_LOSS == 'mse':
-                        inputs_flatten = tf.contrib.layers.flatten(inputs)
-                        if cfg.DECODER_TYPE != 'fc':
-                            reconstructed = tf.contrib.layers.flatten(reconstructed)
-                        reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
-                    elif cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
-                        reconstruct_cost = tf.reduce_mean(
-                            tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs, logits=reconstructed))
-                    else:
-                        reconstruct_cost = None
-                        raise ValueError("Wrong RECONSTRUCTION_LOSS!")
-
-                    tf.summary.scalar('reconstruct_cost', reconstruct_cost)
+                if cfg.RECONSTRUCTION_LOSS == 'mse':
+                    inputs_flatten = tf.contrib.layers.flatten(inputs)
+                    if cfg.DECODER_TYPE != 'fc':
+                        reconstructed = tf.contrib.layers.flatten(reconstructed)
+                    reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
+                elif cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
+                    reconstruct_cost = tf.reduce_mean(
+                        tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs, logits=reconstructed))
+                else:
+                    reconstruct_cost = None
+                reconstruct_cost = tf.identity(reconstruct_cost, name='rec_cost')
+                tf.summary.scalar('reconstruct_cost', reconstruct_cost)
 
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-                with tf.name_scope('train_cost'):
-                    train_cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
-                    tf.summary.scalar('train_cost', train_cost)
+                train_cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
+                train_cost = tf.identity(train_cost, name='train_cost')
+                tf.summary.scalar('train_cost', train_cost)
 
-                with tf.name_scope('cost'):
-                    cost = train_cost + cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
-                    tf.summary.scalar('cost', cost)
-                    if cfg.SHOW_TRAINING_DETAILS:
-                        cost = tf.Print(cost, [tf.constant(5)],
-                                        message="\n[5] COST calculated...")
+                cost = train_cost + cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
+                cost = tf.identity(cost, name='cost')
+                tf.summary.scalar('cost', cost)
+                if cfg.SHOW_TRAINING_DETAILS:
+                    cost = tf.Print(cost, [tf.constant(5)],
+                                    message="\n[5] COST calculated...")
+
             else:
                 # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-                with tf.name_scope('cost'):
-                    cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
-                    tf.summary.scalar('cost', cost)
+                cost = self._margin_loss(logits, labels, **cfg.MARGIN_LOSS_PARAMS)
+                cost = tf.identity(cost, name='cost')
+                tf.summary.scalar('cost', cost)
+                train_cost = None
                 reconstruct_cost = None
                 reconstructed_images = None
 
@@ -364,9 +363,9 @@ class CapsNet(object):
             optimizer = tf.train.AdamOptimizer(cfg.LEARNING_RATE).minimize(cost)
 
             # Accuracy
-            with tf.name_scope('accuracy'):
-                correct_pred = tf.equal(tf.argmax(utils.get_vec_length(logits), axis=1), tf.argmax(labels, axis=1))
-                accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-                tf.summary.scalar('accuracy', accuracy)
+            correct_pred = tf.equal(tf.argmax(utils.get_vec_length(logits), axis=1), tf.argmax(labels, axis=1))
+            accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32), name='accuracy')
+            tf.summary.scalar('accuracy', accuracy)
 
-        return train_graph, inputs, labels, cost, optimizer, accuracy, reconstruct_cost, reconstructed_images
+        return train_graph, inputs, labels, cost, optimizer, accuracy, \
+            train_cost, reconstruct_cost, reconstructed_images
