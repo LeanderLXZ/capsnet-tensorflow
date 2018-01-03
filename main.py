@@ -38,7 +38,7 @@ class Main(object):
         self.img_path = os.path.join(self.log_path, 'images')
 
         # Save config
-        utils.check_dir([self.log_path, self.img_path])
+        utils.check_dir([self.log_path, self.img_path, self.checkpoint_path])
         utils.save_config_log(self.log_path)
 
         # Load data
