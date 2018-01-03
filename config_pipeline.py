@@ -187,30 +187,26 @@ __C.FULL_SET_EVAL_MODE = 'per_batch'
 __C.FULL_SET_EVAL_STEP = 25
 __C.SAVE_MODEL_MODE = 'per_epoch'
 __C.SAVE_MODEL_STEP = 5
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_1 = copy(__C)
 
 __C.VERSION = 'with_fc_rec_mse'
-__C.LEARNING_RATE = 0.001
-__C.EPOCHS = 30
-__C.BATCH_SIZE = 256
 __C.WITH_RECONSTRUCTION = True
-__C.DISPLAY_STEP = None  # batches
-__C.SAVE_LOG_STEP = 10  # batches
-__C.SAVE_IMAGE_STEP = 25  # batches
-__C.FULL_SET_EVAL_MODE = 'per_batch'
-__C.FULL_SET_EVAL_STEP = 25
-__C.SAVE_MODEL_MODE = 'per_epoch'
-__C.SAVE_MODEL_STEP = 5
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_2 = copy(__C)
 
 __C.VERSION = 'with_fc_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_3 = copy(__C)
 
 __C.VERSION = 'with_conv_rec_mse'
-__C.LEARNING_RATE = 0.001
-__C.EPOCHS = 30
-__C.BATCH_SIZE = 256
 __C.WITH_RECONSTRUCTION = True
 __C.DECODER_TYPE = 'CONV'
 __C.RECONSTRUCTION_LOSS = 'mse'
@@ -219,23 +215,19 @@ __C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'depth': 16, 'padding': 'S
                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
                       {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
-__C.DISPLAY_STEP = None  # batches
-__C.SAVE_LOG_STEP = 10  # batches
-__C.SAVE_IMAGE_STEP = 25  # batches
-__C.FULL_SET_EVAL_MODE = 'per_batch'
-__C.FULL_SET_EVAL_STEP = 25
-__C.SAVE_MODEL_MODE = 'per_epoch'
-__C.SAVE_MODEL_STEP = 5
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_4 = copy(__C)
 
 __C.VERSION = 'with_conv_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_5 = copy(__C)
 
 __C.VERSION = 'with_conv_t_rec_mse'
-__C.LEARNING_RATE = 0.001
-__C.EPOCHS = 30
-__C.BATCH_SIZE = 256
 __C.WITH_RECONSTRUCTION = True
 __C.DECODER_TYPE = 'CONV_T'
 __C.RECONSTRUCTION_LOSS = 'mse'
@@ -244,15 +236,14 @@ __C.DECODER_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'V
                       {'kernel_size': 9, 'stride': 1, 'depth': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
                       {'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
                       {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': 'sigmoid'}]
-__C.DISPLAY_STEP = None  # batches
-__C.SAVE_LOG_STEP = 10  # batches
-__C.SAVE_IMAGE_STEP = 25  # batches
-__C.FULL_SET_EVAL_MODE = 'per_batch'
-__C.FULL_SET_EVAL_STEP = 25
-__C.SAVE_MODEL_MODE = 'per_epoch'
-__C.SAVE_MODEL_STEP = 5
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_6 = copy(__C)
 
 __C.VERSION = 'with_conv_t_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
 cfg_7 = copy(__C)
