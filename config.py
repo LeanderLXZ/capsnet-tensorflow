@@ -152,11 +152,11 @@ __C.TEST_WITH_RECONSTRUCTION = True
 
 # Saving testing reconstruction images
 # None: not save images
-__C.TEST_SAVE_IMAGE_STEP = 100  # batches
+__C.TEST_SAVE_IMAGE_STEP = 10  # batches
 
 # Batch size of testing
 # should be same as training batch_size
-__C.TEST_BATCH_SIZE = 128
+__C.TEST_BATCH_SIZE = 256
 
 # ===========================================
 # #                  Others                 #
