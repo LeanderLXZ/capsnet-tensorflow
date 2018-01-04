@@ -142,13 +142,13 @@ __C.SHOW_TRAINING_DETAILS = False
 # ===========================================
 
 # Testing version name
-__C.TEST_VERSION = 'no_rec'
+__C.TEST_VERSION = 'with_fc_rec_mse'
 
 # Testing checkpoint index
-__C.TEST_CKP_IDX = 20
+__C.TEST_CKP_IDX = 29
 
 # Testing with reconstruction
-__C.TEST_WITH_RECONSTRUCTION = False
+__C.TEST_WITH_RECONSTRUCTION = True
 
 # Saving testing reconstruction images
 # None: not save images

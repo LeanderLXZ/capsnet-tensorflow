@@ -325,7 +325,7 @@ class Main(object):
         test_start_time = time.time()
 
         utils.thick_line()
-        print('Testing on...')
+        print('Testing...')
 
         # Check directory of paths
         utils.check_dir([self.test_log_path])
