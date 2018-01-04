@@ -72,7 +72,7 @@ class Test(object):
 
             if self.cfg.TEST_WITH_RECONSTRUCTION:
                 cls_cost_ = loaded_graph.get_tensor_by_name("classifier_cost:0")
-                rec_cost_ = loaded_graph.get_tensor_by_name("rec_images:0")
+                rec_cost_ = loaded_graph.get_tensor_by_name("reconstruct_cost:0")
                 rec_images_ = loaded_graph.get_tensor_by_name("rec_images:0")
                 return inputs_, labels_, cost_, accuracy_, cls_cost_, rec_cost_, rec_images_
             else:
