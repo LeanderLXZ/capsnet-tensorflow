@@ -203,6 +203,9 @@ cfg_2 = copy(__C)
 
 __C.VERSION = 'with_fc_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+__C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
+                      {'num_outputs': 1024, 'act_fn': 'relu'},
+                      {'num_outputs': 784, 'act_fn': None}]
 __C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
 __C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
 __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
@@ -216,7 +219,7 @@ __C.CONV_RESHAPE_SIZE = (4, 4)
 __C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'depth': 16, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 7},
                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
-                      {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
+                      {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': 'sigmoid'}]
 __C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
 __C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
 __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
@@ -224,6 +227,10 @@ cfg_4 = copy(__C)
 
 __C.VERSION = 'with_conv_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+__C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'depth': 16, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 7},
+                      {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
+                      {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
+                      {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
 __C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
 __C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
 __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
@@ -245,6 +252,10 @@ cfg_6 = copy(__C)
 
 __C.VERSION = 'with_conv_t_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'cross_entropy'
+__C.DECODER_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 12x12
+                      {'kernel_size': 9, 'stride': 1, 'depth': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
+                      {'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
+                      {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
 __C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
 __C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
 __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
