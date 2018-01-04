@@ -115,6 +115,9 @@ __C.SAVE_LOG_STEP = 20  # batches
 # Set None to not save images
 __C.SAVE_IMAGE_STEP = 50  # batches
 
+# Maximum images number in a col
+__C.MAX_IMAGE_IN_COL = 10
+
 # Calculate train loss and valid loss using full data set
 # 'per_epoch': evaluate on full set when n epochs finished
 # 'per_batch': evaluate on full set when n batches finished

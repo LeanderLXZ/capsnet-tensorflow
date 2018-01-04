@@ -87,6 +87,8 @@ class Test(object):
 
         # Get maximum size for square grid of images
         save_col_size = math.floor(np.sqrt(rec_images.shape[0] * 2))
+        if save_col_size > self.cfg.MAX_IMAGE_IN_COL:
+            save_col_size = self.cfg.MAX_IMAGE_IN_COL
         save_row_size = save_col_size // 2
 
         # Scale to 0-255
@@ -111,24 +113,28 @@ class Test(object):
             mode = 'RGB'
 
         # Combine images to grid image
-        gap = 2
-        new_im = Image.new(mode, ((rec_images.shape[1]++gap) * save_row_size * 2 - gap,
-                                  (rec_images.shape[2]+gap) * save_col_size - gap), 'white')
-        for row_i in range(save_row_size*2):
+        thin_gap = 1
+        thick_gap = 3
+        new_im = Image.new(mode, ((rec_images.shape[1] + thin_gap + thick_gap) * save_row_size * 2 - thick_gap,
+                                  (rec_images.shape[2] + thin_gap) * save_col_size - thin_gap), 'white')
+        for row_i in range(save_row_size * 2):
             for col_i in range(save_col_size):
-                if (row_i+1) % 2 == 0:
+                if (row_i + 1) % 2 == 0:  # Odd
                     if mode == 'L':
-                        image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :]
+                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :]
                     else:
-                        image = rec_images_in_square[(row_i+1)//2 - 1, col_i, :, :, :]
-                else:
+                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :, :]
+                    im = Image.fromarray(image, mode)
+                    new_im.paste(im, (col_i * (rec_images.shape[2] + thin_gap),
+                                      row_i * (rec_images.shape[1] + thin_gap)))
+                else:  # Even
                     if mode == 'L':
-                        image = real_images_in_square[int((row_i+1)//2), col_i, :, :]
+                        image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :]
                     else:
-                        image = real_images_in_square[int((row_i+1)//2), col_i, :, :, :]
-                im = Image.fromarray(image, mode)
-                new_im.paste(im, (col_i*(rec_images.shape[2]+gap),
-                                  row_i*(rec_images.shape[1]+gap)))
+                        image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :, :]
+                    im = Image.fromarray(image, mode)
+                    new_im.paste(im, (col_i * (rec_images.shape[2] + thin_gap),
+                                      row_i * (rec_images.shape[1] + thick_gap)))
 
         save_image_path = os.path.join(self.test_image_path, 'batch_{}.jpg'.format(batch_counter))
         new_im.save(save_image_path)
