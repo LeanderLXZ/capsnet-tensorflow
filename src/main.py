@@ -57,8 +57,8 @@ class Main(object):
         utils.thick_line()
         print('Loading data...')
         utils.thin_line()
-        x_train = utils.load_data_from_pickle('./data/source_data/mnist/train_image.p')
-        y_train = utils.load_data_from_pickle('./data/source_data/mnist/train_label.p')
+        x_train = utils.load_data_from_pickle(os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/train_image.p'))
+        y_train = utils.load_data_from_pickle(os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/train_label.p'))
 
         # Split training/validation/test set
         x_train = np.divide(x_train, 255.)

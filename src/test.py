@@ -18,7 +18,7 @@ class Test(object):
 
         # Get checkpoint path
         self.checkpoint_path = \
-            './checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
+            '../checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
 
         # Get log path, append information if the directory exist.
         test_log_path_ = os.path.join(
@@ -45,8 +45,8 @@ class Test(object):
         utils.thick_line()
         print('Loading data...')
         utils.thin_line()
-        x_test = utils.load_data_from_pickle('./data/source_data/mnist/test_image.p')
-        y_test = utils.load_data_from_pickle('./data/source_data/mnist/test_label.p')
+        x_test = utils.load_data_from_pickle(os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_image.p'))
+        y_test = utils.load_data_from_pickle(os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_label.p'))
 
         x_test = np.divide(x_test, 255.)
         self.x_test = x_test.reshape([-1, 28, 28, 1])

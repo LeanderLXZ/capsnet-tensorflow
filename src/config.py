@@ -169,19 +169,19 @@ __C.TEST_BATCH_SIZE = 256
 __C.DATABASE_NAME = 'mnist'
 
 # Source data directory path
-__C.SOURCE_DATA_PATH = './data/source_data'
+__C.SOURCE_DATA_PATH = '../data/source_data'
 
 # Path for saving logs
-__C.LOG_PATH = os.path.join('./train_logs', __C.VERSION)
+__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
 
 # Path for saving summaries
-__C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
+__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
 
 # Path for saving model
-__C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
+__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 
 # Path for saving testing logs
-__C.TEST_LOG_PATH = './test_logs'
+__C.TEST_LOG_PATH = '../test_logs'
 
 # ===========================================
 
