@@ -21,12 +21,13 @@ class Test(object):
             './checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
 
         # Get log path, append information if the directory exist.
-        self.test_log_path = os.path.join(
+        test_log_path_ = os.path.join(
             self.cfg.TEST_LOG_PATH, '{}-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
+        self.test_log_path = test_log_path_
         i_append_info = 0
         while os.path.isdir(self.test_log_path):
             i_append_info += 1
-            self.test_log_path = self.cfg.TEST_LOG_PATH + '({})'.format(i_append_info)
+            self.test_log_path = test_log_path_ + '({})'.format(i_append_info)
 
         # Path for saving images
         self.test_image_path = os.path.join(self.test_log_path, 'images')
@@ -116,27 +117,27 @@ class Test(object):
         thin_gap = 1
         thick_gap = 3
         avg_gap = (thin_gap + thick_gap) / 2
-        new_im = Image.new(mode, (int((rec_images.shape[1] + avg_gap) * save_row_size * 2 - thick_gap),
-                                  int((rec_images.shape[2] + thin_gap) * save_col_size - thin_gap)), 'white')
+        new_im = Image.new(mode, (int((rec_images.shape[2]+thin_gap)*save_col_size+thin_gap),
+                                  int((rec_images.shape[1]+avg_gap)*save_row_size*2+thick_gap)), 'white')
+
         for row_i in range(save_row_size * 2):
             for col_i in range(save_col_size):
                 if (row_i + 1) % 2 == 0:  # Odd
                     if mode == 'L':
-                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :]
+                        image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :]
                     else:
-                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :, :]
+                        image = rec_images_in_square[(row_i+1)//2-1, col_i, :, :, :]
                     im = Image.fromarray(image, mode)
-                    new_im.paste(im, (int(col_i * (rec_images.shape[2] + thin_gap)),
-                                      int(row_i * rec_images.shape[1] + (row_i - 1) * (
-                                      thin_gap + thick_gap) / 2 + thin_gap)))
+                    new_im.paste(im, (int(col_i*(rec_images.shape[2]+thin_gap)+thin_gap),
+                                      int(row_i*rec_images.shape[1]+(row_i+1)*avg_gap)))
                 else:  # Even
                     if mode == 'L':
                         image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :]
                     else:
                         image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :, :]
                     im = Image.fromarray(image, mode)
-                    new_im.paste(im, (int(col_i * (rec_images.shape[2] + thin_gap)),
-                                      int(row_i * (rec_images.shape[1] + (thin_gap + thick_gap) / 2))))
+                    new_im.paste(im, (int(col_i*(rec_images.shape[2]+thin_gap)+thin_gap),
+                                      int(row_i*(rec_images.shape[1]+avg_gap)+thick_gap)))
 
         save_image_path = os.path.join(self.test_image_path, 'batch_{}.jpg'.format(batch_counter))
         new_im.save(save_image_path)
