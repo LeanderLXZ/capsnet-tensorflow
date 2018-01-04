@@ -327,13 +327,17 @@ class CapsNet(object):
                 if self.cfg.RECONSTRUCTION_LOSS == 'mse':
                     inputs_flatten = tf.contrib.layers.flatten(inputs)
                     if self.cfg.DECODER_TYPE != 'FC':
-                        reconstructed = tf.contrib.layers.flatten(reconstructed)
-                    reconstruct_cost = tf.reduce_mean(tf.square(reconstructed - inputs_flatten))
+                        reconstructed_ = tf.contrib.layers.flatten(reconstructed)
+                    else:
+                        reconstructed_ = reconstructed
+                    reconstruct_cost = tf.reduce_mean(tf.square(reconstructed_ - inputs_flatten))
                 elif self.cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
                     if self.cfg.DECODER_TYPE == 'FC':
-                        inputs = tf.contrib.layers.flatten(inputs)
+                        inputs_ = tf.contrib.layers.flatten(inputs)
+                    else:
+                        inputs_ = inputs
                     reconstruct_cost = tf.reduce_mean(
-                        tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs, logits=reconstructed))
+                        tf.nn.sigmoid_cross_entropy_with_logits(labels=inputs_, logits=reconstructed))
                 else:
                     reconstruct_cost = None
                 reconstruct_cost = tf.identity(reconstruct_cost, name='rec_cost')
