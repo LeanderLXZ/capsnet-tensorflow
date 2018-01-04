@@ -158,9 +158,6 @@ __C.TEST_SAVE_IMAGE_STEP = 100  # batches
 # should be same as training batch_size
 __C.TEST_BATCH_SIZE = 128
 
-# Path for saving testing logs
-__C.TEST_LOG_PATH = './test_logs'
-
 # ===========================================
 # #                  Others                 #
 # ===========================================
@@ -179,6 +176,9 @@ __C.SUMMARY_PATH = os.path.join('./tf_logs', __C.VERSION)
 
 # Path for saving model
 __C.CHECKPOINT_PATH = os.path.join('./checkpoints', __C.VERSION)
+
+# Path for saving testing logs
+__C.TEST_LOG_PATH = './test_logs'
 
 # ===========================================
 
