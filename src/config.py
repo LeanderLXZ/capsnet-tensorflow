@@ -17,7 +17,7 @@ __C.LEARNING_RATE = 0.001
 __C.EPOCHS = 30
 
 # Batch size
-__C.BATCH_SIZE = 1024
+__C.BATCH_SIZE = 256
 
 # ===========================================
 # #            Model Architecture           #

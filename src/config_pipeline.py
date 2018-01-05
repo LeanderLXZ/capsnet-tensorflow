@@ -18,7 +18,7 @@ __C.LEARNING_RATE = 0.001
 __C.EPOCHS = 30
 
 # Batch size
-__C.BATCH_SIZE = 128
+__C.BATCH_SIZE = 256
 
 # ===========================================
 # #            Model Architecture           #
@@ -144,7 +144,7 @@ __C.TEST_SAVE_IMAGE_STEP = 100  # batches
 
 # Batch size of testing
 # should be same as training batch_size
-__C.TEST_BATCH_SIZE = 128
+__C.TEST_BATCH_SIZE = 256
 
 # ===========================================
 # #                  Others                 #
