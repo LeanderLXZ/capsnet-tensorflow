@@ -423,7 +423,7 @@ class Main(object):
         """
         session_cfg = tf.ConfigProto()
         session_cfg.gpu_options.allow_growth = True
-        with tf.device('/gpu:%d' % self.gpu_id):
+        with tf.device('/gpu:{}'.format(self.gpu_id)):
             with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
 
                 utils.thick_line()
