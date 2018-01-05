@@ -195,6 +195,7 @@ class Test(object):
         Test model
         """
         start_time = time.time()
+        tf.reset_default_graph()
         loaded_graph = tf.Graph()
 
         with tf.Session(graph=loaded_graph) as sess:
