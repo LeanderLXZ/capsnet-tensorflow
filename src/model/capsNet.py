@@ -5,6 +5,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from model import utils
+from model import capsule_layer
 from model.model_base import ModelBase
 
 
@@ -29,6 +30,52 @@ class CapsNet(ModelBase):
         _labels = tf.placeholder(tf.float32, shape=[self.cfg.BATCH_SIZE, num_class], name='labels')
 
         return _inputs, _labels
+
+    def _caps_layer(self, x, caps_param, idx=0):
+        """
+        Single capsule layer
+
+        Args:
+            x: input tensor
+            caps_param: parameters of capsule layer
+        Returns:
+            output tensor of capsule layer
+        """
+        with tf.name_scope('caps_{}'.format(idx)):
+            _caps = capsule_layer.CapsuleLayer(self._cfg, **caps_param)
+            return _caps(x)
+
+    def _conv2caps_layer(self, x, conv2caps_params):
+        """
+        Build convolution to capsule layer.
+
+        Args:
+            x: input tensor
+            conv2caps_params: parameters of conv2caps layer
+        Returns:
+            output tensor of capsule layer
+        """
+        with tf.variable_scope('conv2caps'):
+            # conv2caps_params: {'kernel_size': None, 'stride': None,
+            # 'n_kernel': None, 'vec_dim': None, 'padding': 'VALID'}
+            conv2caps_layer = capsule_layer.Conv2Capsule(self._cfg, **conv2caps_params)
+            conv2caps = conv2caps_layer(x)
+
+        return conv2caps
+
+    def _multi_caps_layers(self, x):
+        """
+        Build multi-capsule layer.
+        """
+        caps_layers = [x]
+        for iter_caps, caps_param in enumerate(self._cfg.CAPS_PARAMS):
+                # caps_param: {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
+                caps_layer = self._caps_layer(
+                    caps_layers[iter_caps], caps_param, idx=iter_caps)
+                caps_layers.append(caps_layer)
+
+        # shape: (batch_size, num_caps_j, vec_dim_j, 1) -> (batch_size, num_caps_j, vec_dim_j)
+        return tf.squeeze(caps_layers[-1])
 
     def _margin_loss(self, logits, label, m_plus=0.9, m_minus=0.1, lambda_=0.5):
         """
