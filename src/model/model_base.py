@@ -7,11 +7,10 @@ import tensorflow as tf
 from model import capsule_layer
 
 
-class CNNModelBase(object):
+class ModelBase(object):
 
-    def __init__(self, is_training, cfg):
+    def __init__(self, cfg):
 
-        self._is_training = is_training
         self._cfg = cfg
 
     @staticmethod
@@ -29,18 +28,40 @@ class CNNModelBase(object):
             raise ValueError('Wrong activation function name!')
         return activation_fn
 
-    def _batch_norm(self, x):
+    @staticmethod
+    def _batch_norm(x, is_training, batch_norm_decay, batch_norm_epsilon):
         """
         Batch normalization layer
         """
         return tf.contrib.layers.batch_norm(
             input=x,
-            decay=self._cfg.BATCH_NORM_DECAY,
+            decay=batch_norm_decay,
             center=True,
             scale=True,
-            epsilon=self._cfg.BATCH_NORM_EPSILON,
-            is_training=self._is_training,
+            epsilon=batch_norm_epsilon,
+            is_training=is_training,
             fused=True)
+
+    @staticmethod
+    def _avg_pool(x, pool_size=None, stride=None, padding='SAME'):
+        """
+        Average pooling
+        """
+        with tf.name_scope('avg_pool'):
+            return tf.layers.average_pooling2d(
+                inputs=x,
+                pool_size=pool_size,
+                strides=stride,
+                padding=padding)
+
+    @staticmethod
+    def _global_avg_pool(x):
+        """
+        Average pooling on full image
+        """
+        with tf.name_scope('global_avg_pool'):
+            assert x.get_shape().ndims == 4
+            return tf.reduce_mean(x, [1, 2])
 
     def _fc_layer(self, x, out_dim=None, act_fn_name='relu', use_bias=True, idx=0):
         """
@@ -66,8 +87,9 @@ class CNNModelBase(object):
                 weights_initializer=weights_initializer,
                 biases_initializer=biases_initializer)
 
-    def _conv_layer(self, x, kernel_size=None, stride=None, n_kernel=None, padding=None,
-                    act_fn_name='relu', resize=None, use_bias=True, atrous=False, idx=None):
+    def _conv_layer(self, x, kernel_size=None, stride=None,
+                    n_kernel=None, padding='SAME', act_fn_name='relu',
+                    resize=None, use_bias=True, atrous=False, idx=None):
         """
         Single convolution layer
 
@@ -111,7 +133,7 @@ class CNNModelBase(object):
                 biases_initializer=biases_initializer)
 
     def _conv_t_layer(self, x, kernel_size=None, stride=None, n_kernel=None,
-                      padding=None, act_fn_name='relu', use_bias=True, idx=None):
+                      padding='SAME', act_fn_name='relu', use_bias=True, idx=None):
         """
         Single transpose convolution layer
 
@@ -173,27 +195,29 @@ class CNNModelBase(object):
 
         return conv2caps
 
-    def _multi_conv_layers(self, tensor):
+    def _multi_conv_layers(self, x):
         """
         Build multi-convolution layer.
         """
-        conv_layers = [tensor]
+        conv_layers = [x]
         for iter_conv, conv_param in enumerate(self._cfg.CONV_PARAMS):
                 # conv_param: {'kernel_size': None, 'stride': None,
                 # 'n_kernel': None, 'padding': 'VALID', 'act_fn': None}
-                conv_layer = self._conv_layer(x=conv_layers[iter_conv], **conv_param, idx=iter_conv)
+                conv_layer = self._conv_layer(
+                    x=conv_layers[iter_conv], **conv_param, idx=iter_conv)
                 conv_layers.append(conv_layer)
 
         return conv_layers[-1]
 
-    def _multi_caps_layers(self, tensor):
+    def _multi_caps_layers(self, x):
         """
         Build multi-capsule layer.
         """
-        caps_layers = [tensor]
+        caps_layers = [x]
         for iter_caps, caps_param in enumerate(self._cfg.CAPS_PARAMS):
                 # caps_param: {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
-                caps_layer = self._caps_layer(caps_layers[iter_caps], caps_param, idx=iter_caps)
+                caps_layer = self._caps_layer(
+                    caps_layers[iter_caps], caps_param, idx=iter_caps)
                 caps_layers.append(caps_layer)
 
         # shape: (batch_size, num_caps_j, vec_dim_j, 1) -> (batch_size, num_caps_j, vec_dim_j)

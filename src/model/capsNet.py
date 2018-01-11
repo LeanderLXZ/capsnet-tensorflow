@@ -1,21 +1,29 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
 
-from model import utils, capsule_layer
+from model import utils
+from model.model_base import ModelBase
 
 
-class CapsNet(object):
+class CapsNet(ModelBase):
 
     def __init__(self, cfg):
 
-        # Config
+        super(CapsNet, self).__init__(cfg)
         self.cfg = cfg
 
     def _get_inputs(self, image_size, num_class):
         """
         Get input tensors.
-        :param image_size: the size of input images, should be 3 dimensional
-        :param num_class: number of class of label
-        :return: input tensors
+
+        Args:
+            image_size: the size of input images, should be 3 dimensional
+            num_class: number of class of label
+        Returns:
+            input tensors
         """
         _inputs = tf.placeholder(tf.float32, shape=[self.cfg.BATCH_SIZE, *image_size], name='inputs')
         _labels = tf.placeholder(tf.float32, shape=[self.cfg.BATCH_SIZE, num_class], name='labels')
@@ -25,31 +33,31 @@ class CapsNet(object):
     def _margin_loss(self, logits, label, m_plus=0.9, m_minus=0.1, lambda_=0.5):
         """
         Calculate margin loss according to Hinton's paper.
-        :param logits: output tensor of capsule layers.
-        :param label: labels
-        :param m_plus: truncation of positive item
-        :param m_minus: truncation of negative item
-        :param lambda_: lambda
-        :return: margin loss
-        """
-        # L = T_c * max(0, m_plus-||v_c||)^2 + lambda_ * (1-T_c) * max(0, ||v_c||-m_minus)^2
+        L = T_c * max(0, m_plus-||v_c||)^2 + lambda_ * (1-T_c) * max(0, ||v_c||-m_minus)^2
 
+        Args:
+            logits: output tensor of capsule layers.
+            label: labels
+            m_plus: truncation of positive item
+            m_minus: truncation of negative item
+            lambda_: lambda
+        Returns:
+            margin loss
+        """
         # logits shape: (batch_size, num_caps, vec_dim)
         logits_shape = logits.get_shape()
         num_caps = logits_shape[1]
         vec_dim = logits_shape[2]
 
         # logits shape: (batch_size, num_caps, vec_dim)
-        assert logits.get_shape() == (self.cfg.BATCH_SIZE, num_caps, vec_dim), \
-            'Wrong shape of logits: {}'.format(logits.get_shape().as_list())
+        assert logits.get_shape() == (self.cfg.BATCH_SIZE, num_caps, vec_dim)
 
         max_square_plus = tf.square(tf.maximum(
             0., m_plus - utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON)))
         max_square_minus = tf.square(tf.maximum(
-            0., utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON) -   m_minus))
+            0., utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON) - m_minus))
         # max_square_plus & max_plus shape: (batch_size, num_caps)
-        assert max_square_plus.get_shape() == (self.cfg.BATCH_SIZE, num_caps), \
-            'Wrong shape of max_square_plus: {}'.format(max_square_plus.get_shape().as_list())
+        assert max_square_plus.get_shape() == (self.cfg.BATCH_SIZE, num_caps)
 
         # label should be one-hot-encoded
         # label shape: (batch_size, num_caps)
@@ -63,212 +71,62 @@ class CapsNet(object):
 
         return margin_loss
 
-    @staticmethod
-    def _conv_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, act_fn='relu', resize=None):
-        """
-        Single convolution layer
-        :param tensor: input tensor
-        :param kernel_size: size of convolution kernel
-        :param stride: stride of convolution kernel
-        :param depth: depth of convolution kernel
-        :param padding: padding type of convolution kernel
-        :param resize: if resize, resize every image
-        :return: output tensor of convolution layer
-        """
-        # Resize image
-        if resize is not None:
-            conv = tf.image.resize_nearest_neighbor(tensor, (resize, resize))
-        else:
-            conv = tensor
-
-        # Convolution layer
-        if act_fn == 'relu':
-            activation_fn = tf.nn.relu
-        elif act_fn == 'sigmoid':
-            activation_fn = tf.sigmoid
-        elif act_fn is None:
-            activation_fn = None
-        else:
-            raise ValueError('Wrong activation function!')
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-        biases_initializer = tf.zeros_initializer()
-        conv = tf.contrib.layers.conv2d(inputs=conv,
-                                        num_outputs=depth,
-                                        kernel_size=kernel_size,
-                                        stride=stride,
-                                        padding=padding,
-                                        activation_fn=activation_fn,
-                                        weights_initializer=weights_initializer,
-                                        biases_initializer=biases_initializer)
-
-        return conv
-
-    @staticmethod
-    def _fc_layer(tensor, num_outputs=None, act_fn='relu'):
-        """
-        Single full_connected layer
-        :param tensor: input tensor
-        :param num_outputs: hidden units of full_connected layer
-        :param act_fn: activation function
-        :return: output tensor of full_connected layer
-        """
-        # Full connected layer
-        if act_fn == 'relu':
-            activation_fn = tf.nn.relu
-        elif act_fn == 'sigmoid':
-            activation_fn = tf.sigmoid
-        elif act_fn is None:
-            activation_fn = None
-        else:
-            raise ValueError('Wrong activation function!')
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-        biases_initializer = tf.zeros_initializer()
-        fc = tf.contrib.layers.fully_connected(inputs=tensor,
-                                               num_outputs=num_outputs,
-                                               activation_fn=activation_fn,
-                                               weights_initializer=weights_initializer,
-                                               biases_initializer=biases_initializer)
-
-        return fc
-
-    @staticmethod
-    def _conv_transpose_layer(tensor, kernel_size=None, stride=None, depth=None, padding=None, act_fn='relu'):
-        """
-        Single transpose convolution layer
-        :param tensor: input tensor
-        :param kernel_size: size of convolution kernel
-        :param stride: stride of convolution kernel
-        :param depth: depth of convolution kernel
-        :param padding: padding type of convolution kernel
-        :return: output tensor of transpose convolution layer
-        """
-        # Transpose convolution layer
-        if act_fn == 'relu':
-            activation_fn = tf.nn.relu
-        elif act_fn == 'sigmoid':
-            activation_fn = tf.sigmoid
-        elif act_fn is None:
-            activation_fn = None
-        else:
-            raise ValueError('Wrong activation function!')
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-        biases_initializer = tf.zeros_initializer()
-        conv_t = tf.contrib.layers.conv2d_transpose(inputs=tensor,
-                                                    num_outputs=depth,
-                                                    kernel_size=kernel_size,
-                                                    stride=stride,
-                                                    padding=padding,
-                                                    activation_fn=activation_fn,
-                                                    weights_initializer=weights_initializer,
-                                                    biases_initializer=biases_initializer)
-
-        return conv_t
-
-    def _caps_layer(self, tensor, caps_param):
-        """
-        Single capsule layer
-        :param tensor: input tensor
-        :param caps_param: parameters of capsule layer
-        :return: output tensor of capsule layer
-        """
-        caps = capsule_layer.CapsuleLayer(self.cfg, **caps_param)
-
-        return caps(tensor)
-
-    def _conv_layers(self, tensor):
-        """
-        Build multi-convolution layer.
-        """
-        conv_layers = [tensor]
-
-        for iter_conv, conv_param in enumerate(self.cfg.CONV_PARAMS):
-            with tf.variable_scope('conv_{}'.format(iter_conv)):
-                # conv_param: {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
-                conv_layer = self._conv_layer(tensor=conv_layers[iter_conv], **conv_param)
-                conv_layers.append(conv_layer)
-
-        return conv_layers[-1]
-
-    def _conv2caps_layer(self, tensor, conv2caps_params):
-        """
-        Build convolution to capsule layer.
-        """
-        with tf.variable_scope('conv2caps'):
-            # conv2caps_params: {'kernel_size': None, 'stride': None,
-            #                    'depth': None, 'vec_dim': None, 'padding': 'VALID'}
-            conv2caps_layer = capsule_layer.Conv2Capsule(self.cfg, **conv2caps_params)
-            conv2caps = conv2caps_layer(tensor)
-
-        return conv2caps
-
-    def _caps_layers(self, tensor):
-        """
-        Build multi-capsule layer.
-        """
-        caps_layers = [tensor]
-
-        for iter_caps, caps_param in enumerate(self.cfg.CAPS_PARAMS):
-            with tf.variable_scope('caps_{}'.format(iter_caps)):
-                # caps_param: {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
-                caps_layer = self._caps_layer(caps_layers[iter_caps], caps_param)
-                caps_layers.append(caps_layer)
-
-        # shape: (batch_size, num_caps_j, vec_dim_j, 1) -> (batch_size, num_caps_j, vec_dim_j)
-        caps_out = tf.squeeze(caps_layers[-1])
-
-        return caps_out
-
-    def _decoder(self, tensor):
+    def _decoder(self, x):
         """
         Decoder of reconstruction layer
         """
-        decoder_layers = [tensor]
+        with tf.variable_scope('decoder'):
+            decoder_layers = [x]
 
-        # Using full_connected layers
-        if self.cfg.DECODER_TYPE == 'FC':
-            for iter_fc, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
-                with tf.variable_scope('decoder_{}'.format(iter_fc)):
-                    # decoder_param: {'num_outputs':None, 'act_fn': None}
-                    decoder_layer = self._fc_layer(tensor=decoder_layers[iter_fc], **decoder_param)
-                    decoder_layers.append(decoder_layer)
+            # Using full_connected layers
+            if self.cfg.DECODER_TYPE == 'FC':
+                for iter_fc, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
+                        # decoder_param: {'num_outputs':None, 'act_fn': None}
+                        decoder_layer = self._fc_layer(
+                            x=decoder_layers[iter_fc], **decoder_param, idx=iter_fc)
+                        decoder_layers.append(decoder_layer)
 
-        # Using convolution layers
-        elif self.cfg.DECODER_TYPE == 'CONV':
-            decoder_layers[0] = \
-                tf.reshape(tensor, (self.cfg.BATCH_SIZE, *self.cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
-            for iter_conv, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
-                with tf.variable_scope('decoder_{}'.format(iter_conv)):
-                    # decoder_param:
-                    # {'kernel_size': None, 'stride': None, 'depth': None,
-                    #  'padding': 'VALID', 'act_fn':None, 'resize': None}
-                    decoder_layer = self._conv_layer(tensor=decoder_layers[iter_conv], **decoder_param)
-                    decoder_layers.append(decoder_layer)
+            # Using convolution layers
+            elif self.cfg.DECODER_TYPE == 'CONV':
+                decoder_layers[0] = tf.reshape(
+                    x, (self.cfg.BATCH_SIZE, *self.cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
+                for iter_conv, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
+                        # decoder_param:
+                        # {'kernel_size': None, 'stride': None, 'depth': None,
+                        #  'padding': 'VALID', 'act_fn':None, 'resize': None}
+                        decoder_layer = self._conv_layer(
+                            x=decoder_layers[iter_conv], **decoder_param, idx=iter_conv)
+                        decoder_layers.append(decoder_layer)
 
-        # Using transpose convolution layers
-        elif self.cfg.DECODER_TYPE == 'CONV_T':
-            decoder_layers[0] = \
-                tf.reshape(tensor, (self.cfg.BATCH_SIZE,  *self.cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
-            for iter_conv, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
-                with tf.variable_scope('decoder_{}'.format(iter_conv)):
-                    # decoder_param:
-                    # {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
-                    decoder_layer = self._conv_transpose_layer(tensor=decoder_layers[iter_conv], **decoder_param)
-                    decoder_layers.append(decoder_layer)
+            # Using transpose convolution layers
+            elif self.cfg.DECODER_TYPE == 'CONV_T':
+                decoder_layers[0] = tf.reshape(
+                    x, (self.cfg.BATCH_SIZE, *self.cfg.CONV_RESHAPE_SIZE, 1), name='reshape')
+                for iter_conv_t, decoder_param in enumerate(self.cfg.DECODER_PARAMS):
+                        # decoder_param:
+                        # {'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None}
+                        decoder_layer = self._conv_t_layer(
+                            x=decoder_layers[iter_conv_t], **decoder_param, idx=iter_conv_t)
+                        decoder_layers.append(decoder_layer)
 
-        return decoder_layers[-1]
+            return decoder_layers[-1]
 
-    def _reconstruct_layers(self, tensor, labels):
+    def _reconstruct_layers(self, x, labels):
         """
         Reconstruction layer
-        :param tensor: input tensor
-        :param labels: labels
-        :return: output tensor of reconstruction layer
+
+        Args:
+            x: input tensor
+            labels: labels
+        Returns:
+            output tensor of reconstruction layer
         """
         with tf.variable_scope('masking'):
             # tensor shape: (batch_size, n_class, vec_dim_j)
             # labels shape: (batch_size, n_class)
             # _masked shape: (batch_size, vec_dim_j)
-            _masked = tf.reduce_sum(tf.multiply(tensor, tf.expand_dims(labels, axis=-1)), axis=1)
+            _masked = tf.reduce_sum(
+                tf.multiply(x, tf.expand_dims(labels, axis=-1)), axis=1)
 
         with tf.variable_scope('decoder'):
             # _reconstructed shape: (batch_size, image_size*image_size)
@@ -279,9 +137,12 @@ class CapsNet(object):
     def build_graph(self, image_size=(None, None, None), num_class=None):
         """
         Build the graph of CapsNet.
-        :param image_size: size of input images, should be 3 dimensional
-        :param num_class: number of class of label
-        :return: tuple of (train_graph, inputs, labels, cost, optimizer, accuracy)
+
+        Args:
+            image_size: size of input images, should be 3 dimensional
+            num_class: number of class of label
+        Returns:
+            tuple of (train_graph, inputs, labels, cost, optimizer, accuracy)
         """
         # Build graph
         tf.reset_default_graph()
@@ -293,7 +154,7 @@ class CapsNet(object):
             inputs, labels = self._get_inputs(image_size, num_class)
 
             # Build convolution layers
-            conv = self._conv_layers(inputs)
+            conv = self._multi_conv_layers(inputs)
             if self.cfg.SHOW_TRAINING_DETAILS:
                 conv = tf.Print(conv, [tf.constant(1)],
                                 message="\n[1] CONVOLUTION layers passed...")
@@ -306,7 +167,7 @@ class CapsNet(object):
 
             # Build capsule layers
             # logits shape: (batch_size, num_caps, vec_dim)
-            logits = self._caps_layers(conv2caps)
+            logits = self._multi_caps_layers(conv2caps)
             logits = tf.identity(logits, name='logits')
             if self.cfg.SHOW_TRAINING_DETAILS:
                 logits = tf.Print(logits, [tf.constant(3)],
