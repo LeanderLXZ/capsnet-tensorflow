@@ -1,5 +1,6 @@
 import tensorflow as tf
-from activation_fn import ActivationFunc
+
+from model.activation_fn import ActivationFunc
 
 
 class Conv2Capsule(object):
@@ -7,11 +8,13 @@ class Conv2Capsule(object):
     def __init__(self, cfg, kernel_size=None, stride=None, depth=None, vec_dim=None, padding=None):
         """
         Initialize conv2caps layer.
-        :param kernel_size: size of convolution kernel
-        :param stride: stride of convolution kernel
-        :param depth: depth of convolution kernel
-        :param vec_dim: dimensions of vectors of capsule
-        :param padding: padding type of convolution kernel
+
+        Args:
+            kernel_size: size of convolution kernel
+            stride: stride of convolution kernel
+            depth: depth of convolution kernel
+            vec_dim: dimensions of vectors of capsule
+            padding: padding type of convolution kernel
         """
         self.cfg = cfg
         self.kernel_size = kernel_size
@@ -23,8 +26,11 @@ class Conv2Capsule(object):
     def __call__(self, inputs):
         """
         Convert a convolution layer to capsule layer.
-        :param inputs: input tensor with shape: (batch_size, height, width, depth)
-        :return: tensor of capsules with shape: (batch_size, num_caps_j, vec_dim_j, 1)
+
+        Args:
+            inputs: input tensor with shape: (batch_size, height, width, depth)
+        Returns:
+            tensor of capsules with shape: (batch_size, num_caps_j, vec_dim_j, 1)
         """
         # Convolution layer
         activation_fn = tf.nn.relu
@@ -44,14 +50,12 @@ class Conv2Capsule(object):
         num_capsule = caps_shape[1] * caps_shape[2] * self.depth
         caps = tf.reshape(caps, [self.cfg.BATCH_SIZE, -1, self.vec_dim, 1])
         # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
-        assert caps.get_shape() == (self.cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1), \
-            'Wrong shape of caps: {}'.format(caps.get_shape().as_list())
+        assert caps.get_shape() == (self.cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1)
 
         # Applying activation function
         caps_activated = ActivationFunc.squash(caps, self.cfg.BATCH_SIZE, self.cfg.EPSILON)
         # caps_activated shape: (batch_size, num_caps_j, vec_dim_j, 1)
-        assert caps_activated.get_shape() == (self.cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1), \
-            'Wrong shape of caps_squashed: {}'.format(caps_activated.get_shape().as_list())
+        assert caps_activated.get_shape() == (self.cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1)
 
         return caps_activated
 
@@ -61,9 +65,11 @@ class CapsuleLayer(object):
     def __init__(self, cfg, num_caps=None, vec_dim=None, route_epoch=None):
         """
         Initialize capsule layer.
-        :param num_caps: number of capsules of this layer
-        :param vec_dim: dimensions of vectors of capsules
-        :param route_epoch: number of dynamic routing iteration
+
+        Args:
+            num_caps: number of capsules of this layer
+            vec_dim: dimensions of vectors of capsules
+            route_epoch: number of dynamic routing iteration
         """
         self.cfg = cfg
         self.num_caps = num_caps
@@ -73,8 +79,11 @@ class CapsuleLayer(object):
     def __call__(self, inputs):
         """
         Apply dynamic routing.
-        :param inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
-        :return: output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
+
+        Args:
+            inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
+        Returns:
+            output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
         """
         self.v_j = self.dynamic_routing(inputs, self.num_caps, self.vec_dim, self.route_epoch)
 
@@ -83,11 +92,14 @@ class CapsuleLayer(object):
     def dynamic_routing(self, inputs, num_caps_j, vec_dim_j, route_epoch):
         """
         Dynamic routing according to Hinton's paper.
-        :param inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
-        :param num_caps_j: number of capsules of upper layer
-        :param vec_dim_j: dimensions of vectors of upper layer
-        :param route_epoch: number of dynamic routing iteration
-        :return: output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
+
+        Args:
+            inputs: input tensor with shape: (batch_size, num_caps_i, vec_dim_i, 1)
+            num_caps_j: number of capsules of upper layer
+            vec_dim_j: dimensions of vectors of upper layer
+            route_epoch: number of dynamic routing iteration
+        Returns:
+            output tensor with shape (batch_size, num_caps_j, vec_dim_j, 1)
         """
         inputs_shape = inputs.get_shape().as_list()
         num_caps_i = inputs_shape[1]
@@ -99,8 +111,7 @@ class CapsuleLayer(object):
         inputs = tf.reshape(inputs, shape=inputs_shape_new)
         inputs = tf.tile(inputs, [1, 1, num_caps_j, 1, 1], name='input_tensor')
         # inputs shape: (batch_size, num_caps_i, num_caps_j, vec_dim_i, 1)
-        assert inputs.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_i, 1), \
-            'Wrong shape of inputs: {}'.format(inputs.get_shape().as_list())
+        assert inputs.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_i, 1)
 
         # Initializing weights
         weights_shape = [1, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i]
@@ -112,16 +123,14 @@ class CapsuleLayer(object):
         #                           dtype=tf.float32, initializer=weights_initializer)
         weights = tf.tile(weights, [self.cfg.BATCH_SIZE, 1, 1, 1, 1])
         # weights shape: (batch_size, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
-        assert weights.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i), \
-            'Wrong shape of weights: {}'.format(weights.get_shape().as_list())
+        assert weights.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
 
         # Calculating u_hat
         # ( , , , vec_dim_j, vec_dim_i) x ( , , , vec_dim_i, 1)
         # -> ( , , , vec_dim_j, 1) -> squeeze -> ( , , , vec_dim_j)
         u_hat = tf.matmul(weights, inputs, name='u_hat')
         # u_hat shape: (batch_size, num_caps_i, num_caps_j, vec_dim_j, 1)
-        assert u_hat.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_j, 1), \
-            'Wrong shape of u_hat: {}'.format(u_hat.get_shape().as_list())
+        assert u_hat.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_j, 1)
 
         # u_hat_stop
         # Do not transfer the gradient of u_hat_stop during back-propagation
@@ -130,8 +139,7 @@ class CapsuleLayer(object):
         # Initializing b_ij
         b_ij = tf.zeros([self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1], tf.float32, name='b_ij')
         # b_ij shape: (batch_size, num_caps_i, num_caps_j, 1, 1)
-        assert b_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1), \
-            'Wrong shape of b_ij: {}'.format(b_ij.get_shape().as_list())
+        assert b_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1)
 
         def _sum_and_activate(_u_hat, _c_ij, cfg_, name=None):
             """
@@ -141,14 +149,12 @@ class CapsuleLayer(object):
             # Using u_hat but not u_hat_stop in order to transfer gradients.
             _s_j = tf.reduce_sum(tf.multiply(_u_hat, _c_ij), axis=1)
             # _s_j shape: (batch_size, num_caps_j, vec_dim_j, 1)
-            assert _s_j.get_shape() == (self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1), \
-                'Wrong shape of _s_j: {}'.format(_s_j.get_shape().as_list())
+            assert _s_j.get_shape() == (self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1)
 
             # Applying Squashing
             _v_j = ActivationFunc.squash(_s_j, cfg_.BATCH_SIZE, cfg_.EPSILON)
             # _v_j shape: (batch_size, num_caps_j, vec_dim_j, 1)
-            assert _v_j.get_shape() == (self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1), \
-                'Wrong shape of _v_j: {}'.format(_v_j.get_shape().as_list())
+            assert _v_j.get_shape() == (self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1)
 
             _v_j = tf.identity(_v_j, name=name)
 
@@ -162,8 +168,7 @@ class CapsuleLayer(object):
                 c_ij = tf.nn.softmax(b_ij, dim=2)
 
                 # c_ij shape: (batch_size, num_caps_i, num_caps_j, 1, 1)
-                assert c_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1), \
-                    'Wrong shape of c_ij: {}'.format(c_ij.get_shape().as_list())
+                assert c_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1)
 
                 # Applying back-propagation at last epoch.
                 if iter_route == route_epoch - 1:
@@ -185,20 +190,17 @@ class CapsuleLayer(object):
                     v_j_reshaped = tf.reshape(v_j, shape=[-1, 1, num_caps_j, 1, vec_dim_j])
                     v_j_reshaped = tf.tile(v_j_reshaped, [1, num_caps_i, 1, 1, 1], name='v_j_reshaped')
                     # v_j_reshaped shape: (batch_size, num_caps_i, num_caps_j, 1, vec_dim_j)
-                    assert v_j_reshaped.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, vec_dim_j), \
-                        'Wrong shape of v_j_reshaped: {}'.format(v_j_reshaped.get_shape().as_list())
+                    assert v_j_reshaped.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, vec_dim_j)
 
                     # ( , , , 1, vec_dim_j) x ( , , , vec_dim_j, 1)
                     # -> squeeze -> (batch_size, num_caps_i, num_caps_j, 1, 1)
                     delta_b_ij = tf.matmul(v_j_reshaped, u_hat_stop, name='delta_b_ij')
                     # delta_b_ij shape: (batch_size, num_caps_i, num_caps_j, 1)
-                    assert delta_b_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1), \
-                        'Wrong shape of delta_b_ij: {}'.format(delta_b_ij.get_shape().as_list())
+                    assert delta_b_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1)
 
                     b_ij = tf.add(b_ij, delta_b_ij, name='b_ij')
                     # b_ij shape: (batch_size, num_caps_i, num_caps_j, 1, 1)
-                    assert b_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1), \
-                        'Wrong shape of b_ij: {}'.format(b_ij.get_shape().as_list())
+                    assert b_ij.get_shape() == (self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1)
 
         # v_j_out shape: (batch_size, num_caps_j, vec_dim_j, 1)
         assert v_j.get_shape() == (self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1), \

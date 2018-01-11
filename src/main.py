@@ -1,19 +1,20 @@
 from __future__ import division
 from __future__ import print_function
 
-import time
-import utils
-import os
-import sys
 import getopt
 import math
+import os
+import sys
+import time
 
-from PIL import Image
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+from PIL import Image
 from tqdm import tqdm
-from capsNet import CapsNet
+
 from config import config
+from model import utils
+from model.capsNet import CapsNet
 
 
 class Main(object):
@@ -146,7 +147,7 @@ class Main(object):
         train_writer.add_summary(summary_train, batch_counter)
         valid_writer.add_summary(summary_valid, batch_counter)
         utils.save_log(os.path.join(self.log_path, 'train_log.csv'),
-                       epoch_i+1, batch_counter, time.time()-self.start_time,
+                       epoch_i + 1, batch_counter, time.time() - self.start_time,
                        cost_train, cls_cost_train, rec_cost_train, acc_train, cost_valid,
                        cls_cost_valid, rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
 
@@ -245,7 +246,7 @@ class Main(object):
         if not silent:
             utils.thin_line()
             print('Saving {}...'.format(file_path))
-        utils.save_log(file_path, epoch_i+1, batch_counter, time.time()-self.start_time,
+        utils.save_log(file_path, epoch_i + 1, batch_counter, time.time() - self.start_time,
                        cost_train, cls_cost_train, rec_cost_train, acc_train, cost_valid,
                        cls_cost_valid, rec_cost_valid, acc_valid, self.cfg.WITH_RECONSTRUCTION)
         if not silent:

@@ -1,6 +1,7 @@
 import os
-import utils
+
 from config import config as cfg
+from model import utils
 
 
 # Download database

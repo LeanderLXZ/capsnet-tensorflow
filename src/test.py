@@ -1,12 +1,14 @@
-import time
-import utils
-import os
 import math
-from PIL import Image
+import os
+import time
+
 import numpy as np
-from tqdm import tqdm
 import tensorflow as tf
+from PIL import Image
+from tqdm import tqdm
+
 from config import config
+from model import utils
 
 
 class Test(object):

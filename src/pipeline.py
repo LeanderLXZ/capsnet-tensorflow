@@ -1,6 +1,6 @@
+from config_pipeline import cfg_3, cfg_4, cfg_5, cfg_6, cfg_7
 from main import Main
-from capsNet import CapsNet
-from config_pipeline import cfg_1, cfg_2, cfg_3, cfg_4, cfg_5, cfg_6, cfg_7
+from model.capsNet import CapsNet
 
 
 def training_capsnet(cfg):

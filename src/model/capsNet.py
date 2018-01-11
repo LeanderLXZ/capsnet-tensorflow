@@ -1,6 +1,6 @@
-import utils
-import capsule_layer
 import tensorflow as tf
+
+from model import utils, capsule_layer
 
 
 class CapsNet(object):
@@ -46,7 +46,7 @@ class CapsNet(object):
         max_square_plus = tf.square(tf.maximum(
             0., m_plus - utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON)))
         max_square_minus = tf.square(tf.maximum(
-            0., utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON) - m_minus))
+            0., utils.get_vec_length(logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON) -   m_minus))
         # max_square_plus & max_plus shape: (batch_size, num_caps)
         assert max_square_plus.get_shape() == (self.cfg.BATCH_SIZE, num_caps), \
             'Wrong shape of max_square_plus: {}'.format(max_square_plus.get_shape().as_list())
