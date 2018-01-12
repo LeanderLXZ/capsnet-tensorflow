@@ -76,7 +76,7 @@ __C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
 __C.RECONSTRUCTION_LOSS = 'mse'
 
 # Scaling for reconstruction loss
-__C.RECONSTRUCT_COST_SCALE = 0.392  # 0.0005*784=0.392
+__C.RECONSTRUCT_LOSS_SCALE = 0.392  # 0.0005*784=0.392
 
 # -------------------------------------------
 # Test

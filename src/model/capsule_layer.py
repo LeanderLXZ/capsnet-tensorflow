@@ -5,12 +5,13 @@ from __future__ import print_function
 import tensorflow as tf
 
 from model.activation_fn import ActivationFunc
+from model.model_base import ModelBase
 
 
 class Conv2Capsule(object):
 
-    def __init__(self, cfg, kernel_size=None, stride=None,
-                 n_kernel=None, vec_dim=None, padding=None):
+    def __init__(self, cfg, kernel_size=None, stride=None, n_kernel=None,
+                 vec_dim=None, padding=None, use_bias=True, var_on_cpu=False):
         """
         Initialize conv2caps layer.
 
@@ -20,6 +21,8 @@ class Conv2Capsule(object):
             n_kernel: depth of convolution kernel
             vec_dim: dimensions of vectors of capsule
             padding: padding type of convolution kernel
+            use_bias: add biases
+            var_on_cpu: save variables on CPU
         """
         self.cfg = cfg
         self.kernel_size = kernel_size
@@ -27,6 +30,8 @@ class Conv2Capsule(object):
         self.n_kernel = n_kernel
         self.vec_dim = vec_dim
         self.padding = padding
+        self.use_bias = use_bias
+        self.var_on_cpu = var_on_cpu
 
     def __call__(self, inputs):
         """
@@ -42,15 +47,39 @@ class Conv2Capsule(object):
         # Convolution layer
         activation_fn = tf.nn.relu
         weights_initializer = tf.contrib.layers.xavier_initializer()
-        biases_initializer = tf.zeros_initializer()
-        caps = tf.contrib.layers.conv2d(inputs=inputs,
-                                        num_outputs=self.n_kernel * self.vec_dim,
-                                        kernel_size=self.kernel_size,
-                                        stride=self.stride,
-                                        padding=self.padding,
-                                        activation_fn=activation_fn,
-                                        weights_initializer=weights_initializer,
-                                        biases_initializer=biases_initializer)
+
+        if self.var_on_cpu:
+            kernels = ModelBase.variable_on_cpu(
+                name='kernels',
+                shape=[self.kernel_size, self.kernel_size,
+                       inputs.get_shape().as_list()[3],
+                       self.n_kernel * self.vec_dim],
+                initializer=weights_initializer,
+                dtype=tf.float32)
+            caps = tf.nn.conv2d(
+                input=inputs,
+                filter=kernels,
+                strides=self.stride,
+                padding=self.padding)
+            if self.use_bias:
+                biases = ModelBase.variable_on_cpu(
+                    name='biases',
+                    shape=[self.n_kernel],
+                    initializer=tf.zeros_initializer(),
+                    dtype=tf.float32)
+                caps = tf.nn.bias_add(caps, biases)
+        else:
+            biases_initializer = \
+                tf.zeros_initializer() if self.use_bias else None
+            caps = tf.contrib.layers.conv2d(
+                inputs=inputs,
+                num_outputs=self.n_kernel * self.vec_dim,
+                kernel_size=self.kernel_size,
+                stride=self.stride,
+                padding=self.padding,
+                activation_fn=activation_fn,
+                weights_initializer=weights_initializer,
+                biases_initializer=biases_initializer)
 
         # Reshape and generating a capsule layer
         caps_shape = caps.get_shape().as_list()
@@ -72,7 +101,8 @@ class Conv2Capsule(object):
 
 class CapsuleLayer(object):
 
-    def __init__(self, cfg, num_caps=None, vec_dim=None, route_epoch=None):
+    def __init__(self, cfg, num_caps=None, vec_dim=None,
+                 route_epoch=None, var_on_cpu=False):
         """
         Initialize capsule layer.
 
@@ -80,11 +110,13 @@ class CapsuleLayer(object):
             num_caps: number of capsules of this layer
             vec_dim: dimensions of vectors of capsules
             route_epoch: number of dynamic routing iteration
+            var_on_cpu: save variables on CPU
         """
         self.cfg = cfg
         self.num_caps = num_caps
         self.vec_dim = vec_dim
         self.route_epoch = route_epoch
+        self.var_on_cpu = var_on_cpu
 
     def __call__(self, inputs):
         """
@@ -132,16 +164,22 @@ class CapsuleLayer(object):
         # Initializing weights
         weights_shape = [1, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i]
         # Reuse weights
-        weights = tf.Variable(
-            tf.truncated_normal(weights_shape, stddev=self.cfg.STDDEV,
-                                dtype=tf.float32), name='weights')
-        # weights_initializer = tf.truncated_normal_initializer(
-        #     stddev=self.cfg.STDDEV)
-        # weights = tf.get_variable(
-        #     'weights_{}'.format(idx), shape=weights_shape,
-        #     dtype=tf.float32, initializer=weights_initializer)
+        if self.var_on_cpu:
+            weights = ModelBase.variable_on_cpu(
+                name='weights',
+                shape=weights_shape,
+                initializer=tf.truncated_normal_initializer(
+                    stddev=self.cfg.WEIGHTS_STDDEV, dtype=tf.float32),
+                dtype=tf.float32)
+        else:
+            weights = tf.Variable(
+                tf.truncated_normal(weights_shape,
+                                    stddev=self.cfg.WEIGHTS_STDDEV,
+                                    dtype=tf.float32),
+                name='weights')
         weights = tf.tile(weights, [self.cfg.BATCH_SIZE, 1, 1, 1, 1])
-        # weights shape: (batch_size, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
+        # weights shape:
+        # (batch_size, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
         assert weights.get_shape() == (
             self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
 
@@ -158,8 +196,15 @@ class CapsuleLayer(object):
         u_hat_stop = tf.stop_gradient(u_hat, name='u_hat_stop')
 
         # Initializing b_ij
-        b_ij = tf.zeros([self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1],
-                        tf.float32, name='b_ij')
+        if self.var_on_cpu:
+            b_ij = ModelBase.variable_on_cpu(
+                name='b_ij',
+                shape=[self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1],
+                initializer=tf.zeros_initializer(),
+                dtype=tf.float32)
+        else:
+            b_ij = tf.zeros([self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1],
+                            tf.float32, name='b_ij')
         # b_ij shape: (batch_size, num_caps_i, num_caps_j, 1, 1)
         assert b_ij.get_shape() == (
             self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1)
@@ -199,18 +244,21 @@ class CapsuleLayer(object):
                 # Applying back-propagation at last epoch.
                 if iter_route == route_epoch - 1:
                     # c_ij_stop
-                    # Do not transfer the gradient of c_ij_stop during back-propagation
+                    # Do not transfer the gradient of c_ij_stop during
+                    # back-propagation.
                     c_ij_stop = tf.stop_gradient(c_ij, name='c_ij_stop')
 
-                    # Calculating s_j(using u_hat) and Applying activation function
-                    # Using u_hat but not u_hat_stop in order to transfer gradients.
+                    # Calculating s_j(using u_hat) and Applying activation
+                    # function. Using u_hat but not u_hat_stop in order to
+                    # transfer gradients.
                     v_j = _sum_and_activate(
                         u_hat, c_ij_stop, self.cfg, name='v_j')
 
                 # Do not apply back-propagation if it is not last epoch.
                 else:
-                    # Calculating s_j(using u_hat_stop) and Applying activation function
-                    # Using u_hat_stop so that the gradient will not be transferred to routing processes.
+                    # Calculating s_j(using u_hat_stop) and Applying activation
+                    # function. Using u_hat_stop so that the gradient will not
+                    # be transferred to routing processes.
                     v_j = _sum_and_activate(
                         u_hat_stop, c_ij, self.cfg, name='v_j')
 
@@ -221,9 +269,11 @@ class CapsuleLayer(object):
                         v_j_reshaped,
                         [1, num_caps_i, 1, 1, 1],
                         name='v_j_reshaped')
-                    # v_j_reshaped shape: (batch_size, num_caps_i, num_caps_j, 1, vec_dim_j)
+                    # v_j_reshaped shape:
+                    # (batch_size, num_caps_i, num_caps_j, 1, vec_dim_j)
                     assert v_j_reshaped.get_shape() == (
-                        self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, vec_dim_j)
+                        self.cfg.BATCH_SIZE, num_caps_i,
+                        num_caps_j, 1, vec_dim_j)
 
                     # ( , , , 1, vec_dim_j) x ( , , , vec_dim_j, 1)
                     # -> squeeze -> (batch_size, num_caps_i, num_caps_j, 1, 1)
@@ -239,6 +289,7 @@ class CapsuleLayer(object):
                         self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1)
 
         # v_j_out shape: (batch_size, num_caps_j, vec_dim_j, 1)
-        assert v_j.get_shape() == (self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1)
+        assert v_j.get_shape() == (
+            self.cfg.BATCH_SIZE, num_caps_j, vec_dim_j, 1)
 
         return v_j

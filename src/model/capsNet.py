@@ -11,10 +11,12 @@ from model.model_base import ModelBase
 
 class CapsNet(ModelBase):
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, var_on_cpu=False):
 
-        super(CapsNet, self).__init__(cfg)
+        super(CapsNet, self).__init__(cfg, var_on_cpu)
+
         self.cfg = cfg
+        self.var_on_cpu = var_on_cpu
 
     def _get_inputs(self, image_size, num_class):
         """
@@ -44,7 +46,8 @@ class CapsNet(ModelBase):
             output tensor of capsule layer
         """
         with tf.name_scope('caps_{}'.format(idx)):
-            _caps = capsule_layer.CapsuleLayer(self._cfg, **caps_param)
+            _caps = capsule_layer.CapsuleLayer(
+                self.cfg, **caps_param, var_on_cpu=self.var_on_cpu)
             return _caps(x)
 
     def _conv2caps_layer(self, x, conv2caps_params):
@@ -61,8 +64,8 @@ class CapsNet(ModelBase):
             # conv2caps_params:
             # {'kernel_size': None, 'stride': None, 'n_kernel': None,
             #  'vec_dim': None, 'padding': 'VALID'}
-            conv2caps_layer = \
-                capsule_layer.Conv2Capsule(self._cfg, **conv2caps_params)
+            conv2caps_layer = capsule_layer.Conv2Capsule(
+                self.cfg, **conv2caps_params, var_on_cpu=self.var_on_cpu)
             conv2caps = conv2caps_layer(x)
 
         return conv2caps
@@ -70,17 +73,21 @@ class CapsNet(ModelBase):
     def _multi_caps_layers(self, x):
         """
         Build multi-capsule layer.
+
+        Args:
+            x: input tensor
+        Returns:
+            multi capsule layers' output tensor
+                - shape: (batch_size, num_caps_j, vec_dim_j)
         """
         caps_layers = [x]
-        for iter_caps, caps_param in enumerate(self._cfg.CAPS_PARAMS):
+        for iter_caps, caps_param in enumerate(self.cfg.CAPS_PARAMS):
             # caps_param:
             #       {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
             caps_layer = self._caps_layer(
                 caps_layers[iter_caps], caps_param, idx=iter_caps)
             caps_layers.append(caps_layer)
 
-        # shape: (batch_size, num_caps_j, vec_dim_j, 1)
-        # -> (batch_size, num_caps_j, vec_dim_j)
         return tf.squeeze(caps_layers[-1])
 
     def _margin_loss(self, logits, labels, m_plus=0.9,
@@ -124,13 +131,19 @@ class CapsNet(ModelBase):
     def _decoder(self, inputs):
         """
         Decoder of reconstruction layer
+
+        Args:
+            inputs: input tensor
+        Return:
+            output tensor of decoder
         """
-        def _multi_layers(inputs_, params, layer_fn, reshape=False, cfg=None):
+        var_on_cpu = self.var_on_cpu
+
+        def _multi_layers(params, layer_fn, reshape=False, cfg=None):
             """
             Generate multi layers
 
             Args:
-                inputs_: input tensor/layer
                 params: parameters of layer
                 layer_fn: function of type of layer
                 reshape: if True, reshape inputs_ at beginning
@@ -144,10 +157,11 @@ class CapsNet(ModelBase):
                     (cfg.BATCH_SIZE, *cfg.CONV_RESHAPE_SIZE, 1),
                     name='reshape')]
             else:
-                layers_ = [inputs_]
+                layers_ = [inputs]
             for iter_l, param in enumerate(params):
-                layer_ = layer_fn(x=decoder_layers[iter_l],
-                                  **param, idx=iter_l)
+                layer_ = layer_fn(
+                    x=decoder_layers[iter_l], **param,
+                    idx=iter_l, var_on_cpu=var_on_cpu)
                 layers_.append(layer_)
             return layers_
 
@@ -156,14 +170,12 @@ class CapsNet(ModelBase):
             # Using full_connected layers
             if self.cfg.DECODER_TYPE == 'FC':
                 decoder_layers = _multi_layers(
-                    inputs,
                     self.cfg.DECODER_PARAMS,
                     self._fc_layer)
 
             # Using convolution layers
             elif self.cfg.DECODER_TYPE == 'CONV':
                 decoder_layers = _multi_layers(
-                    inputs,
                     self.cfg.DECODER_PARAMS,
                     self._conv_layer,
                     reshape=True,
@@ -172,7 +184,6 @@ class CapsNet(ModelBase):
             # Using transpose convolution layers
             elif self.cfg.DECODER_TYPE == 'CONV_T':
                 decoder_layers = _multi_layers(
-                    inputs,
                     self.cfg.DECODER_PARAMS,
                     self._conv_t_layer,
                     reshape=True,
@@ -206,7 +217,103 @@ class CapsNet(ModelBase):
 
         return _reconstructed
 
-    def inference(self, inputs):
+    def _loss_without_rec(self, logits, labels):
+        """
+        Calculate loss without reconstruction.
+
+        Args:
+            logits: output tensor of model
+                - shape (batch_size, num_caps, vec_dim)
+            labels: labels
+        Return:
+            total loss
+        """
+        # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
+        loss = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
+        loss = tf.identity(loss, name='loss')
+        tf.summary.scalar('loss', loss)
+
+        return loss
+
+    def _loss_with_rec(self, inputs, logits, labels, image_size):
+        """
+        Calculate loss with reconstruction.
+
+        Args:
+            inputs: input tensor
+                - shape (batch_size, *image_size)
+            logits: output tensor of model
+                - shape (batch_size, num_caps, vec_dim)
+            labels: labels
+            image_size: size of image, 3D
+        Return:
+            total loss
+        """
+        # Reconstruction layers
+        # reconstructed shape: (batch_size, image_size*image_size)
+        reconstructed = self._reconstruct_layers(logits, labels)
+        if self.cfg.SHOW_TRAINING_DETAILS:
+            reconstructed = tf.Print(
+                reconstructed, [tf.constant(4)],
+                message="\nRECONSTRUCTION layers passed...")
+
+        reconstructed_images = tf.reshape(
+            reconstructed, shape=[-1, *image_size], name='rec_images')
+
+        # Reconstruction loss
+        if self.cfg.RECONSTRUCTION_LOSS == 'mse':
+            inputs_flatten = tf.contrib.layers.flatten(inputs)
+            if self.cfg.DECODER_TYPE != 'FC':
+                reconstructed_ = tf.contrib.layers.flatten(reconstructed)
+            else:
+                reconstructed_ = reconstructed
+            reconstruct_loss = tf.reduce_mean(
+                tf.square(reconstructed_ - inputs_flatten))
+        elif self.cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
+            if self.cfg.DECODER_TYPE == 'FC':
+                inputs_ = tf.contrib.layers.flatten(inputs)
+            else:
+                inputs_ = inputs
+            reconstruct_loss = tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    labels=inputs_, logits=reconstructed))
+        else:
+            reconstruct_loss = None
+        reconstruct_loss = tf.identity(reconstruct_loss, name='rec_loss')
+        tf.summary.scalar('reconstruct_loss', reconstruct_loss)
+
+        # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
+        classifier_loss = self._margin_loss(
+            logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
+        classifier_loss = tf.identity(classifier_loss, name='classifier_loss')
+        tf.summary.scalar('classifier_loss', classifier_loss)
+
+        loss = classifier_loss + \
+            self.cfg.RECONSTRUCT_LOSS_SCALE * reconstruct_loss
+        loss = tf.identity(loss, name='loss')
+        tf.summary.scalar('loss', loss)
+        if self.cfg.SHOW_TRAINING_DETAILS:
+            loss = tf.Print(loss, [tf.constant(5)],
+                            message="\nloss calculated...")
+
+        return loss, classifier_loss, reconstruct_loss, reconstructed_images
+
+    def _total_loss(self, inputs, logits, labels, image_size):
+        """
+        Get Losses and reconstructed images tensor.
+        """
+        if self.cfg.WITH_RECONSTRUCTION:
+            loss, classifier_loss, reconstruct_loss, reconstructed_images = \
+                self._loss_with_rec(inputs, logits, labels, image_size)
+
+        else:
+            loss = self._loss_without_rec(logits, labels)
+            classifier_loss, reconstruct_loss, reconstructed_images = \
+                None, None, None
+
+        return loss, classifier_loss, reconstruct_loss, reconstructed_images
+
+    def _inference(self, inputs):
         """
         Build inference graph.
 
@@ -238,103 +345,6 @@ class CapsNet(ModelBase):
 
         return logits
 
-    def loss_without_rec(self, logits, labels):
-        """
-        Calculate cost without reconstruction
-
-        Args:
-            logits: output tensor of model
-                - shape (batch_size, num_caps, vec_dim)
-            labels: labels
-        Return:
-            total cost
-        """
-
-        # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-        cost = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
-        cost = tf.identity(cost, name='cost')
-        tf.summary.scalar('cost', cost)
-
-        return cost
-
-    def loss_with_rec(self, inputs, logits, labels, image_size):
-        """
-        Calculate cost with reconstruction
-
-        Args:
-            inputs: input tensor
-                - shape (batch_size, *image_size)
-            logits: output tensor of model
-                - shape (batch_size, num_caps, vec_dim)
-            labels: labels
-            image_size: size of image, 3D
-        Return:
-            total cost
-        """
-        # Reconstruction layers
-        # reconstructed shape: (batch_size, image_size*image_size)
-        reconstructed = self._reconstruct_layers(logits, labels)
-        if self.cfg.SHOW_TRAINING_DETAILS:
-            reconstructed = tf.Print(
-                reconstructed, [tf.constant(4)],
-                message="\nRECONSTRUCTION layers passed...")
-
-        reconstructed_images = tf.reshape(
-            reconstructed, shape=[-1, *image_size], name='rec_images')
-
-        # Reconstruction cost
-        if self.cfg.RECONSTRUCTION_LOSS == 'mse':
-            inputs_flatten = tf.contrib.layers.flatten(inputs)
-            if self.cfg.DECODER_TYPE != 'FC':
-                reconstructed_ = tf.contrib.layers.flatten(reconstructed)
-            else:
-                reconstructed_ = reconstructed
-            reconstruct_cost = tf.reduce_mean(
-                tf.square(reconstructed_ - inputs_flatten))
-        elif self.cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
-            if self.cfg.DECODER_TYPE == 'FC':
-                inputs_ = tf.contrib.layers.flatten(inputs)
-            else:
-                inputs_ = inputs
-            reconstruct_cost = tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    labels=inputs_, logits=reconstructed))
-        else:
-            reconstruct_cost = None
-        reconstruct_cost = tf.identity(reconstruct_cost, name='rec_cost')
-        tf.summary.scalar('reconstruct_cost', reconstruct_cost)
-
-        # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-        classifier_cost = self._margin_loss(
-            logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
-        classifier_cost = tf.identity(classifier_cost, name='classifier_cost')
-        tf.summary.scalar('classifier_cost', classifier_cost)
-
-        cost = classifier_cost + \
-            self.cfg.RECONSTRUCT_COST_SCALE * reconstruct_cost
-        cost = tf.identity(cost, name='cost')
-        tf.summary.scalar('cost', cost)
-        if self.cfg.SHOW_TRAINING_DETAILS:
-            cost = tf.Print(cost, [tf.constant(5)],
-                            message="\nCOST calculated...")
-
-        return cost, classifier_cost, reconstruct_cost, reconstructed_images
-
-    def loss(self, inputs, logits, labels, image_size):
-        """
-        Get loss/cost
-        """
-        if self.cfg.WITH_RECONSTRUCTION:
-            cost, classifier_cost, reconstruct_cost, reconstructed_images = \
-                self.loss_with_rec(inputs, logits, labels, image_size)
-
-        else:
-            cost = self.loss_without_rec(logits, labels)
-            classifier_cost, reconstruct_cost, reconstructed_images = \
-                None, None, None
-
-        return cost, classifier_cost, reconstruct_cost, reconstructed_images
-
     def build_graph(self, image_size=(None, None, None), num_class=None):
         """
         Build the graph of CapsNet.
@@ -343,9 +353,9 @@ class CapsNet(ModelBase):
             image_size: size of input images, should be 3 dimensional
             num_class: number of class of label
         Returns:
-            tuple of (train_graph, inputs, labels, cost,
-                      optimizer, accuracy, classifier_cost,
-                      reconstruct_cost, reconstructed_images)
+            tuple of (train_graph, inputs, labels, loss,
+                      optimizer, accuracy, classifier_loss,
+                      reconstruct_loss, reconstructed_images)
         """
         # Build graph
         tf.reset_default_graph()
@@ -357,27 +367,27 @@ class CapsNet(ModelBase):
             inputs, labels = self._get_inputs(image_size, num_class)
 
             # Build inference Graph
-            logits = self.inference(inputs)
+            logits = self._inference(inputs)
 
             # Build reconstruction part
-            cost, classifier_cost, reconstruct_cost, reconstructed_images = \
-                self.loss(inputs, logits, labels, image_size)
+            loss, classifier_loss, reconstruct_loss, reconstructed_images = \
+                self._total_loss(inputs, logits, labels, image_size)
 
             # Optimizer
             if self.cfg.SHOW_TRAINING_DETAILS:
-                cost = tf.Print(cost, [tf.constant(6)],
-                                message="\n[6] Updating GRADIENTS...")
+                loss = tf.Print(loss, [tf.constant(6)],
+                                message="\nUpdating GRADIENTS...")
             optimizer = tf.train.AdamOptimizer(
-                self.cfg.LEARNING_RATE).minimize(cost)
+                self.cfg.LEARNING_RATE).minimize(loss)
 
             # Accuracy
             correct_pred = tf.equal(
                 tf.argmax(utils.get_vec_length(
-                    logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON)
-                    , axis=1), tf.argmax(labels, axis=1))
+                    logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON),
+                    axis=1), tf.argmax(labels, axis=1))
             accuracy = tf.reduce_mean(tf.cast(
                 correct_pred, tf.float32), name='accuracy')
             tf.summary.scalar('accuracy', accuracy)
 
-        return train_graph, inputs, labels, cost, optimizer, accuracy, \
-            classifier_cost, reconstruct_cost, reconstructed_images
+        return train_graph, inputs, labels, loss, optimizer, accuracy, \
+            classifier_loss, reconstruct_loss, reconstructed_images

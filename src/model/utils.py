@@ -179,9 +179,9 @@ def get_batches(x, y, batch_size):
         yield x[start:end], y[start:end]
 
 
-def print_status(epoch_i, epochs, batch_counter, start_time, cost_train,
-                 cls_cost_train, rec_cost_train, acc_train, cost_valid,
-                 cls_cost_valid, rec_cost_valid, acc_valid, with_rec):
+def print_status(epoch_i, epochs, batch_counter, start_time, loss_train,
+                 cls_loss_train, rec_loss_train, acc_train, loss_valid,
+                 cls_loss_valid, rec_loss_valid, acc_valid, with_rec):
     """
     Print information while training.
     """
@@ -189,27 +189,27 @@ def print_status(epoch_i, epochs, batch_counter, start_time, cost_train,
         print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
               'Batch: {} |'.format(batch_counter),
               'Time: {:.2f}s |'.format(time.time() - start_time),
-              'T_Lo: {:.4f} |'.format(cost_train),
-              'T_Cls_Lo: {:.4f} |'.format(cls_cost_train),
-              'T_Rec_Lo: {:.4f} |'.format(rec_cost_train),
+              'T_Lo: {:.4f} |'.format(loss_train),
+              'T_Cls_Lo: {:.4f} |'.format(cls_loss_train),
+              'T_Rec_Lo: {:.4f} |'.format(rec_loss_train),
               'T_Acc: {:.2f}% |'.format(acc_train * 100),
-              'V_Lo: {:.4f} |'.format(cost_valid),
-              'V_Cls_Lo: {:.4f} |'.format(cls_cost_valid),
-              'V_Rec_Lo: {:.4f} |'.format(rec_cost_valid),
+              'V_Lo: {:.4f} |'.format(loss_valid),
+              'V_Cls_Lo: {:.4f} |'.format(cls_loss_valid),
+              'V_Rec_Lo: {:.4f} |'.format(rec_loss_valid),
               'V_Acc: {:.2f}% |'.format(acc_valid * 100))
     else:
         print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
               'Batch: {} |'.format(batch_counter),
               'Time: {:.2f}s |'.format(time.time() - start_time),
-              'Train_Loss: {:.4f} |'.format(cost_train),
+              'Train_Loss: {:.4f} |'.format(loss_train),
               'Train_Acc: {:.2f}% |'.format(acc_train * 100),
-              'Valid_Loss: {:.4f} |'.format(cost_valid),
+              'Valid_Loss: {:.4f} |'.format(loss_valid),
               'Valid_Acc: {:.2f}% |'.format(acc_valid * 100))
 
 
 def print_full_set_eval(epoch_i, epochs, batch_counter, start_time,
-                        cost_train, cls_cost_train, rec_cost_train, acc_train,
-                        cost_valid, cls_cost_valid, rec_cost_valid, acc_valid,
+                        loss_train, cls_loss_train, rec_loss_train, acc_train,
+                        loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
                         with_full_set_eval, with_rec):
     """
     Print information of full set evaluation.
@@ -220,15 +220,15 @@ def print_full_set_eval(epoch_i, epochs, batch_counter, start_time,
           'Time: {:.2f}s |'.format(time.time() - start_time))
     thin_line()
     if with_full_set_eval:
-        print('Full_Set_Train_Loss: {:.4f}'.format(cost_train))
+        print('Full_Set_Train_Loss: {:.4f}'.format(loss_train))
         if with_rec:
-            print('Train_Classifier_Loss: {:.4f}\n'.format(cls_cost_train),
-                  'Train_Reconstruction_Loss: {:.4f}'.format(rec_cost_train))
+            print('Train_Classifier_Loss: {:.4f}\n'.format(cls_loss_train),
+                  'Train_Reconstruction_Loss: {:.4f}'.format(rec_loss_train))
         print('Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
-    print('Full_Set_Valid_Loss: {:.4f}'.format(cost_valid))
+    print('Full_Set_Valid_Loss: {:.4f}'.format(loss_valid))
     if with_rec:
-        print('Valid_Classifier_Loss: {:.4f}\n'.format(cls_cost_valid),
-              'Reconstruction_Valid_Loss: {:.4f}'.format(rec_cost_valid))
+        print('Valid_Classifier_Loss: {:.4f}\n'.format(cls_loss_valid),
+              'Reconstruction_Valid_Loss: {:.4f}'.format(rec_loss_valid))
     print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid * 100))
 
 
@@ -252,18 +252,19 @@ def save_config_log(file_path, cfg):
 
 
 def save_log(file_path, epoch_i, batch_counter, using_time,
-             cost_train, cls_cost_train, rec_cost_train, acc_train,
-             cost_valid, cls_cost_valid, rec_cost_valid, acc_valid, with_rec):
+             loss_train, cls_loss_train, rec_loss_train, acc_train,
+             loss_valid, cls_loss_valid, rec_loss_valid, acc_valid, with_rec):
     """
     Save losses and accuracies while training.
     """
     if with_rec:
         if not os.path.isfile(file_path):
             with open(file_path, 'w') as f:
-                header = ['Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss',
-                          'Train_Classifier_loss', 'Train_Reconstruction_Loss',
-                          'Train_Accuracy', 'Valid_Loss', 'Valid_Classifier_loss',
-                          'Valid_Reconstruction_Loss', 'Valid_Accuracy']
+                header = [
+                    'Local_Time', 'Epoch', 'Batch', 'Time', 'Train_Loss',
+                    'Train_Classifier_loss', 'Train_Reconstruction_Loss',
+                    'Train_Accuracy', 'Valid_Loss', 'Valid_Classifier_loss',
+                    'Valid_Reconstruction_Loss', 'Valid_Accuracy']
                 writer = csv.writer(f)
                 writer.writerow(header)
 
@@ -271,8 +272,8 @@ def save_log(file_path, epoch_i, batch_counter, using_time,
             local_time = time.strftime(
                 '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
             log = [local_time, epoch_i, batch_counter, using_time,
-                   cost_train, cls_cost_train, rec_cost_train, acc_train,
-                   cost_valid, cls_cost_valid, rec_cost_valid, acc_valid]
+                   loss_train, cls_loss_train, rec_loss_train, acc_train,
+                   loss_valid, cls_loss_valid, rec_loss_valid, acc_valid]
             writer = csv.writer(f)
             writer.writerow(log)
     else:
@@ -287,13 +288,13 @@ def save_log(file_path, epoch_i, batch_counter, using_time,
             local_time = time.strftime(
                 '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
             log = [local_time, epoch_i, batch_counter, using_time,
-                   cost_train, acc_train, cost_valid, acc_valid]
+                   loss_train, acc_train, loss_valid, acc_valid]
             writer = csv.writer(f)
             writer.writerow(log)
 
 
-def save_test_log(file_path, cost_test, acc_test,
-                  cls_cost_test, rec_cost_test, with_rec):
+def save_test_log(file_path, loss_test, acc_test,
+                  cls_loss_test, rec_loss_test, with_rec):
     """
     Save losses and accuracies of testing.
     """
@@ -307,11 +308,11 @@ def save_test_log(file_path, cost_test, acc_test,
         f.write('=====================================================\n')
         f.write('Time: {}\n'.format(local_time))
         f.write('------------------------------------------------------\n')
-        f.write('Test_Loss: {:.4f}\n'.format(cost_test))
+        f.write('Test_Loss: {:.4f}\n'.format(loss_test))
         f.write('Test_Accuracy: {:.2f}%\n'.format(acc_test * 100))
         if with_rec:
-            f.write('Test_Train_Loss: {:.4f}\n'.format(cls_cost_test))
-            f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_cost_test))
+            f.write('Test_Train_Loss: {:.4f}\n'.format(cls_loss_test))
+            f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_loss_test))
         f.write('=====================================================')
 
 
@@ -329,9 +330,9 @@ class DLProgress(tqdm):
         Args:
             block_num: A count of blocks transferred so far
             block_size: Block size in bytes
-            total_size: The total size of the file. This may be -1 on older FTP
-                        servers which do not return a file size in response to
-                        a retrieval request.
+            total_size: The total size of the file. This may be -1 on older
+                        FTP servers which do not return a file size in response
+                        to a retrieval request.
         """
         self.total = total_size
         self.update((block_num - self.last_block) * block_size)

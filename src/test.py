@@ -65,7 +65,7 @@ class Test(object):
 
     def _get_tensors(self, loaded_graph):
         """
-        Get inputs, labels, cost, and accuracy tensor from <loaded_graph>
+        Get inputs, labels, loss, and accuracy tensor from <loaded_graph>
         """
         with loaded_graph.as_default():
 
@@ -74,16 +74,16 @@ class Test(object):
 
             inputs_ = loaded_graph.get_tensor_by_name("inputs:0")
             labels_ = loaded_graph.get_tensor_by_name("labels:0")
-            cost_ = loaded_graph.get_tensor_by_name("cost:0")
+            loss_ = loaded_graph.get_tensor_by_name("loss:0")
             accuracy_ = loaded_graph.get_tensor_by_name("accuracy:0")
 
             if self.cfg.TEST_WITH_RECONSTRUCTION:
-                cls_cost_ = loaded_graph.get_tensor_by_name("classifier_cost:0")
-                rec_cost_ = loaded_graph.get_tensor_by_name("rec_cost:0")
+                cls_loss_ = loaded_graph.get_tensor_by_name("classifier_loss:0")
+                rec_loss_ = loaded_graph.get_tensor_by_name("rec_loss:0")
                 rec_images_ = loaded_graph.get_tensor_by_name("rec_images:0")
-                return inputs_, labels_, cost_, accuracy_, cls_cost_, rec_cost_, rec_images_
+                return inputs_, labels_, loss_, accuracy_, cls_loss_, rec_loss_, rec_images_
             else:
-                return inputs_, labels_, cost_, accuracy_
+                return inputs_, labels_, loss_, accuracy_
 
     def _save_images(self, sess, rec_images, inputs, labels,
                      x_batch, y_batch, batch_counter):
@@ -148,15 +148,15 @@ class Test(object):
         save_image_path = os.path.join(self.test_image_path, 'batch_{}.jpg'.format(batch_counter))
         new_im.save(save_image_path)
 
-    def _eval_on_batches(self, sess, inputs, labels, cost, accuracy,
-                         cls_cost, rec_cost, rec_images,  x, y, n_batch):
+    def _eval_on_batches(self, sess, inputs, labels, loss, accuracy,
+                         cls_loss, rec_loss, rec_images,  x, y, n_batch):
         """
         Calculate losses and accuracies of full train set.
         """
-        cost_all = []
+        loss_all = []
         acc_all = []
-        cls_cost_all = []
-        rec_cost_all = []
+        cls_loss_all = []
+        rec_loss_all = []
         batch_counter = 0
         _batch_generator = utils.get_batches(x, y, self.cfg.TEST_BATCH_SIZE)
 
@@ -164,12 +164,12 @@ class Test(object):
             for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
                 batch_counter += 1
                 x_batch, y_batch = next(_batch_generator)
-                cost_i, cls_cost_i, rec_cost_i, acc_i = \
-                    sess.run([cost, cls_cost, rec_cost, accuracy],
+                loss_i, cls_loss_i, rec_loss_i, acc_i = \
+                    sess.run([loss, cls_loss, rec_loss, accuracy],
                              feed_dict={inputs: x_batch, labels: y_batch})
-                cost_all.append(cost_i)
-                cls_cost_all.append(cls_cost_i)
-                rec_cost_all.append(rec_cost_i)
+                loss_all.append(loss_i)
+                cls_loss_all.append(cls_loss_i)
+                rec_loss_all.append(rec_loss_i)
                 acc_all.append(acc_i)
 
                 # Save reconstruct images
@@ -178,23 +178,23 @@ class Test(object):
                         self._save_images(sess, rec_images, inputs, labels,
                                           x_batch, y_batch, batch_counter)
 
-            cls_cost = sum(cls_cost_all) / len(cls_cost_all)
-            rec_cost = sum(rec_cost_all) / len(rec_cost_all)
+            cls_loss = sum(cls_loss_all) / len(cls_loss_all)
+            rec_loss = sum(rec_loss_all) / len(rec_loss_all)
 
         else:
             for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
                 x_batch, y_batch = next(_batch_generator)
-                cost_i, acc_i = \
-                    sess.run([cost, accuracy],
+                loss_i, acc_i = \
+                    sess.run([loss, accuracy],
                              feed_dict={inputs: x_batch, labels: y_batch})
-                cost_all.append(cost_i)
+                loss_all.append(loss_i)
                 acc_all.append(acc_i)
-            cls_cost, rec_cost = None, None
+            cls_loss, rec_loss = None, None
 
-        cost = sum(cost_all) / len(cost_all)
+        loss = sum(loss_all) / len(loss_all)
         accuracy = sum(acc_all) / len(acc_all)
 
-        return cost, cls_cost, rec_cost, accuracy
+        return loss, cls_loss, rec_loss, accuracy
 
     def test(self):
         """
@@ -212,11 +212,11 @@ class Test(object):
 
             # Get Tensors from loaded model
             if self.cfg.TEST_WITH_RECONSTRUCTION:
-                inputs, labels, cost, accuracy, \
-                    cls_cost, rec_cost, rec_images = self._get_tensors(loaded_graph)
+                inputs, labels, loss, accuracy, \
+                    cls_loss, rec_loss, rec_images = self._get_tensors(loaded_graph)
             else:
-                inputs, labels, cost, accuracy = self._get_tensors(loaded_graph)
-                cls_cost, rec_cost, rec_images = None, None, None
+                inputs, labels, loss, accuracy = self._get_tensors(loaded_graph)
+                cls_loss, rec_loss, rec_images = None, None, None
 
             utils.thick_line()
             print('Testing on test set...')
@@ -224,22 +224,22 @@ class Test(object):
             utils.thin_line()
             print('Calculating loss and accuracy of test set...')
 
-            cost_test, cls_cost_test, rec_cost_test, acc_test = \
-                self._eval_on_batches(sess, inputs, labels, cost, accuracy,
-                                      cls_cost, rec_cost, rec_images,
+            loss_test, cls_loss_test, rec_loss_test, acc_test = \
+                self._eval_on_batches(sess, inputs, labels, loss, accuracy,
+                                      cls_loss, rec_loss, rec_images,
                                       self.x_test, self.y_test, self.n_batch_test)
 
             # Print losses and accuracy
             utils.thin_line()
-            print('Test_Loss: {:.4f}'.format(cost_test))
+            print('Test_Loss: {:.4f}'.format(loss_test))
             if self.cfg.TEST_WITH_RECONSTRUCTION:
-                print('Test_Classifier_Loss: {:.4f}\n'.format(cls_cost_test),
-                      'Test_Reconstruction_Loss: {:.4f}'.format(rec_cost_test))
+                print('Test_Classifier_Loss: {:.4f}\n'.format(cls_loss_test),
+                      'Test_Reconstruction_Loss: {:.4f}'.format(rec_loss_test))
             print('Test_Accuracy: {:.2f}%'.format(acc_test * 100))
 
             # Save test log
-            utils.save_test_log(self.test_log_path, cost_test, acc_test, cls_cost_test,
-                                rec_cost_test, self.cfg.TEST_WITH_RECONSTRUCTION)
+            utils.save_test_log(self.test_log_path, loss_test, acc_test, cls_loss_test,
+                                rec_loss_test, self.cfg.TEST_WITH_RECONSTRUCTION)
 
             utils.thin_line()
             print('Testing finished! Using time: {:.2f}'.format(time.time() - start_time))
