@@ -96,10 +96,11 @@ class Main(object):
         utils.thick_line()
         print('Building graph...')
         tf.reset_default_graph()
-        self.train_graph, self.inputs, self.labels, self.loss, self.optimizer, \
-            self.accuracy, self.cls_loss, self.rec_loss, self.rec_images = \
-            model.build_graph(image_size=self.x_train.shape[1:],
-                              num_class=self.y_train.shape[1])
+        self.train_graph, self.inputs, self.labels, self.optimizer, \
+            self.saver, self.summary, self.loss, self.accuracy, self.cls_loss, \
+            self.rec_loss, self.rec_images = model.build_graph(
+                image_size=self.x_train.shape[1:],
+                num_class=self.y_train.shape[1])
 
     def _display_status(self, sess, x_batch, y_batch, epoch_i, batch_counter):
         """
@@ -140,7 +141,7 @@ class Main(object):
             self.cfg.WITH_RECONSTRUCTION)
 
     def _save_logs(self, sess, train_writer, valid_writer,
-                   merged, x_batch, y_batch, epoch_i, batch_counter):
+                   x_batch, y_batch, epoch_i, batch_counter):
         """
         Save logs and ddd summaries to TensorBoard while training.
         """
@@ -152,23 +153,23 @@ class Main(object):
         if self.cfg.WITH_RECONSTRUCTION:
             summary_train, loss_train, cls_loss_train, \
                 rec_loss_train, acc_train = \
-                sess.run([merged, self.loss, self.cls_loss,
+                sess.run([self.summary, self.loss, self.cls_loss,
                           self.rec_loss, self.accuracy],
                          feed_dict={self.inputs: x_batch,
                                     self.labels: y_batch})
             summary_valid, loss_valid, cls_loss_valid, \
                 rec_loss_valid, acc_valid = \
-                sess.run([merged, self.loss, self.cls_loss,
+                sess.run([self.summary, self.loss, self.cls_loss,
                           self.rec_loss, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch,
                                     self.labels: y_valid_batch})
         else:
             summary_train, loss_train, acc_train = \
-                sess.run([merged, self.loss, self.accuracy],
+                sess.run([self.summary, self.loss, self.accuracy],
                          feed_dict={self.inputs: x_batch,
                                     self.labels: y_batch})
             summary_valid, loss_valid, acc_valid = \
-                sess.run([merged, self.loss, self.accuracy],
+                sess.run([self.summary, self.loss, self.accuracy],
                          feed_dict={self.inputs: x_valid_batch,
                                     self.labels: y_valid_batch})
             cls_loss_train, rec_loss_train, cls_loss_valid, rec_loss_valid = \
@@ -513,15 +514,11 @@ class Main(object):
             print('Training...')
 
             # Merge all the summaries and create writers
-            merged = tf.summary.merge_all()
             train_log_path = os.path.join(self.summary_path, 'train')
             valid_log_path = os.path.join(self.summary_path, 'valid')
             utils.check_dir([train_log_path, valid_log_path])
             train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
             valid_writer = tf.summary.FileWriter(valid_log_path)
-
-            # Model saver
-            saver = tf.train.Saver(max_to_keep=self.cfg.MAX_TO_KEEP_CKP)
 
             sess.run(tf.global_variables_initializer())
             batch_counter = 0
@@ -555,7 +552,7 @@ class Main(object):
                         if self.cfg.SAVE_LOG_STEP is not None:
                             if batch_counter % self.cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(
-                                    sess, train_writer, valid_writer, merged,
+                                    sess, train_writer, valid_writer,
                                     x_batch, y_batch, epoch_i, batch_counter)
 
                         # Save reconstruction images
@@ -569,7 +566,7 @@ class Main(object):
                         # Save model
                         if self.cfg.SAVE_MODEL_MODE == 'per_batch':
                             if batch_counter % self.cfg.SAVE_MODEL_STEP == 0:
-                                self._save_model(sess, saver, batch_counter)
+                                self._save_model(sess, self.saver, batch_counter)
 
                         # Evaluate on full set
                         if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
@@ -599,7 +596,7 @@ class Main(object):
                         if self.cfg.SAVE_LOG_STEP is not None:
                             if batch_counter % self.cfg.SAVE_LOG_STEP == 0:
                                 self._save_logs(
-                                    sess, train_writer, valid_writer, merged,
+                                    sess, train_writer, valid_writer,
                                     x_batch, y_batch, epoch_i, batch_counter)
 
                         # Save reconstruction images
@@ -615,7 +612,7 @@ class Main(object):
                         if self.cfg.SAVE_MODEL_MODE == 'per_batch':
                             if batch_counter % self.cfg.SAVE_MODEL_STEP == 0:
                                 self._save_model(
-                                    sess, saver, batch_counter, silent=True)
+                                    sess, self.saver, batch_counter, silent=True)
 
                         # Evaluate on full set
                         if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
@@ -625,7 +622,7 @@ class Main(object):
 
                 if self.cfg.SAVE_MODEL_MODE == 'per_epoch':
                     if (epoch_i+1) % self.cfg.SAVE_MODEL_STEP == 0:
-                        self._save_model(sess, saver, epoch_i)
+                        self._save_model(sess, self.saver, epoch_i)
                 if self.cfg.FULL_SET_EVAL_MODE == 'per_epoch':
                     if (epoch_i+1) % self.cfg.FULL_SET_EVAL_MODE == 0:
                         self._eval_on_full_set(sess, epoch_i, batch_counter)

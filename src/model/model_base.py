@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy as np
 
 
 class ModelBase(object):
@@ -26,7 +27,8 @@ class ModelBase(object):
             Variable Tensor
         """
         with tf.device('/cpu:0'):
-            var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
+            var = tf.get_variable(
+                name, shape, initializer=initializer, dtype=dtype)
         return var
 
     @staticmethod
@@ -113,7 +115,8 @@ class ModelBase(object):
                     dtype=tf.float32)
                 return activation_fn(tf.add(tf.matmul(x, weights), biases))
             else:
-                biases_initializer = tf.zeros_initializer() if use_bias else None
+                biases_initializer = tf.zeros_initializer() \
+                    if use_bias else None
                 return tf.contrib.layers.fully_connected(
                     inputs=x,
                     num_outputs=out_dim,
@@ -158,11 +161,15 @@ class ModelBase(object):
             if self.var_on_cpu:
                 kernels = self.variable_on_cpu(
                     name='kernels',
-                    shape=[kernel_size, kernel_size, x.get_shape().as_list()[3], n_kernel],
+                    shape=[kernel_size, kernel_size,
+                           x.get_shape().as_list()[3], n_kernel],
                     initializer=tf.truncated_normal_initializer(
                         stddev=self.cfg.CONV_KERNEL_STDDEV, dtype=tf.float32),
                     dtype=tf.float32)
-                conv = tf.nn.conv2d(input=x, filter=kernels, strides=stride, padding=padding)
+                conv = tf.nn.conv2d(input=x,
+                                    filter=kernels,
+                                    strides=stride,
+                                    padding=padding)
                 if use_bias:
                     biases = self.variable_on_cpu(
                         name='biases',
@@ -173,7 +180,8 @@ class ModelBase(object):
                 return activation_fn(conv)
             else:
                 weights_initializer = tf.contrib.layers.xavier_initializer()
-                biases_initializer = tf.zeros_initializer() if use_bias else None
+                biases_initializer = tf.zeros_initializer() \
+                    if use_bias else None
                 return tf.contrib.layers.conv2d(
                     inputs=x,
                     num_outputs=n_kernel,
@@ -231,3 +239,29 @@ class ModelBase(object):
                 conv_layers.append(conv_layer)
 
         return conv_layers[-1]
+
+    def _optimizer(self, opt_name='adam', n_train_samples=None):
+
+        if opt_name == 'adam':
+            return tf.train.AdamOptimizer(self.cfg.LEARNING_RATE)
+
+        elif opt_name == 'momentum':
+            n_batches_per_epoch = \
+                n_train_samples // self.cfg.GPU_BATCH_SIZE * self.cfg.GPU_NUMBER
+            boundaries = [
+                n_batches_per_epoch * x
+                for x in np.array(self.cfg.LR_BOUNDARIES, dtype=np.int64)
+                ]
+            staged_lr = [self.cfg.LEARNING_RATE * x
+                         for x in self.cfg.LR_STAGE]
+            learning_rate = tf.train.piecewise_constant(
+                tf.train.get_global_step(),
+                boundaries, staged_lr)
+            return tf.train.MomentumOptimizer(
+                learning_rate=learning_rate, momentum=self.cfg.MOMENTUM)
+
+        elif opt_name == 'gd':
+            return tf.train.GradientDescentOptimizer(self.cfg.LEARNING_RATE)
+
+        else:
+            raise ValueError('Wrong optimizer name!')

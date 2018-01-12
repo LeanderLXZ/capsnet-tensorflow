@@ -313,13 +313,14 @@ class CapsNet(ModelBase):
 
         return loss, classifier_loss, reconstruct_loss, reconstructed_images
 
-    def _inference(self, inputs):
+    def _inference(self, inputs, labels):
         """
         Build inference graph.
 
         Args:
             inputs: input tensor
                 - shape (batch_size, *image_size)
+            labels: labels tensor
         Return:
             logits: output tensor of model
                 - shape: (batch_size, num_caps, vec_dim)
@@ -343,7 +344,16 @@ class CapsNet(ModelBase):
             logits = tf.Print(logits, [tf.constant(3)],
                               message="\nCAPSULE layers passed...")
 
-        return logits
+        # Accuracy
+        correct_pred = tf.equal(
+            tf.argmax(utils.get_vec_length(
+                logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON),
+                axis=1), tf.argmax(labels, axis=1))
+        accuracy = tf.reduce_mean(tf.cast(
+            correct_pred, tf.float32), name='accuracy')
+        tf.summary.scalar('accuracy', accuracy)
+
+        return logits, accuracy
 
     def build_graph(self, image_size=(None, None, None), num_class=None):
         """
@@ -357,7 +367,6 @@ class CapsNet(ModelBase):
                       optimizer, accuracy, classifier_loss,
                       reconstruct_loss, reconstructed_images)
         """
-        # Build graph
         tf.reset_default_graph()
         train_graph = tf.Graph()
 
@@ -367,7 +376,7 @@ class CapsNet(ModelBase):
             inputs, labels = self._get_inputs(image_size, num_class)
 
             # Build inference Graph
-            logits = self._inference(inputs)
+            logits, accuracy = self._inference(inputs, labels)
 
             # Build reconstruction part
             loss, classifier_loss, reconstruct_loss, reconstructed_images = \
@@ -377,17 +386,16 @@ class CapsNet(ModelBase):
             if self.cfg.SHOW_TRAINING_DETAILS:
                 loss = tf.Print(loss, [tf.constant(6)],
                                 message="\nUpdating GRADIENTS...")
-            optimizer = tf.train.AdamOptimizer(
-                self.cfg.LEARNING_RATE).minimize(loss)
+            opt = self._optimizer(opt_name=self.cfg.OPTIMIZER)
+            train_op = opt.minimize(loss)
 
-            # Accuracy
-            correct_pred = tf.equal(
-                tf.argmax(utils.get_vec_length(
-                    logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON),
-                    axis=1), tf.argmax(labels, axis=1))
-            accuracy = tf.reduce_mean(tf.cast(
-                correct_pred, tf.float32), name='accuracy')
-            tf.summary.scalar('accuracy', accuracy)
+            # Create a saver.
+            saver = tf.train.Saver(tf.global_variables(),
+                                   max_to_keep=self.cfg.MAX_TO_KEEP_CKP)
 
-        return train_graph, inputs, labels, loss, optimizer, accuracy, \
-            classifier_loss, reconstruct_loss, reconstructed_images
+            # Build the summary operation from the last tower summaries.
+            summary_op = tf.summary.merge_all()
+
+            return train_graph, inputs, labels, train_op, saver, \
+                summary_op, loss, accuracy, classifier_loss, \
+                reconstruct_loss, reconstructed_images
