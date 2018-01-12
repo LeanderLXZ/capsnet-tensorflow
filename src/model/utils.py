@@ -68,8 +68,11 @@ def check_dir(path_list):
 def _read32(bytestream):
     """
     Read 32-bit integer from bytesteam
-    :param bytestream: A bytestream
-    :return: 32-bit integer
+
+    Args:
+        bytestream: A bytestream
+    Returns:
+        32-bit integer
     """
     dt = np.dtype(np.uint32).newbyteorder('>')
     return np.frombuffer(bytestream.read(4), dtype=dt)[0]
@@ -99,7 +102,8 @@ def extract_image(save_path, extract_path):
 
             magic = _read32(bytestream)
             if magic != 2051:
-                raise ValueError('Invalid magic number {} in file: {}'.format(magic, f.name))
+                raise ValueError(
+                    'Invalid magic number {} in file: {}'.format(magic, f.name))
             num_images = _read32(bytestream)
             rows = _read32(bytestream)
             cols = _read32(bytestream)
@@ -122,8 +126,9 @@ def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
 
             magic = _read32(bytestream)
             if magic != 2049:
-                raise ValueError('Invalid magic number %d in MNIST label file: %s' %
-                                 (magic, f.name))
+                raise ValueError(
+                    'Invalid magic number %d in MNIST label file: %s' %
+                    (magic, f.name))
             num_items = _read32(bytestream)
             buf = bytestream.read(num_items)
             labels = np.frombuffer(buf, dtype=np.uint8)
@@ -132,7 +137,8 @@ def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
             save_data_to_pickle(labels, extract_path + '.p')
 
 
-def download_and_extract_mnist(url, save_path, extract_path, database_name, data_type):
+def download_and_extract_mnist(url, save_path, extract_path,
+                               database_name, data_type):
 
     if not os.path.exists(save_path):
         with DLProgress(unit='B', unit_scale=True, miniters=1,
@@ -143,11 +149,13 @@ def download_and_extract_mnist(url, save_path, extract_path, database_name, data
         if data_type == 'image':
             extract_image(save_path, extract_path)
         elif data_type == 'label':
-            extract_labels(save_path, extract_path, one_hot=True, num_classes=10)
+            extract_labels(
+                save_path, extract_path, one_hot=True, num_classes=10)
         else:
             raise ValueError('Wrong data_type!')
     except Exception as err:
-        shutil.rmtree(extract_path)  # Remove extraction folder if there is an error
+        # Remove extraction folder if there is an error
+        shutil.rmtree(extract_path)
         raise err
 
     # Remove compressed data
@@ -171,9 +179,9 @@ def get_batches(x, y, batch_size):
         yield x[start:end], y[start:end]
 
 
-def print_status(epoch_i, epochs, batch_counter, start_time,
-                 cost_train, cls_cost_train, rec_cost_train, acc_train,
-                 cost_valid, cls_cost_valid, rec_cost_valid, acc_valid, with_rec):
+def print_status(epoch_i, epochs, batch_counter, start_time, cost_train,
+                 cls_cost_train, rec_cost_train, acc_train, cost_valid,
+                 cls_cost_valid, rec_cost_valid, acc_valid, with_rec):
     """
     Print information while training.
     """
@@ -233,7 +241,8 @@ def save_config_log(file_path, cfg):
     print('Saving {}...'.format(file_path))
 
     with open(file_path, 'a') as f:
-        local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+        local_time = time.strftime(
+            '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
         f.write('=====================================================\n')
         f.write('Time: {}\n'.format(local_time))
         f.write('-----------------------------------------------------\n')
@@ -259,7 +268,8 @@ def save_log(file_path, epoch_i, batch_counter, using_time,
                 writer.writerow(header)
 
         with open(file_path, 'a') as f:
-            local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+            local_time = time.strftime(
+                '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
             log = [local_time, epoch_i, batch_counter, using_time,
                    cost_train, cls_cost_train, rec_cost_train, acc_train,
                    cost_valid, cls_cost_valid, rec_cost_valid, acc_valid]
@@ -274,14 +284,16 @@ def save_log(file_path, epoch_i, batch_counter, using_time,
                 writer.writerow(header)
 
         with open(file_path, 'a') as f:
-            local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+            local_time = time.strftime(
+                '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
             log = [local_time, epoch_i, batch_counter, using_time,
                    cost_train, acc_train, cost_valid, acc_valid]
             writer = csv.writer(f)
             writer.writerow(log)
 
 
-def save_test_log(file_path, cost_test, acc_test, cls_cost_test, rec_cost_test, with_rec):
+def save_test_log(file_path, cost_test, acc_test,
+                  cls_cost_test, rec_cost_test, with_rec):
     """
     Save losses and accuracies of testing.
     """
@@ -290,7 +302,8 @@ def save_test_log(file_path, cost_test, acc_test, cls_cost_test, rec_cost_test, 
     print('Saving {}...'.format(file_path))
 
     with open(file_path, 'a') as f:
-        local_time = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
+        local_time = time.strftime(
+            '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
         f.write('=====================================================\n')
         f.write('Time: {}\n'.format(local_time))
         f.write('------------------------------------------------------\n')
@@ -310,12 +323,15 @@ class DLProgress(tqdm):
 
     def hook(self, block_num=1, block_size=1, total_size=None):
         """
-        A hook function that will be called once on establishment of the network connection and
-        once after each block read thereafter.
-        :param block_num: A count of blocks transferred so far
-        :param block_size: Block size in bytes
-        :param total_size: The total size of the file. This may be -1 on older FTP servers which do not return
-                            a file size in response to a retrieval request.
+        A hook function that will be called once on establishment
+        of the network connection and once after each block read thereafter.
+
+        Args:
+            block_num: A count of blocks transferred so far
+            block_size: Block size in bytes
+            total_size: The total size of the file. This may be -1 on older FTP
+                        servers which do not return a file size in response to
+                        a retrieval request.
         """
         self.total = total_size
         self.update((block_num - self.last_block) * block_size)

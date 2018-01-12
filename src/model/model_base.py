@@ -63,7 +63,8 @@ class ModelBase(object):
             assert x.get_shape().ndims == 4
             return tf.reduce_mean(x, [1, 2])
 
-    def _fc_layer(self, x, out_dim=None, act_fn_name='relu', use_bias=True, idx=0):
+    def _fc_layer(self, x, out_dim=None,
+                  act_fn_name='relu', use_bias=True, idx=0):
         """
         Single full_connected layer
 
@@ -115,7 +116,8 @@ class ModelBase(object):
                 pad = kernel_size - 1
                 pad_beg = pad // 2
                 pad_end = pad - pad_beg
-                x = tf.pad(x, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
+                x = tf.pad(
+                    x, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
                 padding = 'VALID'
 
             activation_fn = self._get_act_fn(act_fn_name)
@@ -132,8 +134,9 @@ class ModelBase(object):
                 weights_initializer=weights_initializer,
                 biases_initializer=biases_initializer)
 
-    def _conv_t_layer(self, x, kernel_size=None, stride=None, n_kernel=None,
-                      padding='SAME', act_fn_name='relu', use_bias=True, idx=None):
+    def _conv_t_layer(self, x, kernel_size=None,
+                      stride=None, n_kernel=None, padding='SAME',
+                      act_fn_name='relu', use_bias=True, idx=None):
         """
         Single transpose convolution layer
 
