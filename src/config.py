@@ -24,14 +24,14 @@ __C.BATCH_SIZE = 256
 # ===========================================
 
 # Architecture parameters of convolution layers
-# [{'kernel_size': None, 'stride': None, 'depth': None}, ]
+# [{'kernel_size': None, 'stride': None, 'n_kernel': None}, ]
 __C.CONV_PARAMS = [
     {'kernel_size': 9, 'stride': 1, 'n_kernel': 256, 'padding': 'VALID'},
-    # {'kernel_size': 3, 'stride': 1, 'depth': 128, 'padding': 'VALID'}
+    # {'kernel_size': 3, 'stride': 1, 'n_kernel': 128, 'padding': 'VALID'}
 ]
 
 # Architecture parameters of conv2capsule layer
-# {'kernel_size': None, 'stride': None, 'depth': None, 'vec_dim': None, 'padding': 'VALID'}
+# {'kernel_size': None, 'stride': None, 'n_kernel': None, 'vec_dim': None, 'padding': 'VALID'}
 __C.CONV2CAPS_PARAMS = {'kernel_size': 9,
                         'stride': 2,
                         'n_kernel': 32,
@@ -86,13 +86,13 @@ __C.WITH_RECONSTRUCTION = False
 __C.DECODER_TYPE = 'FC'
 
 # Architecture parameters of decoders of reconstruction
-# 'FC': [{'num_outputs':None, 'act_fn': None}, ]  # 'act_fn': 'relu', 'sigmoid'
-# 'CONV': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None, 'resize': None}, ]
-# 'CONV_T': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}, ]
+# 'FC': [{'out_dim':None, 'act_fn': None}, ]  # 'act_fn': 'relu', 'sigmoid'
+# 'CONV': [{'kernel_size': None, 'stride': None, 'n_kernel': None, 'padding': 'VALID', 'act_fn': None, 'resize': None}, ]
+# 'CONV_T': [{'kernel_size': None, 'stride': None, 'n_kernel': None, 'padding': 'VALID'}, ]
 __C.DECODER_PARAMS = [
-    {'num_outputs': 512, 'act_fn': 'relu'},
-    {'num_outputs': 1024, 'act_fn': 'relu'},
-    {'num_outputs': 784, 'act_fn': 'sigmoid'}
+    {'out_dim': 512, 'act_fn': 'relu'},
+    {'out_dim': 1024, 'act_fn': 'relu'},
+    {'out_dim': 784, 'act_fn': 'sigmoid'}
 ]
 
 # Reconstruction loss
@@ -106,18 +106,18 @@ __C.RECONSTRUCT_LOSS_SCALE = 0.392  # 0.0005*784=0.392
 # __C.DECODER_TYPE = 'CONV'
 # __C.RECONSTRUCTION_LOSS = 'cross_entropy'
 # __C.CONV_RESHAPE_SIZE = (4, 4)
-# __C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'depth': 16, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 7},
-#                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
-#                       {'kernel_size': 3, 'stride': 1, 'depth': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
-#                       {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': None}]
+# __C.DECODER_PARAMS = [{'kernel_size': 3, 'stride': 1, 'n_kernel': 16, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 7},
+#                       {'kernel_size': 3, 'stride': 1, 'n_kernel': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 14},
+#                       {'kernel_size': 3, 'stride': 1, 'n_kernel': 32, 'padding': 'SAME', 'act_fn': 'relu', 'resize': 28},
+#                       {'kernel_size': 3, 'stride': 1, 'n_kernel': 1, 'padding': 'SAME', 'act_fn': None}]
 
 # __C.DECODER_TYPE = 'CONV_T'
 # __C.RECONSTRUCTION_LOSS = 'mse'
 # __C.CONV_RESHAPE_SIZE = (4, 4)
-# __C.DECODER_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 12x12
-#                       {'kernel_size': 9, 'stride': 1, 'depth': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
-#                       {'kernel_size': 9, 'stride': 1, 'depth': 16, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
-#                       {'kernel_size': 3, 'stride': 1, 'depth': 1, 'padding': 'SAME', 'act_fn': 'sigmoid'}]
+# __C.DECODER_PARAMS = [{'kernel_size': 9, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 12x12
+#                       {'kernel_size': 9, 'stride': 1, 'n_kernel': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
+#                       {'kernel_size': 9, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
+#                       {'kernel_size': 3, 'stride': 1, 'n_kernel': 1, 'padding': 'SAME', 'act_fn': 'sigmoid'}]
 
 # -------------------------------------------
 # Test

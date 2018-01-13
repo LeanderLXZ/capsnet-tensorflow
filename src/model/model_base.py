@@ -169,7 +169,7 @@ class ModelBase(object):
             dtype=tf.float32)
         conv = tf.nn.conv2d(input=x,
                             filter=kernels,
-                            strides=stride,
+                            strides=[1, stride, stride, 1],
                             padding=padding)
         if use_bias:
           biases = self.variable_on_cpu(
