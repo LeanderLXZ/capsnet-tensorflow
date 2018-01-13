@@ -155,13 +155,17 @@ class ModelBase(object):
 
       activation_fn = self._get_act_fn(act_fn)
 
+      if stddev is None:
+        weights_initializer = tf.contrib.layers.xavier_initializer()
+      else:
+        weights_initializer = tf.truncated_normal_initializer(stddev=stddev)
+
       if self.cfg.VAR_ON_CPU:
         kernels = self.variable_on_cpu(
             name='kernels',
             shape=[kernel_size, kernel_size,
                    x.get_shape().as_list()[3], n_kernel],
-            initializer=tf.truncated_normal_initializer(
-                stddev=stddev, dtype=tf.float32),
+            initializer=weights_initializer,
             dtype=tf.float32)
         conv = tf.nn.conv2d(input=x,
                             filter=kernels,
@@ -176,7 +180,6 @@ class ModelBase(object):
           conv = tf.nn.bias_add(conv, biases)
         return activation_fn(conv)
       else:
-        weights_initializer = tf.contrib.layers.xavier_initializer()
         biases_initializer = tf.zeros_initializer() if use_bias else None
         return tf.contrib.layers.conv2d(
             inputs=x,
