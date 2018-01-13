@@ -148,7 +148,7 @@ class CapsNet(ModelBase):
       """
       if reshape:
         layers_ = [tf.reshape(inputs,
-                              (cfg.BATCH_SIZE, *cfg.CONV_RESHAPE_SIZE, -1),
+                              (self.batch_size, *cfg.CONV_RESHAPE_SIZE, -1),
                               name='reshape')]
       else:
         layers_ = [inputs]
