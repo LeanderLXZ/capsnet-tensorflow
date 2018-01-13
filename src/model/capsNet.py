@@ -219,8 +219,6 @@ class CapsNet(ModelBase):
     """
     # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
     loss = self._margin_loss(logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
-    loss = tf.identity(loss, name='loss')
-    tf.summary.scalar('loss', loss)
 
     return loss
 
@@ -269,18 +267,15 @@ class CapsNet(ModelBase):
     else:
       reconstruct_loss = None
     reconstruct_loss = tf.identity(reconstruct_loss, name='rec_loss')
-    tf.summary.scalar('reconstruct_loss', reconstruct_loss)
 
     # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
     classifier_loss = self._margin_loss(
         logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
     classifier_loss = tf.identity(classifier_loss, name='classifier_loss')
-    tf.summary.scalar('classifier_loss', classifier_loss)
 
     loss = classifier_loss + \
         self.cfg.RECONSTRUCT_LOSS_SCALE * reconstruct_loss
-    loss = tf.identity(loss, name='loss')
-    tf.summary.scalar('loss', loss)
+
     if self.cfg.SHOW_TRAINING_DETAILS:
       loss = tf.Print(loss, [tf.constant(5)], message="\nloss calculated...")
 
@@ -293,11 +288,12 @@ class CapsNet(ModelBase):
     if self.cfg.WITH_RECONSTRUCTION:
       loss, classifier_loss, reconstruct_loss, reconstructed_images = \
           self._loss_with_rec(inputs, logits, labels, image_size)
-
     else:
       loss = self._loss_without_rec(logits, labels)
       classifier_loss, reconstruct_loss, reconstructed_images = \
           None, None, None
+
+    loss = tf.identity(loss, name='loss')
 
     return loss, classifier_loss, reconstruct_loss, reconstructed_images
 
@@ -339,7 +335,6 @@ class CapsNet(ModelBase):
             axis=1), tf.argmax(labels, axis=1))
     accuracy = tf.reduce_mean(tf.cast(
         correct_pred, tf.float32), name='accuracy')
-    tf.summary.scalar('accuracy', accuracy)
 
     return logits, accuracy
 
@@ -382,6 +377,11 @@ class CapsNet(ModelBase):
                              max_to_keep=self.cfg.MAX_TO_KEEP_CKP)
 
       # Build the summary operation from the last tower summaries.
+      tf.summary.scalar(accuracy, 'accuracy')
+      tf.summary.scalar(loss, 'loss')
+      if self.cfg.WITH_RECONSTRUCTION:
+        tf.summary.scalar(classifier_loss, 'cls_loss')
+        tf.summary.scalar(reconstruct_loss, 'rec_loss')
       summary_op = tf.summary.merge_all()
 
       return train_graph, inputs, labels, train_op, saver, \
