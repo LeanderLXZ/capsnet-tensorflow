@@ -11,11 +11,10 @@ from model.model_base import ModelBase
 
 class CapsNet(ModelBase):
 
-  def __init__(self, cfg, var_on_cpu=False):
-    super(CapsNet, self).__init__(cfg, var_on_cpu)
+  def __init__(self, cfg):
+    super(CapsNet, self).__init__(cfg)
 
     self.cfg = cfg
-    self.var_on_cpu = var_on_cpu
 
   def _get_inputs(self, image_size, num_class):
     """
@@ -45,8 +44,7 @@ class CapsNet(ModelBase):
       output tensor of capsule layer
     """
     with tf.name_scope('caps_{}'.format(idx)):
-      _caps = capsule_layer.CapsuleLayer(
-          self.cfg, **caps_param, var_on_cpu=self.var_on_cpu)
+      _caps = capsule_layer.CapsuleLayer(self.cfg, **caps_param)
       return _caps(x)
 
   def _conv2caps_layer(self, x, conv2caps_params):
@@ -63,8 +61,7 @@ class CapsNet(ModelBase):
       # conv2caps_params:
       # {'kernel_size': None, 'stride': None, 'n_kernel': None,
       #  'vec_dim': None, 'padding': 'VALID'}
-      conv2caps_layer = capsule_layer.Conv2Capsule(
-          self.cfg, **conv2caps_params, var_on_cpu=self.var_on_cpu)
+      conv2caps_layer = capsule_layer.Conv2Capsule(self.cfg, **conv2caps_params)
       conv2caps = conv2caps_layer(x)
 
     return conv2caps
@@ -136,8 +133,6 @@ class CapsNet(ModelBase):
     Return:
       output tensor of decoder
     """
-    var_on_cpu = self.var_on_cpu
-
     def _multi_layers(params, layer_fn, reshape=False, cfg=None):
       """
       Generate multi layers
@@ -157,8 +152,7 @@ class CapsNet(ModelBase):
       else:
         layers_ = [inputs]
       for iter_l, param in enumerate(params):
-        layer_ = layer_fn(x=decoder_layers[iter_l], **param,
-                          idx=iter_l, var_on_cpu=var_on_cpu)
+        layer_ = layer_fn(x=decoder_layers[iter_l], **param, idx=iter_l)
         layers_.append(layer_)
       return layers_
 

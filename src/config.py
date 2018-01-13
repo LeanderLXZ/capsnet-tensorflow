@@ -25,29 +25,53 @@ __C.BATCH_SIZE = 256
 
 # Architecture parameters of convolution layers
 # [{'kernel_size': None, 'stride': None, 'depth': None}, ]
-__C.CONV_PARAMS = [{'kernel_size': 9, 'stride': 1, 'depth': 256, 'padding': 'VALID'},
-                   # {'kernel_size': 3, 'stride': 1, 'depth': 128, 'padding': 'VALID'}
-                   ]
+__C.CONV_PARAMS = [
+    {'kernel_size': 9, 'stride': 1, 'depth': 256, 'padding': 'VALID'},
+    # {'kernel_size': 3, 'stride': 1, 'depth': 128, 'padding': 'VALID'}
+]
 
 # Architecture parameters of conv2capsule layer
 # {'kernel_size': None, 'stride': None, 'depth': None, 'vec_dim': None, 'padding': 'VALID'}
-__C.CONV2CAPS_PARAMS = {'kernel_size': 9, 'stride': 2, 'depth': 32, 'vec_dim': 8, 'padding': 'VALID'}
+__C.CONV2CAPS_PARAMS = {'kernel_size': 9,
+                        'stride': 2,
+                        'depth': 32,
+                        'vec_dim': 8,
+                        'padding': 'VALID'}
 
 # Architecture parameters of capsule layers
 # [{'num_caps': None, 'vec_dim': None, 'route_epoch': None}, ]
-__C.CAPS_PARAMS = [{'num_caps': 10, 'vec_dim': 16, 'route_epoch': 3},
-                   # {'num_caps': 10, 'vec_dim': 32, 'route_epoch': 3}
-                   ]
+__C.CAPS_PARAMS = [
+    {'num_caps': 10, 'vec_dim': 16, 'route_epoch': 3},
+    # {'num_caps': 10, 'vec_dim': 32, 'route_epoch': 3}
+]
 
 # Parameters of margin loss
 # default: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
-__C.MARGIN_LOSS_PARAMS = {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
+__C.MARGIN_LOSS_PARAMS = {'m_plus': 0.9,
+                          'm_minus': 0.1,
+                          'lambda_': 0.5}
 
 # Add epsilon(a very small number) to zeros
 __C.EPSILON = 1e-9
 
 # stddev of tf.truncated_normal_initializer()
-__C.STDDEV = 0.01
+__C.WEIGHTS_STDDEV = 0.01
+
+# -------------------------------------------
+# Optimizer and learning rate decay
+
+# Optimizer
+# 'gd': GradientDescentOptimizer()
+# 'adam': AdamOptimizer()
+# 'momentum': MomentumOptimizer()
+__C.OPTIMIZER = 'adam'
+
+#
+__C.LR_BOUNDARIES = [82, 123, 300]
+
+__C.LR_STAGE = [1, 0.1, 0.01, 0.002]
+
+__C.MOMENTUM = 0.9
 
 # -------------------------------------------
 # Reconstruction
@@ -65,9 +89,11 @@ __C.DECODER_TYPE = 'FC'
 # 'FC': [{'num_outputs':None, 'act_fn': None}, ]  # 'act_fn': 'relu', 'sigmoid'
 # 'CONV': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID', 'act_fn': None, 'resize': None}, ]
 # 'CONV_T': [{'kernel_size': None, 'stride': None, 'depth': None, 'padding': 'VALID'}, ]
-__C.DECODER_PARAMS = [{'num_outputs': 512, 'act_fn': 'relu'},
-                      {'num_outputs': 1024, 'act_fn': 'relu'},
-                      {'num_outputs': 784, 'act_fn': 'sigmoid'}]
+__C.DECODER_PARAMS = [
+    {'num_outputs': 512, 'act_fn': 'relu'},
+    {'num_outputs': 1024, 'act_fn': 'relu'},
+    {'num_outputs': 784, 'act_fn': 'sigmoid'}
+]
 
 # Reconstruction loss
 # 'mse': Mean Square Error
@@ -182,6 +208,22 @@ __C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 
 # Path for saving testing logs
 __C.TEST_LOG_PATH = '../test_logs'
+
+# ===========================================
+# #          Multi-GPUs Config              #
+# ===========================================
+
+# Number of GPUs
+__C.GPU_NUMBER = 2
+
+# Batch size on a single GPU
+__C.GPU_BATCH_SIZE = 128
+
+# Save variables on CPU
+__C.VAR_ON_CPU = True
+
+# The decay to use for the moving average.
+__C.MOVING_AVERAGE_DECAY = 0.9999
 
 # ===========================================
 

@@ -11,7 +11,7 @@ from model.model_base import ModelBase
 class Conv2Capsule(object):
 
   def __init__(self, cfg, kernel_size=None, stride=None, n_kernel=None,
-               vec_dim=None, padding=None, use_bias=True, var_on_cpu=False):
+               vec_dim=None, padding=None, use_bias=True):
     """
     Initialize conv2caps layer.
 
@@ -22,7 +22,6 @@ class Conv2Capsule(object):
       vec_dim: dimensions of vectors of capsule
       padding: padding type of convolution kernel
       use_bias: add biases
-      var_on_cpu: save variables on CPU
     """
     self.cfg = cfg
     self.kernel_size = kernel_size
@@ -31,7 +30,6 @@ class Conv2Capsule(object):
     self.vec_dim = vec_dim
     self.padding = padding
     self.use_bias = use_bias
-    self.var_on_cpu = var_on_cpu
 
   def __call__(self, inputs):
     """
@@ -48,7 +46,7 @@ class Conv2Capsule(object):
     activation_fn = tf.nn.relu
     weights_initializer = tf.contrib.layers.xavier_initializer()
 
-    if self.var_on_cpu:
+    if self.cfg.VAR_ON_CPU:
       kernels = ModelBase.variable_on_cpu(
           name='kernels',
           shape=[self.kernel_size, self.kernel_size,
@@ -100,8 +98,7 @@ class Conv2Capsule(object):
 
 class CapsuleLayer(object):
 
-  def __init__(self, cfg, num_caps=None, vec_dim=None,
-               route_epoch=None, var_on_cpu=False):
+  def __init__(self, cfg, num_caps=None, vec_dim=None, route_epoch=None):
     """
     Initialize capsule layer.
 
@@ -109,13 +106,11 @@ class CapsuleLayer(object):
       num_caps: number of capsules of this layer
       vec_dim: dimensions of vectors of capsules
       route_epoch: number of dynamic routing iteration
-      var_on_cpu: save variables on CPU
     """
     self.cfg = cfg
     self.num_caps = num_caps
     self.vec_dim = vec_dim
     self.route_epoch = route_epoch
-    self.var_on_cpu = var_on_cpu
 
   def __call__(self, inputs):
     """
@@ -163,7 +158,7 @@ class CapsuleLayer(object):
     # Initializing weights
     weights_shape = [1, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i]
     # Reuse weights
-    if self.var_on_cpu:
+    if self.cfg.VAR_ON_CPU:
       weights = ModelBase.variable_on_cpu(
           name='weights',
           shape=weights_shape,
@@ -194,7 +189,7 @@ class CapsuleLayer(object):
     u_hat_stop = tf.stop_gradient(u_hat, name='u_hat_stop')
 
     # Initializing b_ij
-    if self.var_on_cpu:
+    if self.cfg.VAR_ON_CPU:
       b_ij = ModelBase.variable_on_cpu(
           name='b_ij',
           shape=[self.cfg.BATCH_SIZE, num_caps_i, num_caps_j, 1, 1],

@@ -8,10 +8,9 @@ import numpy as np
 
 class ModelBase(object):
 
-  def __init__(self, cfg, var_on_cpu):
+  def __init__(self, cfg):
 
     self.cfg = cfg
-    self.var_on_cpu = var_on_cpu
 
   @staticmethod
   def variable_on_cpu(name, shape, initializer, dtype=tf.float32):
@@ -31,17 +30,17 @@ class ModelBase(object):
     return var
 
   @staticmethod
-  def _get_act_fn(act_fn_name):
+  def _get_act_fn(act_fn):
     """
     Get activation function from name
     """
-    if act_fn_name == 'relu':
+    if act_fn == 'relu':
       activation_fn = tf.nn.relu
-    elif act_fn_name == 'sigmoid':
+    elif act_fn == 'sigmoid':
       activation_fn = tf.nn.sigmoid
-    elif act_fn_name == 'elu':
+    elif act_fn == 'elu':
       activation_fn = tf.nn.elu
-    elif act_fn_name is None:
+    elif act_fn is None:
       activation_fn = None
     else:
       raise ValueError('Wrong activation function name!')
@@ -81,7 +80,7 @@ class ModelBase(object):
       assert x.get_shape().ndims == 4
       return tf.reduce_mean(x, [1, 2])
 
-  def _fc_layer(self, x, out_dim=None, act_fn_name='relu',
+  def _fc_layer(self, x, out_dim=None, act_fn='relu',
                 use_bias=True, idx=0):
     """
     Single full_connected layer
@@ -89,17 +88,17 @@ class ModelBase(object):
     Args:
       x: input tensor
       out_dim: hidden units of full_connected layer
-      act_fn_name: activation function
+      act_fn: activation function
       use_bias: use bias
       idx: index of layer
     Returns:
       output tensor of full_connected layer
     """
     with tf.name_scope('fc_{}'.format(idx)):
-      activation_fn = self._get_act_fn(act_fn_name)
+      activation_fn = self._get_act_fn(act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
 
-      if self.var_on_cpu:
+      if self.cfg.VAR_ON_CPU:
         weights = self.variable_on_cpu(
             name='weights',
             shape=[x.get_shape().as_list()[1], out_dim],
@@ -121,8 +120,8 @@ class ModelBase(object):
             biases_initializer=biases_initializer)
 
   def _conv_layer(self, x, kernel_size=None, stride=None, n_kernel=None,
-                  padding='SAME', act_fn_name='relu', resize=None,
-                  use_bias=True, atrous=False, idx=None):
+                  padding='SAME', act_fn='relu', stddev=None,
+                  resize=None, use_bias=True, atrous=False, idx=None):
     """
     Single convolution layer
 
@@ -132,7 +131,8 @@ class ModelBase(object):
       stride: stride of convolution kernel
       n_kernel: number of convolution kernels
       padding: padding type of convolution kernel
-      act_fn_name: activation function
+      act_fn: activation function
+      stddev: stddev of weights initializer
       resize: if resize, resize every image
       atrous: use atrous convolution
       use_bias: use bias
@@ -153,15 +153,15 @@ class ModelBase(object):
         x = tf.pad(x, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
         padding = 'VALID'
 
-      activation_fn = self._get_act_fn(act_fn_name)
+      activation_fn = self._get_act_fn(act_fn)
 
-      if self.var_on_cpu:
+      if self.cfg.VAR_ON_CPU:
         kernels = self.variable_on_cpu(
             name='kernels',
             shape=[kernel_size, kernel_size,
                    x.get_shape().as_list()[3], n_kernel],
             initializer=tf.truncated_normal_initializer(
-                stddev=self.cfg.CONV_KERNEL_STDDEV, dtype=tf.float32),
+                stddev=stddev, dtype=tf.float32),
             dtype=tf.float32)
         conv = tf.nn.conv2d(input=x,
                             filter=kernels,
@@ -190,7 +190,7 @@ class ModelBase(object):
 
   def _conv_t_layer(self, x, kernel_size=None,
                     stride=None, n_kernel=None, padding='SAME',
-                    act_fn_name='relu', use_bias=True, idx=None):
+                    act_fn='relu', use_bias=True, idx=None):
     """
     Single transpose convolution layer
 
@@ -200,14 +200,14 @@ class ModelBase(object):
       stride: stride of convolution kernel
       n_kernel: number of convolution kernels
       padding: padding type of convolution kernel
-      act_fn_name: activation function
+      act_fn: activation function
       use_bias: use bias
       idx: index of layer
     Returns:
       output tensor of convolution layer
     """
     with tf.name_scope('conv_t_{}'.format(idx)):
-      activation_fn = self._get_act_fn(act_fn_name)
+      activation_fn = self._get_act_fn(act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
       biases_initializer = tf.zeros_initializer() if use_bias else None
 
@@ -236,7 +236,7 @@ class ModelBase(object):
 
     return conv_layers[-1]
 
-  def _optimizer(self, opt_name='adam', n_train_samples=None):
+  def _optimizer(self, opt_name='adam', n_train_samples=None, global_step=None):
 
     if opt_name == 'adam':
       return tf.train.AdamOptimizer(self.cfg.LEARNING_RATE)
@@ -250,7 +250,7 @@ class ModelBase(object):
       staged_lr = [self.cfg.LEARNING_RATE * x
                    for x in self.cfg.LR_STAGE]
       learning_rate = tf.train.piecewise_constant(
-          tf.train.get_global_step(),
+          global_step,
           boundaries, staged_lr)
       return tf.train.MomentumOptimizer(
           learning_rate=learning_rate, momentum=self.cfg.MOMENTUM)

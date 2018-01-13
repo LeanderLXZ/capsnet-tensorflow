@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from config import config
 from model import utils
-from model.capsNet import CapsNet
+from multi_gpu.capsNet_distribute import CapsNetDistribute
 
 
 class Main(object):
@@ -93,20 +93,20 @@ class Main(object):
     utils.thick_line()
     print('Building graph...')
     tf.reset_default_graph()
-    self.train_graph, self.inputs, self.labels, self.optimizer, \
+    self.step, self.train_graph, self.inputs, self.labels, self.optimizer, \
         self.saver, self.summary, self.loss, self.accuracy, self.cls_loss, \
         self.rec_loss, self.rec_images = model.build_graph(
             image_size=self.x_train.shape[1:],
             num_class=self.y_train.shape[1])
 
-  def _display_status(self, sess, x_batch, y_batch, epoch_i, batch_i):
+  def _display_status(self, sess, x_batch, y_batch, epoch_i, step):
     """
     Display information during training.
     """
-    valid_batch_idx = np.random.choice(
+    valid_stepdx = np.random.choice(
         range(len(self.x_valid)), self.cfg.BATCH_SIZE).tolist()
-    x_valid_batch = self.x_valid[valid_batch_idx]
-    y_valid_batch = self.y_valid[valid_batch_idx]
+    x_valid_batch = self.x_valid[valid_stepdx]
+    y_valid_batch = self.y_valid[valid_stepdx]
 
     if self.cfg.WITH_RECONSTRUCTION:
       loss_train, cls_loss_train, rec_loss_train, acc_train = \
@@ -132,20 +132,20 @@ class Main(object):
           None, None, None, None
 
     utils.print_status(
-        epoch_i, self.cfg.EPOCHS, batch_i, self.start_time,
+        epoch_i, self.cfg.EPOCHS, step, self.start_time,
         loss_train, cls_loss_train, rec_loss_train, acc_train,
         loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
         self.cfg.WITH_RECONSTRUCTION)
 
   def _save_logs(self, sess, train_writer, valid_writer,
-                 x_batch, y_batch, epoch_i, batch_i):
+                 x_batch, y_batch, epoch_i, step):
     """
     Save logs and ddd summaries to TensorBoard while training.
     """
-    valid_batch_idx = np.random.choice(
+    valid_stepdx = np.random.choice(
         range(len(self.x_valid)), self.cfg.BATCH_SIZE).tolist()
-    x_valid_batch = self.x_valid[valid_batch_idx]
-    y_valid_batch = self.y_valid[valid_batch_idx]
+    x_valid_batch = self.x_valid[valid_stepdx]
+    y_valid_batch = self.y_valid[valid_stepdx]
 
     if self.cfg.WITH_RECONSTRUCTION:
       summary_train, loss_train, cls_loss_train, rec_loss_train, acc_train = \
@@ -170,10 +170,10 @@ class Main(object):
       cls_loss_train, rec_loss_train, cls_loss_valid, rec_loss_valid = \
           None, None, None, None
 
-    train_writer.add_summary(summary_train, batch_i)
-    valid_writer.add_summary(summary_valid, batch_i)
+    train_writer.add_summary(summary_train, step)
+    valid_writer.add_summary(summary_valid, step)
     utils.save_log(
-        os.path.join(self.log_path, 'train_log.csv'), epoch_i + 1, batch_i,
+        os.path.join(self.log_path, 'train_log.csv'), epoch_i + 1, step,
         time.time() - self.start_time, loss_train, cls_loss_train,
         rec_loss_train, acc_train, loss_valid, cls_loss_valid, rec_loss_valid,
         acc_valid, self.cfg.WITH_RECONSTRUCTION)
@@ -242,7 +242,7 @@ class Main(object):
 
     return loss, cls_loss, rec_loss, accuracy
 
-  def _eval_on_full_set(self, sess, epoch_i, batch_i, silent=False):
+  def _eval_on_full_set(self, sess, epoch_i, step, silent=False):
     """
     Evaluate on the full data set and print information.
     """
@@ -268,7 +268,7 @@ class Main(object):
 
     if not silent:
       utils.print_full_set_eval(
-          epoch_i, self.cfg.EPOCHS, batch_i, self.start_time,
+          epoch_i, self.cfg.EPOCHS, step, self.start_time,
           loss_train, cls_loss_train, rec_loss_train, acc_train,
           loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
           self.cfg.EVAL_WITH_FULL_TRAIN_SET, self.cfg.WITH_RECONSTRUCTION)
@@ -278,7 +278,7 @@ class Main(object):
       utils.thin_line()
       print('Saving {}...'.format(file_path))
     utils.save_log(
-      file_path, epoch_i + 1, batch_i, time.time() - self.start_time,
+      file_path, epoch_i + 1, step, time.time() - self.start_time,
       loss_train, cls_loss_train, rec_loss_train, acc_train,
       loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
       self.cfg.WITH_RECONSTRUCTION)
@@ -289,7 +289,7 @@ class Main(object):
             .format(time.time() - eval_start_time))
 
   def _save_images(self, sess, img_path, x_batch, y_batch,
-                   batch_i, silent=False, epoch_i=None):
+                   step, silent=False, epoch_i=None):
     """
     Save reconstruction images.
     """
@@ -359,11 +359,11 @@ class Main(object):
 
     if epoch_i is None:
       save_image_path = os.path.join(
-          img_path, 'batch_{}.jpg'.format(batch_i))
+          img_path, 'batch_{}.jpg'.format(step))
     else:
       save_image_path = os.path.join(
           img_path,
-          'epoch_{}_batch_{}.jpg'.format(epoch_i, batch_i))
+          'epoch_{}_batch_{}.jpg'.format(epoch_i, step))
     if not silent:
       utils.thin_line()
       print('Saving image to {}...'.format(save_image_path))
@@ -414,14 +414,14 @@ class Main(object):
     acc_test_all = []
     cls_loss_test_all = []
     rec_loss_test_all = []
-    batch_i = 0
+    step = 0
     _test_batch_generator = utils.get_batches(
         x_test, y_test, self.cfg.BATCH_SIZE)
 
     if self.cfg.TEST_WITH_RECONSTRUCTION:
       for _ in tqdm(range(n_batch_test), total=n_batch_test,
                     ncols=100, unit=' batches'):
-        batch_i += 1
+        step += 1
         test_batch_x, test_batch_y = next(_test_batch_generator)
         loss_test_i, cls_loss_i, rec_loss_i, acc_test_i = sess.run(
             [self.loss, self.cls_loss, self.rec_loss, self.accuracy],
@@ -433,9 +433,9 @@ class Main(object):
 
         # Save reconstruct images
         if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
-          if batch_i % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
+          if step % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
             self._save_images(sess, self.test_image_path, test_batch_x,
-                              test_batch_y, batch_i, silent=False)
+                              test_batch_y, step, silent=False)
 
       cls_loss_test = sum(cls_loss_test_all) / len(cls_loss_test_all)
       rec_loss_test = sum(rec_loss_test_all) / len(rec_loss_test_all)
@@ -492,7 +492,7 @@ class Main(object):
         valid_writer = tf.summary.FileWriter(valid_log_path)
 
         sess.run(tf.global_variables_initializer())
-        batch_i = 0
+        step = 0
 
         for epoch_i in range(self.cfg.EPOCHS):
 
@@ -504,38 +504,39 @@ class Main(object):
             for x_batch, y_batch in utils.get_batches(self.x_train,
                                                       self.y_train,
                                                       self.cfg.BATCH_SIZE):
-              batch_i += 1
+              step += 1
 
               # Training optimizer
               sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
-                                                  self.labels: y_batch})
+                                                  self.labels: y_batch,
+                                                  self.step: step-1})
 
               # Display training information
-              if batch_i % self.cfg.DISPLAY_STEP == 0:
-                self._display_status(sess, x_batch, y_batch, epoch_i, batch_i)
+              if step % self.cfg.DISPLAY_STEP == 0:
+                self._display_status(sess, x_batch, y_batch, epoch_i, step)
 
               # Save training logs
               if self.cfg.SAVE_LOG_STEP is not None:
-                if batch_i % self.cfg.SAVE_LOG_STEP == 0:
+                if step % self.cfg.SAVE_LOG_STEP == 0:
                   self._save_logs(sess, train_writer, valid_writer,
-                                  x_batch, y_batch, epoch_i, batch_i)
+                                  x_batch, y_batch, epoch_i, step)
 
               # Save reconstruction images
               if self.cfg.SAVE_IMAGE_STEP is not None:
                 if self.cfg.WITH_RECONSTRUCTION:
-                  if batch_i % self.cfg.SAVE_IMAGE_STEP == 0:
+                  if step % self.cfg.SAVE_IMAGE_STEP == 0:
                     self._save_images(sess, self.train_image_path, x_batch,
-                                      y_batch, batch_i, epoch_i=epoch_i)
+                                      y_batch, step, epoch_i=epoch_i)
 
               # Save model
               if self.cfg.SAVE_MODEL_MODE == 'per_batch':
-                if batch_i % self.cfg.SAVE_MODEL_STEP == 0:
-                  self._save_model(sess, self.saver, batch_i)
+                if step % self.cfg.SAVE_MODEL_STEP == 0:
+                  self._save_model(sess, self.saver, step)
 
               # Evaluate on full set
               if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
-                if batch_i % self.cfg.FULL_SET_EVAL_STEP == 0:
-                  self._eval_on_full_set(sess, epoch_i, batch_i)
+                if step % self.cfg.FULL_SET_EVAL_STEP == 0:
+                  self._eval_on_full_set(sess, epoch_i, step)
                   utils.thick_line()
           else:
             utils.thin_line()
@@ -545,43 +546,44 @@ class Main(object):
                           total=self.n_batch_train,
                           ncols=100, unit=' batches'):
 
-              batch_i += 1
+              step += 1
               x_batch, y_batch = next(train_batch_generator)
 
               # Training optimizer
               sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
-                                                  self.labels: y_batch})
+                                                  self.labels: y_batch,
+                                                  self.step: step-1})
 
               # Save training logs
               if self.cfg.SAVE_LOG_STEP is not None:
-                if batch_i % self.cfg.SAVE_LOG_STEP == 0:
+                if step % self.cfg.SAVE_LOG_STEP == 0:
                   self._save_logs(sess, train_writer, valid_writer,
-                                  x_batch, y_batch, epoch_i, batch_i)
+                                  x_batch, y_batch, epoch_i, step)
 
               # Save reconstruction images
               if self.cfg.SAVE_IMAGE_STEP is not None:
                 if self.cfg.WITH_RECONSTRUCTION:
-                  if batch_i % self.cfg.SAVE_IMAGE_STEP == 0:
+                  if step % self.cfg.SAVE_IMAGE_STEP == 0:
                     self._save_images(sess, self.train_image_path,
-                                      x_batch, y_batch, batch_i,
+                                      x_batch, y_batch, step,
                                       silent=True, epoch_i=epoch_i)
 
               # Save model
               if self.cfg.SAVE_MODEL_MODE == 'per_batch':
-                if batch_i % self.cfg.SAVE_MODEL_STEP == 0:
-                  self._save_model(sess, self.saver, batch_i, silent=True)
+                if step % self.cfg.SAVE_MODEL_STEP == 0:
+                  self._save_model(sess, self.saver, step, silent=True)
 
               # Evaluate on full set
               if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
-                if batch_i % self.cfg.FULL_SET_EVAL_STEP == 0:
-                  self._eval_on_full_set(sess, epoch_i, batch_i, silent=True)
+                if step % self.cfg.FULL_SET_EVAL_STEP == 0:
+                  self._eval_on_full_set(sess, epoch_i, step, silent=True)
 
           if self.cfg.SAVE_MODEL_MODE == 'per_epoch':
             if (epoch_i + 1) % self.cfg.SAVE_MODEL_STEP == 0:
               self._save_model(sess, self.saver, epoch_i)
           if self.cfg.FULL_SET_EVAL_MODE == 'per_epoch':
             if (epoch_i + 1) % self.cfg.FULL_SET_EVAL_MODE == 0:
-              self._eval_on_full_set(sess, epoch_i, batch_i)
+              self._eval_on_full_set(sess, epoch_i, step)
 
           utils.thin_line()
           print('Epoch done! Using time: {:.2f}'
@@ -605,11 +607,10 @@ class Main(object):
 if __name__ == '__main__':
 
   opts, args = getopt.getopt(sys.argv[1:], "g", ['gpu-id'])
-  gpu_id_ = 0
   for op, value in opts:
     if op == "-g":
       os.environ["CUDA_VISIBLE_DEVICES"] = str(value)
 
-  CapsNet_ = CapsNet(config)
+  CapsNet_ = CapsNetDistribute(config)
   Main_ = Main(CapsNet_, config)
   Main_.train()

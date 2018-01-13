@@ -91,7 +91,7 @@ class Test(object):
                 return inputs_, labels_, loss_, accuracy_
 
     def _save_images(self, sess, rec_images, inputs, labels,
-                     x_batch, y_batch, batch_i):
+                     x_batch, y_batch, step):
         """
         Save reconstruction images.
         """
@@ -167,7 +167,7 @@ class Test(object):
                             + thick_gap)))
 
         save_image_path = os.path.join(
-            self.test_image_path, 'batch_{}.jpg'.format(batch_i))
+            self.test_image_path, 'batch_{}.jpg'.format(step))
         new_im.save(save_image_path)
 
     def _eval_on_batches(self, sess, inputs, labels, loss, accuracy,
@@ -179,13 +179,13 @@ class Test(object):
         acc_all = []
         cls_loss_all = []
         rec_loss_all = []
-        batch_i = 0
+        step = 0
         _batch_generator = utils.get_batches(x, y, self.cfg.TEST_BATCH_SIZE)
 
         if self.cfg.TEST_WITH_RECONSTRUCTION:
             for _ in tqdm(range(n_batch), total=n_batch,
                           ncols=100, unit=' batches'):
-                batch_i += 1
+                step += 1
                 x_batch, y_batch = next(_batch_generator)
                 loss_i, cls_loss_i, rec_loss_i, acc_i = \
                     sess.run([loss, cls_loss, rec_loss, accuracy],
@@ -197,9 +197,9 @@ class Test(object):
 
                 # Save reconstruct images
                 if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
-                    if batch_i % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
+                    if step % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
                         self._save_images(sess, rec_images, inputs, labels,
-                                          x_batch, y_batch, batch_i)
+                                          x_batch, y_batch, step)
 
             cls_loss = sum(cls_loss_all) / len(cls_loss_all)
             rec_loss = sum(rec_loss_all) / len(rec_loss_all)

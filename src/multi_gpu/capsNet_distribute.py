@@ -9,11 +9,10 @@ from model.capsNet import CapsNet
 
 class CapsNetDistribute(CapsNet):
 
-  def __init__(self, cfg, var_on_cpu):
-    super(CapsNet, self).__init__(cfg, var_on_cpu)
+  def __init__(self, cfg):
+    super(CapsNet, self).__init__(cfg)
 
     self.cfg = cfg
-    self.var_on_cpu = var_on_cpu
 
   def _tower_loss(self, inputs, labels, image_size):
     """
@@ -104,8 +103,12 @@ class CapsNetDistribute(CapsNet):
       # Get inputs tensor
       inputs, labels = self._get_inputs(image_size, num_class)
 
+      # Global step
+      global_step = tf.placeholder(tf.int16, name='global_step')
+
       optimizer = self._optimizer(self.cfg.OPTIMIZER,
-                                  n_train_samples=n_train_samples)
+                                  n_train_samples=n_train_samples,
+                                  global_step=global_step)
 
       # batch_queue = tf.contrib.slim.prefetch_queue.prefetch_queue(
       #     [inputs, labels], capacity=2 * self.cfg.GPU_NUMBER)
@@ -143,7 +146,8 @@ class CapsNetDistribute(CapsNet):
       grads = self._average_gradients(tower_grads)
 
       # Apply the gradients to adjust the shared variables.
-      apply_gradient_op = optimizer.apply_gradients(grads)
+      apply_gradient_op = optimizer.apply_gradients(
+          grads, global_step=global_step)
 
       # Track the moving averages of all trainable variables.
       variable_averages = tf.train.ExponentialMovingAverage(
@@ -155,12 +159,11 @@ class CapsNetDistribute(CapsNet):
       train_op = tf.group(apply_gradient_op, variables_averages_op)
 
       # Create a saver.
-      saver = tf.train.Saver(tf.global_variables(),
-                             max_to_keep=self.cfg.MAX_TO_KEEP_CKP)
+      saver = tf.train.Saver(max_to_keep=self.cfg.MAX_TO_KEEP_CKP)
 
       # Build the summary operation from the last tower summaries.
       summary_op = tf.summary.merge_all()
 
-      return train_graph, inputs, labels, train_op, saver, \
-          summary_op, loss, accuracy, classifier_loss, \
+      return global_step, train_graph, inputs, labels, train_op, \
+          saver, summary_op, loss, accuracy, classifier_loss, \
           reconstruct_loss, reconstructed_images

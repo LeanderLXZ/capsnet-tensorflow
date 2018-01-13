@@ -174,7 +174,7 @@ def get_batches(x, y, batch_size):
     yield x[start:end], y[start:end]
 
 
-def print_status(epoch_i, epochs, batch_i, start_time, loss_train,
+def print_status(epoch_i, epochs, step, start_time, loss_train,
                  cls_loss_train, rec_loss_train, acc_train, loss_valid,
                  cls_loss_valid, rec_loss_valid, acc_valid, with_rec):
   """
@@ -182,7 +182,7 @@ def print_status(epoch_i, epochs, batch_i, start_time, loss_train,
   """
   if with_rec:
     print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
-          'Batch: {} |'.format(batch_i),
+          'Batch: {} |'.format(step),
           'Time: {:.2f}s |'.format(time.time() - start_time),
           'T_Lo: {:.4f} |'.format(loss_train),
           'T_Cls_Lo: {:.4f} |'.format(cls_loss_train),
@@ -194,7 +194,7 @@ def print_status(epoch_i, epochs, batch_i, start_time, loss_train,
           'V_Acc: {:.2f}% |'.format(acc_valid * 100))
   else:
     print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
-          'Batch: {} |'.format(batch_i),
+          'Batch: {} |'.format(step),
           'Time: {:.2f}s |'.format(time.time() - start_time),
           'Train_Loss: {:.4f} |'.format(loss_train),
           'Train_Acc: {:.2f}% |'.format(acc_train * 100),
@@ -202,7 +202,7 @@ def print_status(epoch_i, epochs, batch_i, start_time, loss_train,
           'Valid_Acc: {:.2f}% |'.format(acc_valid * 100))
 
 
-def print_full_set_eval(epoch_i, epochs, batch_i, start_time,
+def print_full_set_eval(epoch_i, epochs, step, start_time,
                         loss_train, cls_loss_train, rec_loss_train, acc_train,
                         loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
                         with_full_set_eval, with_rec):
@@ -211,7 +211,7 @@ def print_full_set_eval(epoch_i, epochs, batch_i, start_time,
   """
   thin_line()
   print('Epoch: {}/{} |'.format(epoch_i + 1, epochs),
-        'Batch: {} |'.format(batch_i),
+        'Batch: {} |'.format(step),
         'Time: {:.2f}s |'.format(time.time() - start_time))
   thin_line()
   if with_full_set_eval:
@@ -245,7 +245,7 @@ def save_config_log(file_path, cfg):
     f.write('=====================================================')
 
 
-def save_log(file_path, epoch_i, batch_i, using_time,
+def save_log(file_path, epoch_i, step, using_time,
              loss_train, cls_loss_train, rec_loss_train, acc_train,
              loss_valid, cls_loss_valid, rec_loss_valid, acc_valid, with_rec):
   """
@@ -264,7 +264,7 @@ def save_log(file_path, epoch_i, batch_i, using_time,
     with open(file_path, 'a') as f:
       local_time = time.strftime(
           '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
-      log = [local_time, epoch_i, batch_i, using_time,
+      log = [local_time, epoch_i, step, using_time,
              loss_train, cls_loss_train, rec_loss_train, acc_train,
              loss_valid, cls_loss_valid, rec_loss_valid, acc_valid]
       writer = csv.writer(f)
@@ -280,7 +280,7 @@ def save_log(file_path, epoch_i, batch_i, using_time,
     with open(file_path, 'a') as f:
       local_time = time.strftime(
           '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
-      log = [local_time, epoch_i, batch_i, using_time,
+      log = [local_time, epoch_i, step, using_time,
              loss_train, acc_train, loss_valid, acc_valid]
       writer = csv.writer(f)
       writer.writerow(log)
