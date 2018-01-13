@@ -148,7 +148,7 @@ class CapsNet(ModelBase):
       """
       if reshape:
         layers_ = [tf.reshape(inputs,
-                              (cfg.BATCH_SIZE, *cfg.CONV_RESHAPE_SIZE, 1),
+                              (cfg.BATCH_SIZE, *cfg.CONV_RESHAPE_SIZE, -1),
                               name='reshape')]
       else:
         layers_ = [inputs]
@@ -160,19 +160,19 @@ class CapsNet(ModelBase):
     with tf.variable_scope('decoder'):
 
       # Using full_connected layers
-      if self.cfg.DECODER_TYPE == 'FC':
+      if self.cfg.DECODER_TYPE == 'fc':
         decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
                                        self._fc_layer)
 
       # Using convolution layers
-      elif self.cfg.DECODER_TYPE == 'CONV':
+      elif self.cfg.DECODER_TYPE == 'conv':
         decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
                                        self._conv_layer,
                                        reshape=True,
                                        cfg=self.cfg)
 
       # Using transpose convolution layers
-      elif self.cfg.DECODER_TYPE == 'CONV_T':
+      elif self.cfg.DECODER_TYPE == 'conv_t':
         decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
                                        self._conv_t_layer,
                                        reshape=True,
@@ -234,7 +234,7 @@ class CapsNet(ModelBase):
       labels: labels
       image_size: size of image, 3D
     Return:
-      total loss
+      Total loss
     """
     # Reconstruction layers
     # reconstructed shape: (batch_size, image_size*image_size)
@@ -250,14 +250,14 @@ class CapsNet(ModelBase):
     # Reconstruction loss
     if self.cfg.RECONSTRUCTION_LOSS == 'mse':
       inputs_flatten = tf.contrib.layers.flatten(inputs)
-      if self.cfg.DECODER_TYPE != 'FC':
+      if self.cfg.DECODER_TYPE != 'fc':
         reconstructed_ = tf.contrib.layers.flatten(reconstructed)
       else:
         reconstructed_ = reconstructed
       reconstruct_loss = tf.reduce_mean(
           tf.square(reconstructed_ - inputs_flatten))
-    elif self.cfg.RECONSTRUCTION_LOSS == 'cross_entropy':
-      if self.cfg.DECODER_TYPE == 'FC':
+    elif self.cfg.RECONSTRUCTION_LOSS == 'ce':
+      if self.cfg.DECODER_TYPE == 'cf':
         inputs_ = tf.contrib.layers.flatten(inputs)
       else:
         inputs_ = inputs

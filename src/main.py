@@ -399,9 +399,9 @@ class Main(object):
     print('Loading test set...')
     utils.thin_line()
     x_test = utils.load_data_from_pickle(
-        './data/source_data/mnist/test_image.p')
+        os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_image.p'))
     y_test = utils.load_data_from_pickle(
-        './data/source_data/mnist/test_label.p')
+        os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_label.p'))
     x_test = np.divide(x_test, 255.)
     x_test = x_test.reshape([-1, 28, 28, 1])
     assert x_test.shape == (10000, 28, 28, 1), x_test.shape
@@ -606,6 +606,7 @@ if __name__ == '__main__':
   opts, args = getopt.getopt(sys.argv[1:], "g", ['gpu-id'])
   for op, value in opts:
     if op == "-g":
+      print('Using /gpu: %d' % value)
       os.environ["CUDA_VISIBLE_DEVICES"] = str(value)
 
   CapsNet_ = CapsNet(config)
