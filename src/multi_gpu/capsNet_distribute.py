@@ -137,8 +137,6 @@ class CapsNetDistribute(CapsNet):
                 # Calculate the gradients on this tower.
                 grads = optimizer.compute_gradients(loss)
 
-                print(grads)
-
                 # Keep track of the gradients across all towers.
                 tower_grads.append(grads)
 
