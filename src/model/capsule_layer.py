@@ -62,7 +62,7 @@ class Conv2Capsule(object):
       if self.use_bias:
         biases = ModelBase.variable_on_cpu(
             name='biases',
-            shape=[self.n_kernel],
+            shape=[self.n_kernel * self.vec_dim],
             initializer=tf.zeros_initializer(),
             dtype=tf.float32)
         caps = tf.nn.bias_add(caps, biases)

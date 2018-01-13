@@ -66,11 +66,13 @@ __C.WEIGHTS_STDDEV = 0.01
 # 'momentum': MomentumOptimizer()
 __C.OPTIMIZER = 'adam'
 
-#
+# Boundaries of learning rate
 __C.LR_BOUNDARIES = [82, 123, 300]
 
+# Stage of learning rate
 __C.LR_STAGE = [1, 0.1, 0.01, 0.002]
 
+# Momentum parameter of momentum optimizer
 __C.MOMENTUM = 0.9
 
 # -------------------------------------------
