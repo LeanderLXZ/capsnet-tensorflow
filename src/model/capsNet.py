@@ -377,11 +377,11 @@ class CapsNet(ModelBase):
                              max_to_keep=self.cfg.MAX_TO_KEEP_CKP)
 
       # Build the summary operation from the last tower summaries.
-      tf.summary.scalar(accuracy, 'accuracy')
-      tf.summary.scalar(loss, 'loss')
+      tf.summary.scalar('accuracy', accuracy)
+      tf.summary.scalar('loss', loss)
       if self.cfg.WITH_RECONSTRUCTION:
-        tf.summary.scalar(classifier_loss, 'cls_loss')
-        tf.summary.scalar(reconstruct_loss, 'rec_loss')
+        tf.summary.scalar('cls_loss', classifier_loss)
+        tf.summary.scalar('rec_loss', reconstruct_loss)
       summary_op = tf.summary.merge_all()
 
       return train_graph, inputs, labels, train_op, saver, \
