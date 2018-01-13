@@ -26,7 +26,7 @@ __C.BATCH_SIZE = 256
 # Architecture parameters of convolution layers
 # [{'kernel_size': None, 'stride': None, 'depth': None}, ]
 __C.CONV_PARAMS = [
-    {'kernel_size': 9, 'stride': 1, 'depth': 256, 'padding': 'VALID'},
+    {'kernel_size': 9, 'stride': 1, 'n_kernel': 256, 'padding': 'VALID'},
     # {'kernel_size': 3, 'stride': 1, 'depth': 128, 'padding': 'VALID'}
 ]
 
@@ -34,7 +34,7 @@ __C.CONV_PARAMS = [
 # {'kernel_size': None, 'stride': None, 'depth': None, 'vec_dim': None, 'padding': 'VALID'}
 __C.CONV2CAPS_PARAMS = {'kernel_size': 9,
                         'stride': 2,
-                        'depth': 32,
+                        'n_kernel': 32,
                         'vec_dim': 8,
                         'padding': 'VALID'}
 
