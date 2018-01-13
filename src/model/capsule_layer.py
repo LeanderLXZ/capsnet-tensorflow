@@ -84,7 +84,7 @@ class Conv2Capsule(object):
     caps = tf.reshape(caps, [self.cfg.BATCH_SIZE, -1, self.vec_dim, 1])
     # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
     assert caps.get_shape() == (
-      self.cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1)
+        self.cfg.BATCH_SIZE, num_capsule, self.vec_dim, 1)
 
     # Applying activation function
     caps_activated = ActivationFunc.squash(
