@@ -24,11 +24,13 @@ class Test(object):
 
         # Get checkpoint path
         self.checkpoint_path = \
-            '../checkpoints/{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
+            '../checkpoints/{}/model.ckpt-{}'\
+                .format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
 
         # Get log path, append information if the directory exist.
         test_log_path_ = os.path.join(
-            self.cfg.TEST_LOG_PATH, '{}-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
+            self.cfg.TEST_LOG_PATH, '{}-{}'
+                .format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
         self.test_log_path = test_log_path_
         i_append_info = 0
         while os.path.isdir(self.test_log_path):
@@ -51,8 +53,10 @@ class Test(object):
         utils.thick_line()
         print('Loading data...')
         utils.thin_line()
-        x_test = utils.load_data_from_pickle(os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_image.p'))
-        y_test = utils.load_data_from_pickle(os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_label.p'))
+        x_test = utils.load_data_from_pickle(os.path.join(
+            self.cfg.SOURCE_DATA_PATH, 'mnist/test_image.p'))
+        y_test = utils.load_data_from_pickle(os.path.join(
+            self.cfg.SOURCE_DATA_PATH, 'mnist/test_label.p'))
 
         x_test = np.divide(x_test, 255.)
         self.x_test = x_test.reshape([-1, 28, 28, 1])
@@ -81,16 +85,18 @@ class Test(object):
                 cls_loss_ = loaded_graph.get_tensor_by_name("classifier_loss:0")
                 rec_loss_ = loaded_graph.get_tensor_by_name("rec_loss:0")
                 rec_images_ = loaded_graph.get_tensor_by_name("rec_images:0")
-                return inputs_, labels_, loss_, accuracy_, cls_loss_, rec_loss_, rec_images_
+                return inputs_, labels_, loss_, accuracy_, \
+                    cls_loss_, rec_loss_, rec_images_
             else:
                 return inputs_, labels_, loss_, accuracy_
 
     def _save_images(self, sess, rec_images, inputs, labels,
-                     x_batch, y_batch, batch_counter):
+                     x_batch, y_batch, batch_i):
         """
         Save reconstruction images.
         """
-        rec_images = sess.run(rec_images, feed_dict={inputs: x_batch, labels: y_batch})
+        rec_images = sess.run(rec_images,
+                              feed_dict={inputs: x_batch, labels: y_batch})
 
         # Get maximum size for square grid of images
         save_col_size = math.floor(np.sqrt(rec_images.shape[0] * 2))
@@ -105,12 +111,14 @@ class Test(object):
                                 (x_batch.max() - x_batch.min()))
 
         # Put images in a square arrangement
-        rec_images_in_square = np.reshape(rec_images[: save_row_size*save_col_size],
-                                          (save_row_size, save_col_size, rec_images.shape[1],
-                                           rec_images.shape[2], rec_images.shape[3])).astype(np.uint8)
-        real_images_in_square = np.reshape(real_images[: save_row_size*save_col_size],
-                                           (save_row_size, save_col_size, real_images.shape[1],
-                                            real_images.shape[2], real_images.shape[3])).astype(np.uint8)
+        rec_images_in_square = np.reshape(
+            rec_images[: save_row_size*save_col_size],
+            (save_row_size, save_col_size, rec_images.shape[1],
+             rec_images.shape[2], rec_images.shape[3])).astype(np.uint8)
+        real_images_in_square = np.reshape(
+            real_images[: save_row_size*save_col_size],
+            (save_row_size, save_col_size, real_images.shape[1],
+             real_images.shape[2], real_images.shape[3])).astype(np.uint8)
 
         if self.cfg.DATABASE_NAME == 'mnist':
             mode = 'L'
@@ -123,29 +131,43 @@ class Test(object):
         thin_gap = 1
         thick_gap = 3
         avg_gap = (thin_gap + thick_gap) / 2
-        new_im = Image.new(mode, (int((rec_images.shape[2] + thin_gap) * save_col_size - thin_gap + thick_gap * 2),
-                                  int((rec_images.shape[1] + avg_gap) * save_row_size * 2 + thick_gap)), 'white')
+        new_im = Image.new(mode, (
+            int((rec_images.shape[2] + thin_gap)
+                * save_col_size - thin_gap + thick_gap * 2),
+            int((rec_images.shape[1] + avg_gap)
+                * save_row_size * 2 + thick_gap)), 'white')
 
         for row_i in range(save_row_size * 2):
             for col_i in range(save_col_size):
                 if (row_i + 1) % 2 == 0:  # Odd
                     if mode == 'L':
-                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :]
+                        image = rec_images_in_square[
+                            (row_i + 1) // 2 - 1, col_i, :, :]
                     else:
-                        image = rec_images_in_square[(row_i + 1) // 2 - 1, col_i, :, :, :]
+                        image = rec_images_in_square[
+                            (row_i + 1) // 2 - 1, col_i, :, :, :]
                     im = Image.fromarray(image, mode)
-                    new_im.paste(im, (int(col_i * (rec_images.shape[2] + thin_gap) + thick_gap),
-                                      int(row_i * rec_images.shape[1] + (row_i + 1) * avg_gap)))
+                    new_im.paste(im, (
+                        int(col_i * (rec_images.shape[2] + thin_gap)
+                            + thick_gap),
+                        int(row_i * rec_images.shape[1]
+                            + (row_i + 1) * avg_gap)))
                 else:  # Even
                     if mode == 'L':
-                        image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :]
+                        image = real_images_in_square[
+                                int((row_i + 1) // 2), col_i, :, :]
                     else:
-                        image = real_images_in_square[int((row_i + 1) // 2), col_i, :, :, :]
+                        image = real_images_in_square[
+                                int((row_i + 1) // 2), col_i, :, :, :]
                     im = Image.fromarray(image, mode)
-                    new_im.paste(im, (int(col_i * (rec_images.shape[2] + thin_gap) + thick_gap),
-                                      int(row_i * (rec_images.shape[1] + avg_gap) + thick_gap)))
+                    new_im.paste(im, (
+                        int(col_i * (rec_images.shape[2] + thin_gap)
+                            + thick_gap),
+                        int(row_i * (rec_images.shape[1] + avg_gap)
+                            + thick_gap)))
 
-        save_image_path = os.path.join(self.test_image_path, 'batch_{}.jpg'.format(batch_counter))
+        save_image_path = os.path.join(
+            self.test_image_path, 'batch_{}.jpg'.format(batch_i))
         new_im.save(save_image_path)
 
     def _eval_on_batches(self, sess, inputs, labels, loss, accuracy,
@@ -157,12 +179,13 @@ class Test(object):
         acc_all = []
         cls_loss_all = []
         rec_loss_all = []
-        batch_counter = 0
+        batch_i = 0
         _batch_generator = utils.get_batches(x, y, self.cfg.TEST_BATCH_SIZE)
 
         if self.cfg.TEST_WITH_RECONSTRUCTION:
-            for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
-                batch_counter += 1
+            for _ in tqdm(range(n_batch), total=n_batch,
+                          ncols=100, unit=' batches'):
+                batch_i += 1
                 x_batch, y_batch = next(_batch_generator)
                 loss_i, cls_loss_i, rec_loss_i, acc_i = \
                     sess.run([loss, cls_loss, rec_loss, accuracy],
@@ -174,15 +197,16 @@ class Test(object):
 
                 # Save reconstruct images
                 if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
-                    if batch_counter % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
+                    if batch_i % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
                         self._save_images(sess, rec_images, inputs, labels,
-                                          x_batch, y_batch, batch_counter)
+                                          x_batch, y_batch, batch_i)
 
             cls_loss = sum(cls_loss_all) / len(cls_loss_all)
             rec_loss = sum(rec_loss_all) / len(rec_loss_all)
 
         else:
-            for _ in tqdm(range(n_batch), total=n_batch, ncols=100, unit=' batches'):
+            for _ in tqdm(range(n_batch), total=n_batch,
+                          ncols=100, unit=' batches'):
                 x_batch, y_batch = next(_batch_generator)
                 loss_i, acc_i = \
                     sess.run([loss, accuracy],
@@ -213,7 +237,8 @@ class Test(object):
             # Get Tensors from loaded model
             if self.cfg.TEST_WITH_RECONSTRUCTION:
                 inputs, labels, loss, accuracy, \
-                    cls_loss, rec_loss, rec_images = self._get_tensors(loaded_graph)
+                    cls_loss, rec_loss, rec_images = \
+                    self._get_tensors(loaded_graph)
             else:
                 inputs, labels, loss, accuracy = self._get_tensors(loaded_graph)
                 cls_loss, rec_loss, rec_images = None, None, None
@@ -225,9 +250,10 @@ class Test(object):
             print('Calculating loss and accuracy of test set...')
 
             loss_test, cls_loss_test, rec_loss_test, acc_test = \
-                self._eval_on_batches(sess, inputs, labels, loss, accuracy,
-                                      cls_loss, rec_loss, rec_images,
-                                      self.x_test, self.y_test, self.n_batch_test)
+                self._eval_on_batches(
+                    sess, inputs, labels, loss, accuracy,
+                    cls_loss, rec_loss, rec_images,
+                    self.x_test, self.y_test, self.n_batch_test)
 
             # Print losses and accuracy
             utils.thin_line()
@@ -238,11 +264,13 @@ class Test(object):
             print('Test_Accuracy: {:.2f}%'.format(acc_test * 100))
 
             # Save test log
-            utils.save_test_log(self.test_log_path, loss_test, acc_test, cls_loss_test,
-                                rec_loss_test, self.cfg.TEST_WITH_RECONSTRUCTION)
+            utils.save_test_log(
+                self.test_log_path, loss_test, acc_test, cls_loss_test,
+                rec_loss_test, self.cfg.TEST_WITH_RECONSTRUCTION)
 
             utils.thin_line()
-            print('Testing finished! Using time: {:.2f}'.format(time.time() - start_time))
+            print('Testing finished! Using time: {:.2f}'
+                  .format(time.time() - start_time))
             utils.thick_line()
 
 
