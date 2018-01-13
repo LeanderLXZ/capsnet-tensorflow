@@ -25,7 +25,7 @@ class Main(object):
     Load data and initialize model.
 
     Args:
-        model: the model which will be trained
+      model: the model which will be trained
     """
     # Global start time
     self.start_time = time.time()
