@@ -153,35 +153,33 @@ class CapsNet(ModelBase):
       else:
         layers_ = [inputs]
       for iter_l, param in enumerate(params):
-        layer_ = layer_fn(x=decoder_layers[iter_l], **param, idx=iter_l)
+        layer_ = layer_fn(x=layers_[iter_l], **param, idx=iter_l)
         layers_.append(layer_)
       return layers_
 
-    with tf.variable_scope('decoder'):
+    # Using full_connected layers
+    if self.cfg.DECODER_TYPE == 'fc':
+      decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
+                                     self._fc_layer)
 
-      # Using full_connected layers
-      if self.cfg.DECODER_TYPE == 'fc':
-        decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
-                                       self._fc_layer)
+    # Using convolution layers
+    elif self.cfg.DECODER_TYPE == 'conv':
+      decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
+                                     self._conv_layer,
+                                     reshape=True,
+                                     cfg=self.cfg)
 
-      # Using convolution layers
-      elif self.cfg.DECODER_TYPE == 'conv':
-        decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
-                                       self._conv_layer,
-                                       reshape=True,
-                                       cfg=self.cfg)
+    # Using transpose convolution layers
+    elif self.cfg.DECODER_TYPE == 'conv_t':
+      decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
+                                     self._conv_t_layer,
+                                     reshape=True,
+                                     cfg=self.cfg)
 
-      # Using transpose convolution layers
-      elif self.cfg.DECODER_TYPE == 'conv_t':
-        decoder_layers = _multi_layers(self.cfg.DECODER_PARAMS,
-                                       self._conv_t_layer,
-                                       reshape=True,
-                                       cfg=self.cfg)
+    else:
+      raise ValueError('Wrong decoder type!')
 
-      else:
-        raise ValueError('Wrong decoder type!')
-
-      return decoder_layers[-1]
+    return decoder_layers[-1]
 
   def _reconstruct_layers(self, inputs, labels):
     """
