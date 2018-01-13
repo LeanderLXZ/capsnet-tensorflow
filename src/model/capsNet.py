@@ -110,12 +110,12 @@ class CapsNet(ModelBase):
 
     max_square_plus = tf.square(tf.maximum(
         0., m_plus - utils.get_vec_length(
-            logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON)))
+            logits, self.batch_size, self.cfg.EPSILON)))
     max_square_minus = tf.square(tf.maximum(
         0., utils.get_vec_length(
-            logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON) - m_minus))
+            logits, self.batch_size, self.cfg.EPSILON) - m_minus))
     # max_square_plus & max_plus shape: (batch_size, num_caps)
-    assert max_square_plus.get_shape() == (self.cfg.BATCH_SIZE, num_caps)
+    assert max_square_plus.get_shape() == (self.batch_size, num_caps)
 
     loss_c = tf.multiply(labels, max_square_plus) + \
         lambda_ * tf.multiply((1 - labels), max_square_minus)
@@ -335,7 +335,7 @@ class CapsNet(ModelBase):
     # Accuracy
     correct_pred = tf.equal(
         tf.argmax(utils.get_vec_length(
-            logits, self.cfg.BATCH_SIZE, self.cfg.EPSILON),
+            logits, self.batch_size, self.cfg.EPSILON),
             axis=1), tf.argmax(labels, axis=1))
     accuracy = tf.reduce_mean(tf.cast(
         correct_pred, tf.float32), name='accuracy')

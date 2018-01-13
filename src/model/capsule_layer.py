@@ -85,7 +85,7 @@ class Conv2Capsule(object):
     caps = tf.reshape(caps, [batch_size, -1, self.vec_dim, 1])
     # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
     assert caps.get_shape() == (
-        batch_size, num_capsule, self.vec_dim, 1)
+        batch_size, num_capsule, self.vec_dim, 1), str(caps.get_shape())+str((batch_size, num_capsule, self.vec_dim, 1))
 
     # Applying activation function
     caps_activated = ActivationFunc.squash(
@@ -169,11 +169,12 @@ class CapsuleLayer(object):
               stddev=self.cfg.WEIGHTS_STDDEV, dtype=tf.float32),
           dtype=tf.float32)
     else:
-      weights = tf.Variable(
-          tf.truncated_normal(weights_shape,
-                              stddev=self.cfg.WEIGHTS_STDDEV,
-                              dtype=tf.float32),
-          name='weights')
+      weights = tf.get_variable(
+          name='weights',
+          shape=weights_shape,
+          initializer=tf.truncated_normal_initializer(
+              stddev=self.cfg.WEIGHTS_STDDEV, dtype=tf.float32),
+          dtype=tf.float32)
     weights = tf.tile(weights, [batch_size, 1, 1, 1, 1])
     # weights shape: (batch_size, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i)
     assert weights.get_shape() == (
@@ -197,10 +198,15 @@ class CapsuleLayer(object):
           name='b_ij',
           shape=[batch_size, num_caps_i, num_caps_j, 1, 1],
           initializer=tf.zeros_initializer(),
-          dtype=tf.float32)
+          dtype=tf.float32,
+          trainable=False)
     else:
-      b_ij = tf.zeros([batch_size, num_caps_i, num_caps_j, 1, 1],
-                      tf.float32, name='b_ij')
+      b_ij = tf.get_variable(
+          name='b_ij',
+          shape=[batch_size, num_caps_i, num_caps_j, 1, 1],
+          initializer=tf.zeros_initializer(),
+          dtype=tf.float32,
+          trainable=False)
     # b_ij shape: (batch_size, num_caps_i, num_caps_j, 1, 1)
     assert b_ij.get_shape() == (
         batch_size, num_caps_i, num_caps_j, 1, 1)
@@ -217,7 +223,7 @@ class CapsuleLayer(object):
           batch_size, num_caps_j, vec_dim_j, 1)
 
       # Applying Squashing
-      _v_j = ActivationFunc.squash(_s_j, cfg_.BATCH_SIZE, cfg_.EPSILON)
+      _v_j = ActivationFunc.squash(_s_j, batch_size, cfg_.EPSILON)
       # _v_j shape: (batch_size, num_caps_j, vec_dim_j, 1)
       assert _v_j.get_shape() == (
           batch_size, num_caps_j, vec_dim_j, 1)

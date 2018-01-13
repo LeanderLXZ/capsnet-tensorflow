@@ -222,7 +222,7 @@ __C.GPU_NUMBER = 2
 __C.GPU_BATCH_SIZE = 128
 
 # Save variables on CPU
-__C.VAR_ON_CPU = False  # True
+__C.VAR_ON_CPU = True
 
 # The decay to use for the moving average.
 __C.MOVING_AVERAGE_DECAY = 0.9999

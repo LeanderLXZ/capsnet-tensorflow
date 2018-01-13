@@ -13,7 +13,8 @@ class ModelBase(object):
     self.cfg = cfg
 
   @staticmethod
-  def variable_on_cpu(name, shape, initializer, dtype=tf.float32):
+  def variable_on_cpu(name, shape, initializer,
+                      dtype=tf.float32, trainable=True):
     """
     Helper to create a Variable stored on CPU memory.
 
@@ -22,11 +23,13 @@ class ModelBase(object):
       shape: list of ints
       initializer: initializer for Variable
       dtype: data type
+      trainable: variable can be trained by model
     Returns:
       Variable Tensor
     """
     with tf.device('/cpu:0'):
-      var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
+      var = tf.get_variable(name, shape, initializer=initializer,
+                            dtype=dtype, trainable=trainable)
     return var
 
   @staticmethod

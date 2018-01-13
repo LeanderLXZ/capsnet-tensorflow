@@ -62,6 +62,7 @@ class CapsNetDistribute(CapsNet):
       grads = []
       for grad, _ in grad_and_vars:
         # Add 0 dimension to the gradients to represent the tower.
+        print(grad)
         expanded_grad = tf.expand_dims(grad, 0)
         # Append on a 'tower' dimension which we will average over.
         grads.append(expanded_grad)
@@ -120,8 +121,8 @@ class CapsNetDistribute(CapsNet):
 
       # Calculate the gradients for each model tower.
       tower_grads = []
-      with tf.variable_scope(tf.get_variable_scope()):
-        for i in range(self.cfg.GPU_NUMBER):
+      for i in range(self.cfg.GPU_NUMBER):
+        with tf.variable_scope(tf.get_variable_scope(), reuse=bool(i != 0)):
           with tf.device('/gpu:%d' % i):
             with tf.name_scope('tower_%d' % i):
 
@@ -134,11 +135,10 @@ class CapsNetDistribute(CapsNet):
                     reconstructed_images = self._tower_loss(
                         x_tower, y_tower, image_size)
 
-                # Reuse variables for the next tower.
-                tf.get_variable_scope().reuse_variables()
-
                 # Calculate the gradients on this tower.
                 grads = optimizer.compute_gradients(loss)
+
+                print(grads)
 
                 # Keep track of the gradients across all towers.
                 tower_grads.append(grads)
@@ -147,8 +147,7 @@ class CapsNetDistribute(CapsNet):
       grads = self._average_gradients(tower_grads)
 
       # Apply the gradients to adjust the shared variables.
-      apply_gradient_op = optimizer.apply_gradients(
-          grads, global_step=global_step)
+      apply_gradient_op = optimizer.apply_gradients(grads)
 
       # Track the moving averages of all trainable variables.
       variable_averages = tf.train.ExponentialMovingAverage(
