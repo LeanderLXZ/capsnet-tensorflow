@@ -57,7 +57,7 @@ class Conv2Capsule(object):
       caps = tf.nn.conv2d(
           input=inputs,
           filter=kernels,
-          strides=self.stride,
+          strides=[1, self.stride, self.stride, 1],
           padding=self.padding)
       if self.use_bias:
         biases = ModelBase.variable_on_cpu(
