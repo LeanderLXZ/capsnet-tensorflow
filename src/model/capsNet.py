@@ -15,6 +15,7 @@ class CapsNet(ModelBase):
     super(CapsNet, self).__init__(cfg)
 
     self.cfg = cfg
+    self.batch_size = cfg.BATCH_SIZE
 
   def _get_inputs(self, image_size, num_class):
     """
@@ -45,7 +46,7 @@ class CapsNet(ModelBase):
     """
     with tf.name_scope('caps_{}'.format(idx)):
       _caps = capsule_layer.CapsuleLayer(self.cfg, **caps_param)
-      return _caps(x)
+      return _caps(x, self.batch_size)
 
   def _conv2caps_layer(self, x, conv2caps_params):
     """
@@ -62,7 +63,7 @@ class CapsNet(ModelBase):
       # {'kernel_size': None, 'stride': None, 'n_kernel': None,
       #  'vec_dim': None, 'padding': 'VALID'}
       conv2caps_layer = capsule_layer.Conv2Capsule(self.cfg, **conv2caps_params)
-      conv2caps = conv2caps_layer(x)
+      conv2caps = conv2caps_layer(x, self.batch_size)
 
     return conv2caps
 

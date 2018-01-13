@@ -13,6 +13,7 @@ class CapsNetDistribute(CapsNet):
     super(CapsNet, self).__init__(cfg)
 
     self.cfg = cfg
+    self.batch_size = cfg.GPU_BATCH_SIZE
 
   def _tower_loss(self, inputs, labels, image_size):
     """
