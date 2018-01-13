@@ -108,12 +108,12 @@ class CapsNetDistribute(CapsNet):
       # Global step
       global_step = tf.placeholder(tf.int16, name='global_step')
 
+      # Optimizer
       optimizer = self._optimizer(self.cfg.OPTIMIZER,
                                   n_train_samples=n_train_samples,
                                   global_step=global_step)
 
-      # batch_queue = tf.contrib.slim.prefetch_queue.prefetch_queue(
-      #     [inputs, labels], capacity=2 * self.cfg.GPU_NUMBER)
+      # Split data for each tower
       x_splits = tf.split(
           axis=0, num_or_size_splits=self.cfg.GPU_NUMBER, value=inputs)
       y_splits = tf.split(
@@ -127,7 +127,6 @@ class CapsNetDistribute(CapsNet):
             with tf.name_scope('tower_%d' % i):
 
                 # Dequeues one batch for the GPU
-                # x_tower, y_tower = batch_queue.dequeue()
                 x_tower, y_tower = x_splits[i], y_splits[i]
 
                 # Calculate the loss for one tower.

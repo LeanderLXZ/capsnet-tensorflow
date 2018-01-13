@@ -17,7 +17,7 @@ __C.LEARNING_RATE = 0.001
 __C.EPOCHS = 30
 
 # Batch size
-__C.BATCH_SIZE = 256
+__C.BATCH_SIZE = 512
 
 # ===========================================
 # #            Model Architecture           #
@@ -228,7 +228,7 @@ __C.TEST_LOG_PATH = '../test_logs'
 __C.GPU_NUMBER = 2
 
 # Batch size on a single GPU
-__C.GPU_BATCH_SIZE = 128
+__C.GPU_BATCH_SIZE = __C.BATCH_SIZE // __C.GPU_NUMBER
 
 # Save variables on CPU
 __C.VAR_ON_CPU = True
