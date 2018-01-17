@@ -158,9 +158,9 @@ class CapsNetDistribute(CapsNet):
 
       # Split data for each tower
       x_splits = tf.split(
-          axis=0, num_or_size_splits=self.cfg.GPU_NUMBER, value=inputs)
+          axis=0, num_or_size_splits=self.cfg.GPU_NUMBER, value=x_batch)
       y_splits = tf.split(
-          axis=0, num_or_size_splits=self.cfg.GPU_NUMBER, value=labels)
+          axis=0, num_or_size_splits=self.cfg.GPU_NUMBER, value=y_batch)
 
       # Calculate the gradients for each model tower.
       tower_grads = []
