@@ -400,7 +400,7 @@ class Sequential(object):
       layer: the layer to be added
     """
 
-    layer.apply_input(self._top)
+    layer.apply_inputs(self._top)
     self._top = layer()
 
   @property
