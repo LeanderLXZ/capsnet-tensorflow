@@ -1,4 +1,8 @@
-from config_pipeline import cfg_3, cfg_4, cfg_5, cfg_6, cfg_7
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from config_pipeline import *
 from main import Main
 from model.capsNet import CapsNet
 

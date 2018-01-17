@@ -13,9 +13,9 @@ import tensorflow as tf
 from PIL import Image
 from tqdm import tqdm
 
-from distribute_config import config
+from config_distribute import config
 from model import utils
-from multi_gpu.capsNet_distribute import CapsNetDistribute
+from model.capsNet_distribute import CapsNetDistribute
 
 
 class Main(object):

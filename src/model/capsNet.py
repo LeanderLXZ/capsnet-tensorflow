@@ -4,8 +4,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from model_arch import classifier
-from model_arch import decoder
+from capsNet_arch import classifier
+from capsNet_arch import decoder
 from model import utils
 from model import capsule_layer
 from model.model_base import ModelBase

@@ -7,3 +7,4 @@ from model import model_base
 from model import activation_fn
 from model import capsule_layer
 from model import capsNet
+from model import capsNet_distribute
