@@ -23,6 +23,10 @@ __C.BATCH_SIZE = 512
 # #            Model Architecture           #
 # ===========================================
 
+# Build architecture by model_arch.py.
+# If False, build architecture by following parameters.
+__C.BUILD_ARCH_BY_FILE = True
+
 # Architecture parameters of convolution layers
 # [{'kernel_size': None, 'stride': None, 'n_kernel': None}, ]
 __C.CONV_PARAMS = [
@@ -82,25 +86,25 @@ __C.MOMENTUM = 0.9
 __C.WITH_RECONSTRUCTION = True
 
 # Type of decoder of reconstruction:
-# 'FC': full_connected layers
-# 'CONV': convolution layers
-# 'CONV_T': transpose convolution layers
-# __C.DECODER_TYPE = 'fc'
+# 'fc': full_connected layers
+# 'conv': convolution layers
+# 'conv_t': transpose convolution layers
+__C.DECODER_TYPE = 'fc'
 
 # Architecture parameters of decoders of reconstruction
 # 'fc': [{'out_dim':None, 'act_fn': None}, ]  # 'act_fn': 'relu', 'sigmoid'
 # 'conv': [{'kernel_size': None, 'stride': None, 'n_kernel': None, 'padding': 'VALID', 'act_fn': None, 'resize': None}, ]
 # 'conv_t': [{'kernel_size': None, 'stride': None, 'n_kernel': None, 'padding': 'VALID'}, ]
-# __C.DECODER_PARAMS = [
-#     {'out_dim': 512, 'act_fn': 'relu'},
-#     {'out_dim': 1024, 'act_fn': 'relu'},
-#     {'out_dim': 784, 'act_fn': 'sigmoid'}
-# ]
+__C.DECODER_PARAMS = [
+    {'out_dim': 512, 'act_fn': 'relu'},
+    {'out_dim': 1024, 'act_fn': 'relu'},
+    {'out_dim': 784, 'act_fn': 'sigmoid'}
+]
 
 # Reconstruction loss
 # 'mse': Mean Square Error
 # 'ce' : sigmoid_cross_entropy_with_logits
-# __C.RECONSTRUCTION_LOSS = 'mse'
+__C.RECONSTRUCTION_LOSS = 'mse'
 
 # Scaling for reconstruction loss
 __C.RECONSTRUCT_LOSS_SCALE = 0.392  # 0.0005*784=0.392
@@ -121,14 +125,14 @@ __C.RECONSTRUCT_LOSS_SCALE = 0.392  # 0.0005*784=0.392
 #                       {'kernel_size': 9, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
 #                       {'kernel_size': 3, 'stride': 1, 'n_kernel': 1, 'padding': 'SAME', 'act_fn': 'sigmoid'}]
 
-__C.DECODER_TYPE = 'conv_t'
-__C.RECONSTRUCTION_LOSS = 'ce'
-__C.CONV_RESHAPE_SIZE = (1, 1)
-__C.DECODER_PARAMS = [{'kernel_size': 4, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 4x4
-                      {'kernel_size': 9, 'stride': 1, 'n_kernel': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 12x12
-                      {'kernel_size': 9, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
-                      {'kernel_size': 9, 'stride': 1, 'n_kernel': 8, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
-                      {'kernel_size': 3, 'stride': 1, 'n_kernel': 1, 'padding': 'SAME', 'act_fn': None}]
+# __C.DECODER_TYPE = 'conv_t'
+# __C.RECONSTRUCTION_LOSS = 'ce'
+# __C.CONV_RESHAPE_SIZE = (1, 1)
+# __C.DECODER_PARAMS = [{'kernel_size': 4, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 4x4
+#                       {'kernel_size': 9, 'stride': 1, 'n_kernel': 32, 'padding': 'VALID', 'act_fn': 'relu'},  # 12x12
+#                       {'kernel_size': 9, 'stride': 1, 'n_kernel': 16, 'padding': 'VALID', 'act_fn': 'relu'},  # 20x20
+#                       {'kernel_size': 9, 'stride': 1, 'n_kernel': 8, 'padding': 'VALID', 'act_fn': 'relu'},   # 28x28
+#                       {'kernel_size': 3, 'stride': 1, 'n_kernel': 1, 'padding': 'SAME', 'act_fn': None}]
 
 # -------------------------------------------
 # Test
