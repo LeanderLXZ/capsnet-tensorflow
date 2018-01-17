@@ -154,6 +154,7 @@ class CapsNet(ModelBase):
                               name='reshape')]
       else:
         layers_ = [inputs]
+
       for iter_l, param in enumerate(params):
         layer_ = layer_fn(x=layers_[iter_l], **param, idx=iter_l)
         layers_.append(layer_)

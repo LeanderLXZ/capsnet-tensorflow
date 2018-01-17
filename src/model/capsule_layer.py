@@ -365,8 +365,11 @@ class Dense2Capsule(object):
     self.batch_size = batch_size
     self.inputs = None
 
-  def _fc_layer(self, x, out_dim=None, act_fn='relu',
-                use_bias=True, idx=0):
+  def _fc_layer(self,
+                x,
+                out_dim=None,
+                act_fn='relu',
+                use_bias=True):
     """
     Single full_connected layer
 
@@ -375,34 +378,32 @@ class Dense2Capsule(object):
       out_dim: hidden units of full_connected layer
       act_fn: activation function
       use_bias: use bias
-      idx: index of layer
     Returns:
       output tensor of full_connected layer
     """
-    with tf.name_scope('fc_{}'.format(idx)):
-      activation_fn = ModelBase.get_act_fn(act_fn)
-      weights_initializer = tf.contrib.layers.xavier_initializer()
+    activation_fn = ModelBase.get_act_fn(act_fn)
+    weights_initializer = tf.contrib.layers.xavier_initializer()
 
-      if self.cfg.VAR_ON_CPU:
-        weights = ModelBase.variable_on_cpu(
-            name='weights',
-            shape=[x.get_shape().as_list()[1], out_dim],
-            initializer=weights_initializer,
-            dtype=tf.float32)
-        biases = ModelBase.variable_on_cpu(
-            name='biases',
-            shape=[out_dim],
-            initializer=tf.zeros_initializer(),
-            dtype=tf.float32)
-        return activation_fn(tf.add(tf.matmul(x, weights), biases))
-      else:
-        biases_initializer = tf.zeros_initializer() if use_bias else None
-        return tf.contrib.layers.fully_connected(
-            inputs=x,
-            num_outputs=out_dim,
-            activation_fn=activation_fn,
-            weights_initializer=weights_initializer,
-            biases_initializer=biases_initializer)
+    if self.cfg.VAR_ON_CPU:
+      weights = ModelBase.variable_on_cpu(
+          name='weights',
+          shape=[x.get_shape().as_list()[1], out_dim],
+          initializer=weights_initializer,
+          dtype=tf.float32)
+      biases = ModelBase.variable_on_cpu(
+          name='biases',
+          shape=[out_dim],
+          initializer=tf.zeros_initializer(),
+          dtype=tf.float32)
+      return activation_fn(tf.add(tf.matmul(x, weights), biases))
+    else:
+      biases_initializer = tf.zeros_initializer() if use_bias else None
+      return tf.contrib.layers.fully_connected(
+          inputs=x,
+          num_outputs=out_dim,
+          activation_fn=activation_fn,
+          weights_initializer=weights_initializer,
+          biases_initializer=biases_initializer)
 
   def apply_inputs(self, inputs):
     """
