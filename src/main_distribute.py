@@ -18,7 +18,7 @@ from model import utils
 from model.capsNet_distribute import CapsNetDistribute
 
 
-class Main(object):
+class MainDistribute(object):
 
   def __init__(self, model, cfg):
     """
@@ -612,5 +612,5 @@ if __name__ == '__main__':
       os.environ["CUDA_VISIBLE_DEVICES"] = str(value)
 
   CapsNet_ = CapsNetDistribute(config)
-  Main_ = Main(CapsNet_, config)
+  Main_ = MainDistribute(CapsNet_, config)
   Main_.train()

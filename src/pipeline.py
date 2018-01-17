@@ -3,21 +3,21 @@ from __future__ import division
 from __future__ import print_function
 
 from config_pipeline import *
-from main import Main
-from model.capsNet import CapsNet
+from main_distribute import MainDistribute
+from model.capsNet_distribute import CapsNetDistribute
 
 
 def training_capsnet(cfg):
 
-  CapsNet_ = CapsNet(cfg)
-  Main_ = Main(CapsNet_, cfg)
+  CapsNet_ = CapsNetDistribute(cfg)
+  Main_ = MainDistribute(CapsNet_, cfg)
   Main_.train()
 
 
 def pipeline():
 
-  # training_capsnet(cfg_1)
-  # training_capsnet(cfg_2)
+  training_capsnet(cfg_1)
+  training_capsnet(cfg_2)
   training_capsnet(cfg_3)
   training_capsnet(cfg_4)
   training_capsnet(cfg_5)
