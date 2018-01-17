@@ -220,10 +220,23 @@ __C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 # Path for saving testing logs
 __C.TEST_LOG_PATH = '../test_logs'
 
+# ===========================================
+# #          Multi-GPUs Config              #
+# ===========================================
+
+# Number of GPUs
+__C.GPU_NUMBER = 2
+
+# Batch size on a single GPU
+__C.GPU_BATCH_SIZE = __C.BATCH_SIZE // __C.GPU_NUMBER
+
 # Save variables on CPU
 __C.VAR_ON_CPU = True
 
+# The decay to use for the moving average.
+__C.MOVING_AVERAGE_DECAY = 0.9999
+
 # ===========================================
 
-# get config by: from config import config
+# get config by: from distribute_config import config
 config = __C

@@ -14,7 +14,6 @@ class CapsNet(ModelBase):
   def __init__(self, cfg):
     super(CapsNet, self).__init__(cfg)
 
-    self.cfg = cfg
     self.batch_size = cfg.BATCH_SIZE
 
   def _get_inputs(self, image_size, num_class):

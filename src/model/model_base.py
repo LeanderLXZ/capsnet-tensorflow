@@ -33,7 +33,7 @@ class ModelBase(object):
     return var
 
   @staticmethod
-  def _get_act_fn(act_fn):
+  def get_act_fn(act_fn):
     """
     Get activation function from name
     """
@@ -98,7 +98,7 @@ class ModelBase(object):
       output tensor of full_connected layer
     """
     with tf.name_scope('fc_{}'.format(idx)):
-      activation_fn = self._get_act_fn(act_fn)
+      activation_fn = self.get_act_fn(act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
 
       if self.cfg.VAR_ON_CPU:
@@ -156,7 +156,7 @@ class ModelBase(object):
         x = tf.pad(x, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
         padding = 'VALID'
 
-      activation_fn = self._get_act_fn(act_fn)
+      activation_fn = self.get_act_fn(act_fn)
 
       if stddev is None:
         weights_initializer = tf.contrib.layers.xavier_initializer()
@@ -213,7 +213,7 @@ class ModelBase(object):
       output tensor of convolution layer
     """
     with tf.name_scope('conv_t_{}'.format(idx)):
-      activation_fn = self._get_act_fn(act_fn)
+      activation_fn = self.get_act_fn(act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
       biases_initializer = tf.zeros_initializer() if use_bias else None
 

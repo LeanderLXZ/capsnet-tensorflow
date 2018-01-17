@@ -12,7 +12,6 @@ class CapsNetDistribute(CapsNet):
   def __init__(self, cfg):
     super(CapsNet, self).__init__(cfg)
 
-    self.cfg = cfg
     self.batch_size = cfg.GPU_BATCH_SIZE
 
   def _tower_loss(self, inputs, labels, image_size):
@@ -62,7 +61,6 @@ class CapsNetDistribute(CapsNet):
       grads = []
       for grad, _ in grad_and_vars:
         # Add 0 dimension to the gradients to represent the tower.
-        print(grad)
         expanded_grad = tf.expand_dims(grad, 0)
         # Append on a 'tower' dimension which we will average over.
         grads.append(expanded_grad)
@@ -126,19 +124,19 @@ class CapsNetDistribute(CapsNet):
           with tf.device('/gpu:%d' % i):
             with tf.name_scope('tower_%d' % i):
 
-                # Dequeues one batch for the GPU
-                x_tower, y_tower = x_splits[i], y_splits[i]
+              # Dequeues one batch for the GPU
+              x_tower, y_tower = x_splits[i], y_splits[i]
 
-                # Calculate the loss for one tower.
-                loss, accuracy, classifier_loss, reconstruct_loss, \
-                    reconstructed_images = self._tower_loss(
-                        x_tower, y_tower, image_size)
+              # Calculate the loss for one tower.
+              loss, accuracy, classifier_loss, reconstruct_loss, \
+                  reconstructed_images = self._tower_loss(
+                      x_tower, y_tower, image_size)
 
-                # Calculate the gradients on this tower.
-                grads = optimizer.compute_gradients(loss)
+              # Calculate the gradients on this tower.
+              grads = optimizer.compute_gradients(loss)
 
-                # Keep track of the gradients across all towers.
-                tower_grads.append(grads)
+              # Keep track of the gradients across all towers.
+              tower_grads.append(grads)
 
       # Calculate the mean of each gradient.
       grads = self._average_gradients(tower_grads)
