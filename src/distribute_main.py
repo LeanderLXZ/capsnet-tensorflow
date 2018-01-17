@@ -501,14 +501,12 @@ class Main(object):
           print('Training on epoch: {}/{}'.format(epoch_i + 1, self.cfg.EPOCHS))
 
           if self.cfg.DISPLAY_STEP is not None:
-            for x_batch, y_batch in utils.get_batches(self.x_train,
-                                                      self.y_train,
-                                                      self.cfg.BATCH_SIZE):
+            for batch_i in range(self.n_batch_train):
+
               step += 1
 
               # Training optimizer
-              sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
-                                                  self.labels: y_batch,
+              sess.run(self.optimizer, feed_dict={self.batch_i: batch_i,
                                                   self.step: step-1})
 
               # Display training information

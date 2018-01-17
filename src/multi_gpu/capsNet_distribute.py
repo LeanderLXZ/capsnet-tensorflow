@@ -80,6 +80,44 @@ class CapsNetDistribute(CapsNet):
 
     return average_grads
 
+  def _generate_batches(self, n_batches):
+
+    def _split_data(_file_path):
+      _inputs_train = None
+      return tf.split(
+          axis=0,
+          num_or_size_splits=n_batches,
+          value=_inputs_train,
+          name='x_batches_train')
+
+    self.x_batches_train = _split_data(self.x_train_path)
+    self.y_batches_train = _split_data(self.y_train_path)
+    self.x_batches_valid = _split_data(self.x_valid_path)
+    self.y_batches_valid = _split_data(self.y_valid_path)
+    self.x_batches_test = _split_data(self.x_test_path)
+    self.y_batches_test = _split_data(self.y_test_path)
+
+  def _get_batches(self, eval_mode):
+
+    train_mode = tf.constant('train', tf.string)
+    valid_mode = tf.constant('valid', tf.string)
+    test_mode = tf.constant('test', tf.string)
+
+    _x_batches = tf.case(
+        {tf.equal(eval_mode, train_mode): lambda: self.x_batches_train,
+         tf.equal(eval_mode, valid_mode): lambda: self.x_batches_valid,
+         tf.equal(eval_mode, test_mode): lambda: self.x_batches_test},
+        default=lambda: self.x_batches_train,
+        exclusive=True)
+    _y_batches = tf.case(
+        {tf.equal(eval_mode, train_mode): lambda: self.y_batches_train,
+         tf.equal(eval_mode, valid_mode): lambda: self.y_batches_valid,
+         tf.equal(eval_mode, test_mode): lambda: self.y_batches_test},
+        default=lambda: self.y_batches_train,
+        exclusive=True)
+
+    return _x_batches, _y_batches
+
   def build_graph(self, image_size=(None, None, None),
                   num_class=None, n_train_samples=None):
     """
@@ -102,8 +140,13 @@ class CapsNetDistribute(CapsNet):
 
     with train_graph.as_default(), tf.device('/cpu:0'):
 
-      # Get inputs tensor
-      inputs, labels = self._get_inputs(image_size, num_class)
+      # Get batch
+      n_batches = tf.placeholder(tf.int16, name='n_batches')
+      eval_mode = tf.placeholder(tf.string, name='eval_mode')
+      batch_i = tf.placeholder(tf.int16, name='batch_i')
+      self._generate_batches(n_batches)
+      x_batches, y_batches = self._get_batches(eval_mode)
+      x_batch, y_batch = x_batches[batch_i], y_batches[batch_i]
 
       # Global step
       global_step = tf.placeholder(tf.int16, name='global_step')
@@ -126,19 +169,19 @@ class CapsNetDistribute(CapsNet):
           with tf.device('/gpu:%d' % i):
             with tf.name_scope('tower_%d' % i):
 
-                # Dequeues one batch for the GPU
-                x_tower, y_tower = x_splits[i], y_splits[i]
+              # Dequeues one batch for the GPU
+              x_tower, y_tower = x_splits[i], y_splits[i]
 
-                # Calculate the loss for one tower.
-                loss, accuracy, classifier_loss, reconstruct_loss, \
-                    reconstructed_images = self._tower_loss(
-                        x_tower, y_tower, image_size)
+              # Calculate the loss for one tower.
+              loss, accuracy, classifier_loss, reconstruct_loss, \
+                  reconstructed_images = self._tower_loss(
+                      x_tower, y_tower, image_size)
 
-                # Calculate the gradients on this tower.
-                grads = optimizer.compute_gradients(loss)
+              # Calculate the gradients on this tower.
+              grads = optimizer.compute_gradients(loss)
 
-                # Keep track of the gradients across all towers.
-                tower_grads.append(grads)
+              # Keep track of the gradients across all towers.
+              tower_grads.append(grads)
 
       # Calculate the mean of each gradient.
       grads = self._average_gradients(tower_grads)
