@@ -33,30 +33,22 @@ class CapsuleLayer(object):
     self.vec_dim = vec_dim
     self.route_epoch = route_epoch
     self.batch_size = batch_size
-    self.inputs = None
     self.idx = idx
 
-  def apply_inputs(self, inputs):
+  def __call__(self, inputs):
     """
-    Apply inputs.
+    Apply dynamic routing.
 
     Args:
       inputs: input tensor
         - shape: (batch_size, num_caps_i, vec_dim_i, 1)
-    """
-    self.inputs = inputs
-
-  def __call__(self):
-    """
-    Apply dynamic routing.
-
     Returns:
       output tensor
         - shape (batch_size, num_caps_j, vec_dim_j, 1)
     """
     with tf.variable_scope('caps_{}'.format(self.idx)):
       self.v_j = self.dynamic_routing(
-          self.inputs, self.num_caps, self.vec_dim,
+          inputs, self.num_caps, self.vec_dim,
           self.route_epoch, self.batch_size)
 
     return self.v_j
@@ -261,22 +253,14 @@ class Conv2Capsule(object):
     self.act_fn = act_fn
     self.use_bias = use_bias
     self.batch_size = batch_size
-    self.inputs = None
 
-  def apply_inputs(self, inputs):
+  def __call__(self, inputs):
     """
-    Apply inputs.
+    Convert a convolution layer to capsule layer.
 
     Args:
       inputs: input tensor
         - shape: (batch_size, height, width, depth)
-    """
-    self.inputs = inputs
-
-  def __call__(self):
-    """
-    Convert a convolution layer to capsule layer.
-
     Returns:
       tensor of capsules
         - shape: (batch_size, num_caps_j, vec_dim_j, 1)
@@ -290,12 +274,12 @@ class Conv2Capsule(object):
         kernels = ModelBase.variable_on_cpu(
             name='kernels',
             shape=[self.kernel_size, self.kernel_size,
-                   self.inputs.get_shape().as_list()[3],
+                   inputs.get_shape().as_list()[3],
                    self.n_kernel * self.vec_dim],
             initializer=weights_initializer,
             dtype=tf.float32)
         caps = tf.nn.conv2d(
-            input=self.inputs,
+            input=inputs,
             filter=kernels,
             strides=[1, self.stride, self.stride, 1],
             padding=self.padding)
@@ -309,7 +293,7 @@ class Conv2Capsule(object):
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
         caps = tf.contrib.layers.conv2d(
-            inputs=self.inputs,
+            inputs=inputs,
             num_outputs=self.n_kernel * self.vec_dim,
             kernel_size=self.kernel_size,
             stride=self.stride,
@@ -363,7 +347,6 @@ class Dense2Capsule(object):
     self.act_fn = act_fn
     self.vec_dim = vec_dim
     self.batch_size = batch_size
-    self.inputs = None
 
   def _fc_layer(self,
                 x,
@@ -408,27 +391,20 @@ class Dense2Capsule(object):
             weights_initializer=weights_initializer,
             biases_initializer=biases_initializer)
 
-  def apply_inputs(self, inputs):
+  def __call__(self, inputs):
     """
-    Apply inputs.
+    Convert inputs to capsule layer densely.
 
     Args:
       inputs: input tensor
         - shape: (batch_size, height, width, depth)
-    """
-    self.inputs = inputs
-
-  def __call__(self):
-    """
-    Convert inputs to capsule layer densely.
-
     Returns:
       tensor of capsules
         - shape: (batch_size, num_caps_j, vec_dim_j, 1)
     """
     with tf.variable_scope('dense2caps'):
       # Flatten shape: (batch_size, height * width * depth)
-      inputs_flatten = tf.contrib.layers.flatten(self.inputs)
+      inputs_flatten = tf.contrib.layers.flatten(inputs)
 
       if self.identity_map:
         self.num_caps = inputs_flatten.get_shape().as_list()[1]
