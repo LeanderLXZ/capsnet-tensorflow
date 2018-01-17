@@ -12,7 +12,7 @@ __C = EasyDict()
 # ===========================================
 
 # Training version
-__C.VERSION = 'conv_t_rec'
+__C.VERSION = 'fc_rec'
 
 # Learning rate
 __C.LEARNING_RATE = 0.001
