@@ -58,6 +58,7 @@ class CapsNet(ModelBase):
       conv2caps_params: parameters of conv2caps layer
     Returns:
       output tensor of capsule layer
+        - shape: (batch_size, num_caps, vec_dim, 1)
     """
     with tf.variable_scope('conv2caps'):
       # conv2caps_params:
@@ -76,7 +77,7 @@ class CapsNet(ModelBase):
       x: input tensor
     Returns:
       multi capsule layers' output tensor
-        - shape: (batch_size, num_caps_j, vec_dim_j)
+        - shape: (batch_size, num_caps, vec_dim, 1)
     """
     caps_layers = [x]
     for iter_caps, caps_param in enumerate(self.cfg.CAPS_PARAMS):
@@ -86,7 +87,7 @@ class CapsNet(ModelBase):
           caps_layers[iter_caps], caps_param, idx=iter_caps)
       caps_layers.append(caps_layer)
 
-    return tf.squeeze(caps_layers[-1])
+    return caps_layers[-1]
 
   def _margin_loss(self, logits, labels, m_plus=0.9,
                    m_minus=0.1, lambda_=0.5):
@@ -326,7 +327,8 @@ class CapsNet(ModelBase):
       # Build capsule layers
       logits = self._multi_caps_layers(conv2caps)
 
-    logits = tf.identity(logits, name='logits')
+    # Logits shape: (batch_size, num_caps, vec_dim, 1)
+    logits = tf.squeeze(logits, name='logits')
     if self.cfg.SHOW_TRAINING_DETAILS:
       logits = tf.Print(logits, [tf.constant(3)],
                         message="\nCAPSULE layers passed...")
