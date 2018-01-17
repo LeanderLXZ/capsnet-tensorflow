@@ -10,7 +10,13 @@ from model.model_base import ModelBase
 
 class CapsuleLayer(object):
 
-  def __init__(self, cfg, num_caps=None, vec_dim=None, route_epoch=None):
+  def __init__(self,
+               cfg,
+               num_caps=None,
+               vec_dim=None,
+               route_epoch=None,
+               batch_size=None,
+               idx=0):
     """
     Initialize capsule layer.
 
@@ -19,25 +25,39 @@ class CapsuleLayer(object):
       num_caps: number of capsules of this layer
       vec_dim: dimensions of vectors of capsules
       route_epoch: number of dynamic routing iteration
+      batch_size: number of samples per batch
+      idx: index of layer
     """
     self.cfg = cfg
     self.num_caps = num_caps
     self.vec_dim = vec_dim
     self.route_epoch = route_epoch
+    self.batch_size = batch_size
+    self.inputs = None
+    self.idx = idx
 
-  def __call__(self, inputs, batch_size):
+  def apply_inputs(self, inputs):
     """
-    Apply dynamic routing.
+    Apply inputs.
 
     Args:
       inputs: input tensor
         - shape: (batch_size, num_caps_i, vec_dim_i, 1)
+    """
+    self.inputs = inputs
+
+  def __call__(self):
+    """
+    Apply dynamic routing.
+
     Returns:
       output tensor
         - shape (batch_size, num_caps_j, vec_dim_j, 1)
     """
-    self.v_j = self.dynamic_routing(
-        inputs, self.num_caps, self.vec_dim, self.route_epoch, batch_size)
+    with tf.name_scope('caps_{}'.format(self.idx)):
+      self.v_j = self.dynamic_routing(
+          self.inputs, self.num_caps, self.vec_dim,
+          self.route_epoch, self.batch_size)
 
     return self.v_j
 
@@ -208,8 +228,16 @@ class CapsuleLayer(object):
 
 class Conv2Capsule(object):
 
-  def __init__(self, cfg, kernel_size=None, stride=None, n_kernel=None,
-               vec_dim=None, padding=None, act_fn='relu', use_bias=True):
+  def __init__(self,
+               cfg,
+               kernel_size=None,
+               stride=None,
+               n_kernel=None,
+               vec_dim=None,
+               padding='SAME',
+               act_fn='relu',
+               use_bias=True,
+               batch_size=None):
     """
     Generate a Capsule layer using convolution kernel.
 
@@ -222,6 +250,7 @@ class Conv2Capsule(object):
       padding: padding type of convolution kernel
       act_fn: activation function of convolution layer
       use_bias: add biases
+      batch_size: number of samples per batch
     """
     self.cfg = cfg
     self.kernel_size = kernel_size
@@ -231,77 +260,91 @@ class Conv2Capsule(object):
     self.padding = padding
     self.act_fn = act_fn
     self.use_bias = use_bias
+    self.batch_size = batch_size
+    self.inputs = None
 
-  def __call__(self, inputs, batch_size):
+  def apply_inputs(self, inputs):
     """
-    Convert a convolution layer to capsule layer.
+    Apply inputs.
 
     Args:
       inputs: input tensor
         - shape: (batch_size, height, width, depth)
-      batch_size: number of samples per batch
+    """
+    self.inputs = inputs
+
+  def __call__(self):
+    """
+    Convert a convolution layer to capsule layer.
+
     Returns:
       tensor of capsules
         - shape: (batch_size, num_caps_j, vec_dim_j, 1)
     """
-    # Convolution layer
-    activation_fn = ModelBase.get_act_fn(self.act_fn)
-    weights_initializer = tf.contrib.layers.xavier_initializer()
+    with tf.variable_scope('conv2caps'):
+      # Convolution layer
+      activation_fn = ModelBase.get_act_fn(self.act_fn)
+      weights_initializer = tf.contrib.layers.xavier_initializer()
 
-    if self.cfg.VAR_ON_CPU:
-      kernels = ModelBase.variable_on_cpu(
-          name='kernels',
-          shape=[self.kernel_size, self.kernel_size,
-                 inputs.get_shape().as_list()[3],
-                 self.n_kernel * self.vec_dim],
-          initializer=weights_initializer,
-          dtype=tf.float32)
-      caps = tf.nn.conv2d(
-          input=inputs,
-          filter=kernels,
-          strides=[1, self.stride, self.stride, 1],
-          padding=self.padding)
-      if self.use_bias:
-        biases = ModelBase.variable_on_cpu(
-            name='biases',
-            shape=[self.n_kernel * self.vec_dim],
-            initializer=tf.zeros_initializer(),
+      if self.cfg.VAR_ON_CPU:
+        kernels = ModelBase.variable_on_cpu(
+            name='kernels',
+            shape=[self.kernel_size, self.kernel_size,
+                   self.inputs.get_shape().as_list()[3],
+                   self.n_kernel * self.vec_dim],
+            initializer=weights_initializer,
             dtype=tf.float32)
-        caps = tf.nn.bias_add(caps, biases)
-    else:
-      biases_initializer = tf.zeros_initializer() if self.use_bias else None
-      caps = tf.contrib.layers.conv2d(
-          inputs=inputs,
-          num_outputs=self.n_kernel * self.vec_dim,
-          kernel_size=self.kernel_size,
-          stride=self.stride,
-          padding=self.padding,
-          activation_fn=activation_fn,
-          weights_initializer=weights_initializer,
-          biases_initializer=biases_initializer)
+        caps = tf.nn.conv2d(
+            input=self.inputs,
+            filter=kernels,
+            strides=[1, self.stride, self.stride, 1],
+            padding=self.padding)
+        if self.use_bias:
+          biases = ModelBase.variable_on_cpu(
+              name='biases',
+              shape=[self.n_kernel * self.vec_dim],
+              initializer=tf.zeros_initializer(),
+              dtype=tf.float32)
+          caps = tf.nn.bias_add(caps, biases)
+      else:
+        biases_initializer = tf.zeros_initializer() if self.use_bias else None
+        caps = tf.contrib.layers.conv2d(
+            inputs=self.inputs,
+            num_outputs=self.n_kernel * self.vec_dim,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            activation_fn=activation_fn,
+            weights_initializer=weights_initializer,
+            biases_initializer=biases_initializer)
 
-    # Reshape and generating a capsule layer
-    caps_shape = caps.get_shape().as_list()
-    num_capsule = caps_shape[1] * caps_shape[2] * self.n_kernel
-    caps = tf.reshape(caps, [batch_size, -1, self.vec_dim, 1])
-    # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
-    assert caps.get_shape() == (
-        batch_size, num_capsule, self.vec_dim, 1)
+      # Reshape and generating a capsule layer
+      caps_shape = caps.get_shape().as_list()
+      num_capsule = caps_shape[1] * caps_shape[2] * self.n_kernel
+      caps = tf.reshape(caps, [self.batch_size, -1, self.vec_dim, 1])
+      # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
+      assert caps.get_shape() == (
+        self.batch_size, num_capsule, self.vec_dim, 1)
 
-    # Applying activation function
-    caps_activated = ActivationFunc.squash(
-        caps, batch_size, self.cfg.EPSILON)
-    # caps_activated shape: (batch_size, num_caps_j, vec_dim_j, 1)
-    assert caps_activated.get_shape() == (
-        batch_size, num_capsule, self.vec_dim, 1)
+      # Applying activation function
+      caps_activated = ActivationFunc.squash(
+          caps, self.batch_size, self.cfg.EPSILON)
+      # caps_activated shape: (batch_size, num_caps_j, vec_dim_j, 1)
+      assert caps_activated.get_shape() == (
+        self.batch_size, num_capsule, self.vec_dim, 1)
 
-    return caps_activated
+      return caps_activated
 
 
 class Dense2Capsule(object):
 
-  def __init__(self, cfg, identity_map=True,
-               num_caps=None, act_fn='relu', vec_dim=8):
+  def __init__(self,
+               cfg,
+               identity_map=True,
+               num_caps=None,
+               act_fn='relu',
+               vec_dim=8,
+               batch_size=None):
     """
     Generate a Capsule layer densely.
 
@@ -312,13 +355,15 @@ class Dense2Capsule(object):
               identity_map is False
       num_caps: number of output capsules, needed if identity_map is False
       vec_dim: dimensions of vectors of capsule
+      batch_size: number of samples per batch
     """
-
     self.cfg = cfg
     self.identity_map = identity_map
     self.num_caps = num_caps
     self.act_fn = act_fn
     self.vec_dim = vec_dim
+    self.batch_size = batch_size
+    self.inputs = None
 
   def _fc_layer(self, x, out_dim=None, act_fn='relu',
                 use_bias=True, idx=0):
@@ -359,48 +404,55 @@ class Dense2Capsule(object):
             weights_initializer=weights_initializer,
             biases_initializer=biases_initializer)
 
-  def __call__(self, inputs, batch_size):
+  def apply_inputs(self, inputs):
     """
-    Convert inputs to capsule layer densely.
+    Apply inputs.
 
     Args:
       inputs: input tensor
         - shape: (batch_size, height, width, depth)
-      batch_size: number of samples per batch
+    """
+    self.inputs = inputs
+
+  def __call__(self):
+    """
+    Convert inputs to capsule layer densely.
+
     Returns:
       tensor of capsules
         - shape: (batch_size, num_caps_j, vec_dim_j, 1)
     """
-    # Flatten shape: (batch_size, height * width * depth)
-    inputs_flatten = tf.contrib.layers.flatten(inputs)
+    with tf.variable_scope('dense2caps'):
+      # Flatten shape: (batch_size, height * width * depth)
+      inputs_flatten = tf.contrib.layers.flatten(self.inputs)
 
-    if self.identity_map:
-      self.num_caps = inputs_flatten.get_shape().as_list()[1]
-      inputs_flatten = tf.expand_dims(inputs_flatten, -1)
-      caps = tf.tile(inputs_flatten, [1, 1, self.vec_dim])
-    else:
-      caps_ = []
-      for i in range(self.vec_dim):
-        fc_ = self._fc_layer(x=inputs_flatten,
-                             out_dim=self.num_caps,
-                             act_fn=self.act_fn,
-                             use_bias=True,
-                             idx=i)
-        fc_ = tf.expand_dims(fc_, -1)
-        caps_.append(fc_)
-      caps = tf.concat(caps_, axis=-1)
+      if self.identity_map:
+        self.num_caps = inputs_flatten.get_shape().as_list()[1]
+        inputs_flatten = tf.expand_dims(inputs_flatten, -1)
+        caps = tf.tile(inputs_flatten, [1, 1, self.vec_dim])
+      else:
+        caps_ = []
+        for i in range(self.vec_dim):
+          fc_ = self._fc_layer(x=inputs_flatten,
+                               out_dim=self.num_caps,
+                               act_fn=self.act_fn,
+                               use_bias=True,
+                               idx=i)
+          fc_ = tf.expand_dims(fc_, -1)
+          caps_.append(fc_)
+        caps = tf.concat(caps_, axis=-1)
 
-    # Reshape and generating a capsule layer
-    caps = tf.reshape(caps, [batch_size, -1, self.vec_dim, 1])
-    # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
-    assert caps.get_shape() == (
-      batch_size, self.num_caps, self.vec_dim, 1)
+      # Reshape and generating a capsule layer
+      caps = tf.reshape(caps, [self.batch_size, -1, self.vec_dim, 1])
+      # caps shape: (batch_size, num_caps_j, vec_dim_j, 1)
+      assert caps.get_shape() == (
+        self.batch_size, self.num_caps, self.vec_dim, 1)
 
-    # Applying activation function
-    caps_activated = ActivationFunc.squash(
-        caps, batch_size, self.cfg.EPSILON)
-    # caps_activated shape: (batch_size, num_caps_j, vec_dim_j, 1)
-    assert caps_activated.get_shape() == (
-      batch_size, self.num_caps, self.vec_dim, 1)
+      # Applying activation function
+      caps_activated = ActivationFunc.squash(
+          caps, self.batch_size, self.cfg.EPSILON)
+      # caps_activated shape: (batch_size, num_caps_j, vec_dim_j, 1)
+      assert caps_activated.get_shape() == (
+        self.batch_size, self.num_caps, self.vec_dim, 1)
 
-    return caps_activated
+      return caps_activated

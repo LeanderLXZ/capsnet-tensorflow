@@ -13,8 +13,11 @@ class ModelBase(object):
     self.cfg = cfg
 
   @staticmethod
-  def variable_on_cpu(name, shape, initializer,
-                      dtype=tf.float32, trainable=True):
+  def variable_on_cpu(name,
+                      shape,
+                      initializer,
+                      dtype=tf.float32,
+                      trainable=True):
     """
     Helper to create a Variable stored on CPU memory.
 
@@ -50,29 +53,37 @@ class ModelBase(object):
     return activation_fn
 
   @staticmethod
-  def _batch_norm(x, is_training, batch_norm_decay, batch_norm_epsilon):
+  def _batch_norm(x,
+                  is_training,
+                  batch_norm_decay,
+                  batch_norm_epsilon):
     """
     Batch normalization layer
     """
     with tf.name_scope('batch_norm'):
-      return tf.contrib.layers.batch_norm(input=x,
-                                          decay=batch_norm_decay,
-                                          center=True,
-                                          scale=True,
-                                          epsilon=batch_norm_epsilon,
-                                          is_training=is_training,
-                                          fused=True)
+      return tf.contrib.layers.batch_norm(
+          input=x,
+          decay=batch_norm_decay,
+          center=True,
+          scale=True,
+          epsilon=batch_norm_epsilon,
+          is_training=is_training,
+          fused=True)
 
   @staticmethod
-  def _avg_pool(x, pool_size=None, stride=None, padding='SAME'):
+  def _avg_pool(x,
+                pool_size=None,
+                stride=None,
+                padding='SAME'):
     """
     Average pooling
     """
     with tf.name_scope('avg_pool'):
-      return tf.layers.average_pooling2d(inputs=x,
-                                         pool_size=pool_size,
-                                         strides=stride,
-                                         padding=padding)
+      return tf.layers.average_pooling2d(
+          inputs=x,
+          pool_size=pool_size,
+          strides=stride,
+          padding=padding)
 
   @staticmethod
   def _global_avg_pool(x):
@@ -83,8 +94,12 @@ class ModelBase(object):
       assert x.get_shape().ndims == 4
       return tf.reduce_mean(x, [1, 2])
 
-  def _fc_layer(self, x, out_dim=None, act_fn='relu',
-                use_bias=True, idx=0):
+  def _fc_layer(self,
+                x,
+                out_dim=None,
+                act_fn='relu',
+                use_bias=True,
+                idx=0):
     """
     Single full_connected layer
 
@@ -122,9 +137,18 @@ class ModelBase(object):
             weights_initializer=weights_initializer,
             biases_initializer=biases_initializer)
 
-  def _conv_layer(self, x, kernel_size=None, stride=None, n_kernel=None,
-                  padding='SAME', act_fn='relu', stddev=None,
-                  resize=None, use_bias=True, atrous=False, idx=None):
+  def _conv_layer(self,
+                  x,
+                  kernel_size=None,
+                  stride=None,
+                  n_kernel=None,
+                  padding='SAME',
+                  act_fn='relu',
+                  stddev=None,
+                  resize=None,
+                  use_bias=True,
+                  atrous=False,
+                  idx=None):
     """
     Single convolution layer
 
@@ -143,60 +167,29 @@ class ModelBase(object):
     Returns:
       output tensor of convolution layer
     """
-    with tf.name_scope('conv_{}'.format(idx)):
-      # Resize image
-      if resize is not None:
-        x = tf.image.resize_nearest_neighbor(x, (resize, resize))
+    _conv = ConvLayer(self.cfg,
+                      kernel_size=kernel_size,
+                      stride=stride,
+                      n_kernel=n_kernel,
+                      padding=padding,
+                      act_fn=act_fn,
+                      stddev=stddev,
+                      resize=resize,
+                      use_bias=use_bias,
+                      atrous=atrous,
+                      idx=idx)
+    _conv.apply_inputs(x)
+    return _conv()
 
-      # With atrous
-      if not atrous and stride > 1:
-        pad = kernel_size - 1
-        pad_beg = pad // 2
-        pad_end = pad - pad_beg
-        x = tf.pad(x, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
-        padding = 'VALID'
-
-      activation_fn = self.get_act_fn(act_fn)
-
-      if stddev is None:
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-      else:
-        weights_initializer = tf.truncated_normal_initializer(stddev=stddev)
-
-      if self.cfg.VAR_ON_CPU:
-        kernels = self.variable_on_cpu(
-            name='kernels',
-            shape=[kernel_size, kernel_size,
-                   x.get_shape().as_list()[3], n_kernel],
-            initializer=weights_initializer,
-            dtype=tf.float32)
-        conv = tf.nn.conv2d(input=x,
-                            filter=kernels,
-                            strides=[1, stride, stride, 1],
-                            padding=padding)
-        if use_bias:
-          biases = self.variable_on_cpu(
-              name='biases',
-              shape=[n_kernel],
-              initializer=tf.zeros_initializer(),
-              dtype=tf.float32)
-          conv = tf.nn.bias_add(conv, biases)
-        return activation_fn(conv)
-      else:
-        biases_initializer = tf.zeros_initializer() if use_bias else None
-        return tf.contrib.layers.conv2d(
-            inputs=x,
-            num_outputs=n_kernel,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
-            activation_fn=activation_fn,
-            weights_initializer=weights_initializer,
-            biases_initializer=biases_initializer)
-
-  def _conv_t_layer(self, x, kernel_size=None,
-                    stride=None, n_kernel=None, padding='SAME',
-                    act_fn='relu', use_bias=True, idx=None):
+  def _conv_t_layer(self,
+                    x,
+                    kernel_size=None,
+                    stride=None,
+                    n_kernel=None,
+                    padding='SAME',
+                    act_fn='relu',
+                    use_bias=True,
+                    idx=None):
     """
     Single transpose convolution layer
 
@@ -242,8 +235,13 @@ class ModelBase(object):
 
     return conv_layers[-1]
 
-  def _optimizer(self, opt_name='adam', n_train_samples=None, global_step=None):
-
+  def _optimizer(self,
+                 opt_name='adam',
+                 n_train_samples=None,
+                 global_step=None):
+    """
+    Optimizer.
+    """
     if opt_name == 'adam':
       return tf.train.AdamOptimizer(self.cfg.LEARNING_RATE)
 
@@ -266,3 +264,151 @@ class ModelBase(object):
 
     else:
       raise ValueError('Wrong optimizer name!')
+
+
+class ConvLayer(object):
+
+  def __init__(self,
+               cfg,
+               kernel_size=None,
+               stride=None,
+               n_kernel=None,
+               padding='SAME',
+               act_fn='relu',
+               stddev=None,
+               resize=None,
+               use_bias=True,
+               atrous=False,
+               idx=0):
+    """
+    Single convolution layer
+
+    Args:
+      cfg: configuration
+      kernel_size: size of convolution kernel
+      stride: stride of convolution kernel
+      n_kernel: number of convolution kernels
+      padding: padding type of convolution kernel
+      act_fn: activation function
+      stddev: stddev of weights initializer
+      resize: if resize is not None, resize every image
+      atrous: use atrous convolution
+      use_bias: use bias
+      idx: index of layer
+    Returns:
+      output tensor of convolution layer
+    """
+    self.cfg = cfg
+    self.kernel_size = kernel_size
+    self.stride = stride
+    self.n_kernel = n_kernel
+    self.padding = padding
+    self.act_fn = act_fn
+    self.stddev = stddev
+    self.resize = resize
+    self.use_bias = use_bias
+    self.atrous = atrous
+    self.idx = idx
+    self.inputs = None
+
+  def apply_inputs(self, inputs):
+    """
+    Apply inputs.
+
+    Args:
+      inputs: input tensor
+        - shape: (batch_size, height, width, channel)
+    """
+    self.inputs = inputs
+
+  def __call__(self):
+
+    """
+    Single convolution layer
+
+    Returns:
+      output tensor of convolution layer
+    """
+    with tf.name_scope('conv_{}'.format(self.idx)):
+      # Resize image
+      if self.resize is not None:
+        self.inputs = tf.image.resize_nearest_neighbor(
+            self.inputs, (self.resize, self.resize))
+
+      # With atrous
+      if not self.atrous and self.stride > 1:
+        pad = self.kernel_size - 1
+        pad_beg = pad // 2
+        pad_end = pad - pad_beg
+        self.inputs = tf.pad(
+            self.inputs,
+            [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
+        self.padding = 'VALID'
+
+      activation_fn = ModelBase.get_act_fn(self.act_fn)
+
+      if self.stddev is None:
+        weights_initializer = tf.contrib.layers.xavier_initializer()
+      else:
+        weights_initializer = tf.truncated_normal_initializer(
+            stddev=self.stddev)
+
+      if self.cfg.VAR_ON_CPU:
+        kernels = ModelBase.variable_on_cpu(
+            name='kernels',
+            shape=[self.kernel_size, self.kernel_size,
+                   self.inputs.get_shape().as_list()[3], self.n_kernel],
+            initializer=weights_initializer,
+            dtype=tf.float32)
+        conv = tf.nn.conv2d(input=self.inputs,
+                            filter=kernels,
+                            strides=[1, self.stride, self.stride, 1],
+                            padding=self.padding)
+        if self.use_bias:
+          biases = ModelBase.variable_on_cpu(
+              name='biases',
+              shape=[self.n_kernel],
+              initializer=tf.zeros_initializer(),
+              dtype=tf.float32)
+          conv = tf.nn.bias_add(conv, biases)
+        return activation_fn(conv)
+      else:
+        biases_initializer = tf.zeros_initializer() if self.use_bias else None
+        return tf.contrib.layers.conv2d(
+            inputs=self.inputs,
+            num_outputs=self.n_kernel,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            activation_fn=activation_fn,
+            weights_initializer=weights_initializer,
+            biases_initializer=biases_initializer)
+
+
+class Sequential(object):
+  """
+  Build model architecture by sequential.
+  """
+  def __init__(self, inputs):
+    self._top = inputs
+
+  def add(self, layer):
+    """
+    Add a layer to the top of the model.
+
+    Args:
+      layer: the layer to be added
+    """
+
+    layer.apply_input(self._top)
+    self._top = layer()
+
+  @property
+  def top_layer(self):
+    """
+    Get the top layer of the model.
+
+    Return:
+      top layer
+    """
+    return self._top

@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+from model_arch import get_model
 from model import utils
 from model import capsule_layer
 from model.model_base import ModelBase
@@ -43,9 +44,10 @@ class CapsNet(ModelBase):
     Returns:
       output tensor of capsule layer
     """
-    with tf.name_scope('caps_{}'.format(idx)):
-      _caps = capsule_layer.CapsuleLayer(self.cfg, **caps_param)
-      return _caps(x, self.batch_size)
+    _caps = capsule_layer.CapsuleLayer(
+        self.cfg, **caps_param, batch_size=self.batch_size, idx=idx)
+    _caps.apply_inputs(x)
+    return _caps()
 
   def _conv2caps_layer(self, x, conv2caps_params):
     """
@@ -61,10 +63,10 @@ class CapsNet(ModelBase):
       # conv2caps_params:
       # {'kernel_size': None, 'stride': None, 'n_kernel': None,
       #  'vec_dim': None, 'padding': 'VALID'}
-      conv2caps_layer = capsule_layer.Conv2Capsule(self.cfg, **conv2caps_params)
-      conv2caps = conv2caps_layer(x, self.batch_size)
-
-    return conv2caps
+      _conv2caps = capsule_layer.Conv2Capsule(
+          self.cfg, **conv2caps_params, batch_size=self.batch_size)
+      _conv2caps.apply_inputs(x)
+      return _conv2caps()
 
   def _multi_caps_layers(self, x):
     """
@@ -306,20 +308,24 @@ class CapsNet(ModelBase):
       logits: output tensor of model
         - shape: (batch_size, num_caps, vec_dim)
     """
-    # Build convolution layers
-    conv = self._multi_conv_layers(inputs)
-    if self.cfg.SHOW_TRAINING_DETAILS:
-      conv = tf.Print(conv, [tf.constant(1)],
-                      message="\nCONVOLUTION layers passed...")
+    if self.cfg.BUILD_ARCH_BY_FILE:
+      logits = get_model(inputs, self.cfg, self.batch_size)
+    else:
+      # Build convolution layers
+      conv = self._multi_conv_layers(inputs)
+      if self.cfg.SHOW_TRAINING_DETAILS:
+        conv = tf.Print(conv, [tf.constant(1)],
+                        message="\nCONVOLUTION layers passed...")
 
-    # Transform convolution layer's outputs to capsules
-    conv2caps = self._conv2caps_layer(conv, self.cfg.CONV2CAPS_PARAMS)
-    if self.cfg.SHOW_TRAINING_DETAILS:
-      conv2caps = tf.Print(conv2caps, [tf.constant(2)],
-                           message="\nCON2CAPS layers passed...")
+      # Transform convolution layer's outputs to capsules
+      conv2caps = self._conv2caps_layer(conv, self.cfg.CONV2CAPS_PARAMS)
+      if self.cfg.SHOW_TRAINING_DETAILS:
+        conv2caps = tf.Print(conv2caps, [tf.constant(2)],
+                             message="\nCON2CAPS layers passed...")
 
-    # Build capsule layers
-    logits = self._multi_caps_layers(conv2caps)
+      # Build capsule layers
+      logits = self._multi_caps_layers(conv2caps)
+
     logits = tf.identity(logits, name='logits')
     if self.cfg.SHOW_TRAINING_DETAILS:
       logits = tf.Print(logits, [tf.constant(3)],
@@ -364,7 +370,7 @@ class CapsNet(ModelBase):
       # Optimizer
       if self.cfg.SHOW_TRAINING_DETAILS:
         loss = tf.Print(loss, [tf.constant(6)],
-                        message="\nUpdating GRADIENTS...")
+                        message="\nUpdating gradients...")
       opt = self._optimizer(opt_name=self.cfg.OPTIMIZER)
       train_op = opt.minimize(loss)
 

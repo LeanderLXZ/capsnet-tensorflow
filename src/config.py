@@ -23,6 +23,10 @@ __C.BATCH_SIZE = 512
 # #            Model Architecture           #
 # ===========================================
 
+# Build architecture by model_arch.py.
+# If False, build architecture by following parameters.
+__C.BUILD_ARCH_BY_FILE = True
+
 # Architecture parameters of convolution layers
 # [{'kernel_size': None, 'stride': None, 'n_kernel': None}, ]
 __C.CONV_PARAMS = [
