@@ -112,7 +112,7 @@ class ModelBase(object):
     Returns:
       output tensor of full_connected layer
     """
-    with tf.name_scope('fc_{}'.format(idx)):
+    with tf.variable_scope('fc_{}'.format(idx)):
       activation_fn = self.get_act_fn(act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
 
@@ -329,7 +329,7 @@ class ConvLayer(object):
     Returns:
       output tensor of convolution layer
     """
-    with tf.name_scope('conv_{}'.format(self.idx)):
+    with tf.variable_scope('conv_{}'.format(self.idx)):
       # Resize image
       if self.resize is not None:
         self.inputs = tf.image.resize_nearest_neighbor(
