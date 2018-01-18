@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from os.path import join
 from easydict import EasyDict
 
 __C = EasyDict()
@@ -159,19 +158,19 @@ __C.DATABASE_NAME = 'mnist'
 __C.DPP_TEST_AS_VALID = False
 
 # Source data directory path
-__C.SOURCE_DATA_PATH = join('../data/source_data', __C.DATABASE_NAME)
+__C.SOURCE_DATA_PATH = '../data/source_data'
 
 # Preprocessed data path
-__C.DPP_DATA_PATH = join('../data/preprocessed_data', __C.DATABASE_NAME)
+__C.DPP_DATA_PATH = '../data/preprocessed_data'
 
 # Path for saving logs
-__C.LOG_PATH = join('../train_logs', __C.VERSION)
+__C.TRAIN_LOG_PATH = '../train_logs'
 
 # Path for saving summaries
-__C.SUMMARY_PATH = join('../tf_logs', __C.VERSION)
+__C.SUMMARY_PATH = '../tf_logs'
 
 # Path for saving model
-__C.CHECKPOINT_PATH = join('../checkpoints', __C.VERSION)
+__C.CHECKPOINT_PATH = '../checkpoints'
 
 # Path for saving testing logs
 __C.TEST_LOG_PATH = '../test_logs'

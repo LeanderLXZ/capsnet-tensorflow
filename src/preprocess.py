@@ -21,6 +21,8 @@ class DataPreProcess(object):
       cfg: configuration
     """
     self.cfg = cfg
+    self.preprocessed_path = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)
+    self.souce_data_path = join(cfg.SOURCE_DATA_PATH, cfg.DATABASE_NAME)
 
   def _load_data(self):
     """
@@ -31,13 +33,13 @@ class DataPreProcess(object):
 
     if self.cfg.DATABASE_NAME == 'mnist':
       self.x = utils.load_data_from_pkl(
-          join(self.cfg.SOURCE_DATA_PATH, 'train_image.p'))
+          join(self.souce_data_path, 'train_image.p'))
       self.y = utils.load_data_from_pkl(
-          join(self.cfg.SOURCE_DATA_PATH, 'train_label.p'))
+          join(self.souce_data_path, 'train_label.p'))
       self.x_test = utils.load_data_from_pkl(
-          join(self.cfg.SOURCE_DATA_PATH, 'test_image.p'))
+          join(self.souce_data_path, 'test_image.p'))
       self.y_test = utils.load_data_from_pkl(
-          join(self.cfg.SOURCE_DATA_PATH, 'test_label.p'))
+          join(self.souce_data_path, 'test_label.p'))
     else:
       raise ValueError('Wrong database name!')
 
@@ -106,20 +108,20 @@ class DataPreProcess(object):
     utils.thin_line()
     print('Saving...')
 
-    utils.check_dir([self.cfg.DPP_DATA_PATH])
+    utils.check_dir([self.preprocessed_path])
     
     utils.save_data_to_pkl(
-        self.x_train, join(self.cfg.DPP_DATA_PATH, 'x_train.p'))
+        self.x_train, join(self.preprocessed_path, 'x_train.p'))
     utils.save_data_to_pkl(
-        self.y_train, join(self.cfg.DPP_DATA_PATH, 'y_train.p'))
+        self.y_train, join(self.preprocessed_path, 'y_train.p'))
     utils.save_data_to_pkl(
-        self.x_valid, join(self.cfg.DPP_DATA_PATH, 'x_valid.p'))
+        self.x_valid, join(self.preprocessed_path, 'x_valid.p'))
     utils.save_data_to_pkl(
-        self.y_valid, join(self.cfg.DPP_DATA_PATH, 'y_valid.p'))
+        self.y_valid, join(self.preprocessed_path, 'y_valid.p'))
     utils.save_data_to_pkl(
-        self.x_test, join(self.cfg.DPP_DATA_PATH, 'x_test.p'))
+        self.x_test, join(self.preprocessed_path, 'x_test.p'))
     utils.save_data_to_pkl(
-        self.y_test, join(self.cfg.DPP_DATA_PATH, 'y_test.p'))
+        self.y_test, join(self.preprocessed_path, 'y_test.p'))
 
   def pipeline(self):
     """

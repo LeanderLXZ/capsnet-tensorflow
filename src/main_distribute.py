@@ -31,53 +31,58 @@ class MainDistribute(object):
     # Config
     self.cfg = cfg
 
-    # Get log path, append information if the directory exist.
-    self.log_path = self.cfg.LOG_PATH
-    test_log_path_ = join(self.cfg.TEST_LOG_PATH, self.cfg.TEST_VERSION)
+    # Get paths from configuration
+    train_log_path_ = join(cfg.TRAIN_LOG_PATH, cfg.VERSION)
+    test_log_path_ = join(cfg.TEST_LOG_PATH, cfg.TEST_VERSION)
+    summary_path_ = join(cfg.SUMMARY_PATH, cfg.VERSION)
+    checkpoint_path_ = join(cfg.CHECKPOINT_PATH, cfg.VERSION)
+    self.preprocessed_path = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)
+
+    # Get log paths, append information if the directory exist.
+    self.train_log_path = train_log_path_
     i_append_info = 0
-    while isdir(self.log_path):
+    while isdir(self.train_log_path):
       i_append_info += 1
-      self.log_path = self.cfg.LOG_PATH + '({})'.format(i_append_info)
+      self.train_log_path = train_log_path_ + '({})'.format(i_append_info)
 
     if i_append_info > 0:
-      self.summary_path = self.cfg.SUMMARY_PATH + '({})'.format(i_append_info)
-      self.checkpoint_path = \
-          self.cfg.CHECKPOINT_PATH + '({})'.format(i_append_info)
+      self.summary_path = summary_path_ + '({})'.format(i_append_info)
+      self.checkpoint_path = checkpoint_path_ + '({})'.format(i_append_info)
       self.test_log_path = test_log_path_ + '({})'.format(i_append_info)
     else:
-      self.summary_path = self.cfg.SUMMARY_PATH
-      self.checkpoint_path = self.cfg.CHECKPOINT_PATH
+      self.summary_path = summary_path_
+      self.checkpoint_path = checkpoint_path_
       self.test_log_path = test_log_path_
 
     # Images saving path
-    self.train_image_path = join(self.log_path, 'images')
+    self.train_image_path = join(self.train_log_path, 'images')
     self.test_image_path = join(self.test_log_path, 'images')
 
     # Check directory of paths
-    utils.check_dir([self.log_path, self.checkpoint_path])
-    if self.cfg.WITH_RECONSTRUCTION:
+    utils.check_dir([self.train_log_path, self.checkpoint_path])
+    if cfg.WITH_RECONSTRUCTION:
       if self.cfg.SAVE_IMAGE_STEP is not None:
         utils.check_dir([self.train_image_path])
 
     # Save config
-    utils.save_config_log(self.log_path, self.cfg)
+    utils.save_config_log(self.train_log_path, cfg)
 
     # Load data
     utils.thick_line()
     print('Loading data...')
     utils.thin_line()
     self.x_train = utils.load_data_from_pkl(
-        join(cfg.DPP_DATA_PATH, 'x_train.p'))
+        join(self.preprocessed_path, 'x_train.p'))
     self.y_train = utils.load_data_from_pkl(
-        join(cfg.DPP_DATA_PATH, 'y_train.p'))
+        join(self.preprocessed_path, 'y_train.p'))
     self.x_valid = utils.load_data_from_pkl(
-        join(cfg.DPP_DATA_PATH, 'x_valid.p'))
+        join(self.preprocessed_path, 'x_valid.p'))
     self.y_valid = utils.load_data_from_pkl(
-        join(cfg.DPP_DATA_PATH, 'y_valid.p'))
+        join(self.preprocessed_path, 'y_valid.p'))
 
     # Calculate number of batches
-    self.n_batch_train = len(self.y_train) // self.cfg.BATCH_SIZE
-    self.n_batch_valid = len(self.y_valid) // self.cfg.BATCH_SIZE
+    self.n_batch_train = len(self.y_train) // cfg.BATCH_SIZE
+    self.n_batch_valid = len(self.y_valid) // cfg.BATCH_SIZE
 
     # Build graph
     utils.thick_line()
@@ -163,7 +168,7 @@ class MainDistribute(object):
     train_writer.add_summary(summary_train, step)
     valid_writer.add_summary(summary_valid, step)
     utils.save_log(
-        join(self.log_path, 'train_log.csv'), epoch_i + 1, step,
+        join(self.train_log_path, 'train_log.csv'), epoch_i + 1, step,
         time.time() - self.start_time, loss_train, cls_loss_train,
         rec_loss_train, acc_train, loss_valid, cls_loss_valid, rec_loss_valid,
         acc_valid, self.cfg.WITH_RECONSTRUCTION)
@@ -263,7 +268,7 @@ class MainDistribute(object):
           loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
           self.cfg.EVAL_WITH_FULL_TRAIN_SET, self.cfg.WITH_RECONSTRUCTION)
 
-    file_path = join(self.log_path, 'full_set_eval_log.csv')
+    file_path = join(self.train_log_path, 'full_set_eval_log.csv')
     if not silent:
       utils.thin_line()
       print('Saving {}...'.format(file_path))
@@ -389,9 +394,9 @@ class MainDistribute(object):
     print('Loading test set...')
     utils.thin_line()
     x_test = utils.load_data_from_pkl(
-        join(self.cfg.DPP_DATA_PATH, 'x_test.p'))
+        join(self.preprocessed_path, 'x_test.p'))
     y_test = utils.load_data_from_pkl(
-        join(self.cfg.DPP_DATA_PATH, 'y_test.p'))
+        join(self.preprocessed_path, 'y_test.p'))
     n_batch_test = len(y_test) // self.cfg.BATCH_SIZE
 
     utils.thin_line()

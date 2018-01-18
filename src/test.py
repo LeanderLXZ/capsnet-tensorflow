@@ -23,14 +23,14 @@ class Test(object):
     self.cfg = cfg
 
     # Get checkpoint path
-    self.checkpoint_path = \
-        '../checkpoints/{}/model.ckpt-{}'.format(
-            self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
+    self.checkpoint_path = join(
+        cfg.CHECKPOINT_PATH,
+        '{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
 
     # Get log path, append information if the directory exist.
     test_log_path_ = join(
-        self.cfg.TEST_LOG_PATH, '{}-{}'
-            .format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
+        self.cfg.TEST_LOG_PATH,
+        '{}-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
     self.test_log_path = test_log_path_
     i_append_info = 0
     while isdir(self.test_log_path):
@@ -53,10 +53,11 @@ class Test(object):
     utils.thick_line()
     print('Loading data...')
     utils.thin_line()
+    preprocessed_path_ = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)
     self.x_test = utils.load_data_from_pkl(
-        join(self.cfg.DPP_DATA_PATH, 'x_test.p'))
+        join(preprocessed_path_, 'x_test.p'))
     self.y_test = utils.load_data_from_pkl(
-        join(self.cfg.DPP_DATA_PATH, 'y_test.p'))
+        join(preprocessed_path_, 'y_test.p'))
 
     # Calculate number of batches
     self.n_batch_test = len(self.y_test) // self.cfg.TEST_BATCH_SIZE

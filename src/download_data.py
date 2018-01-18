@@ -22,33 +22,34 @@ def download_data():
     TEST_IMAGES = 't10k-images-idx3-ubyte.gz'
     TEST_LABELS = 't10k-labels-idx1-ubyte.gz'
 
-    utils.check_dir(['./data/', cfg.SOURCE_DATA_PATH])
+    souce_data_path_ = join(cfg.SOURCE_DATA_PATH, cfg.DATABASE_NAME)
+    utils.check_dir([souce_data_path_])
 
     utils.download_and_extract_mnist(
         url=SOURCE_URL + TRAIN_IMAGES,
-        save_path=join(cfg.SOURCE_DATA_PATH, TRAIN_IMAGES),
-        extract_path=join(cfg.SOURCE_DATA_PATH, 'train_image'),
+        save_path=join(souce_data_path_, TRAIN_IMAGES),
+        extract_path=join(souce_data_path_, 'train_image'),
         database_name=cfg.DATABASE_NAME,
         data_type='image')
 
     utils.download_and_extract_mnist(
         url=SOURCE_URL + TRAIN_LABELS,
-        save_path=join(cfg.SOURCE_DATA_PATH, TRAIN_LABELS),
-        extract_path=join(cfg.SOURCE_DATA_PATH, 'train_label'),
+        save_path=join(souce_data_path_, TRAIN_LABELS),
+        extract_path=join(souce_data_path_, 'train_label'),
         database_name=cfg.DATABASE_NAME,
         data_type='label')
 
     utils.download_and_extract_mnist(
         url=SOURCE_URL + TEST_IMAGES,
-        save_path=join(cfg.SOURCE_DATA_PATH, TEST_IMAGES),
-        extract_path=join(cfg.SOURCE_DATA_PATH, 'test_image'),
+        save_path=join(souce_data_path_, TEST_IMAGES),
+        extract_path=join(souce_data_path_, 'test_image'),
         database_name=cfg.DATABASE_NAME,
         data_type='image')
 
     utils.download_and_extract_mnist(
         url=SOURCE_URL + TEST_LABELS,
-        save_path=join(cfg.SOURCE_DATA_PATH, TEST_LABELS),
-        extract_path=join(cfg.SOURCE_DATA_PATH, 'test_label'),
+        save_path=join(souce_data_path_, TEST_LABELS),
+        extract_path=join(souce_data_path_, 'test_label'),
         database_name=cfg.DATABASE_NAME,
         data_type='label')
 

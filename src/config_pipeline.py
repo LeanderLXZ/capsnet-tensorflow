@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 from copy import copy
 from easydict import EasyDict
 
@@ -13,7 +12,7 @@ __C = EasyDict()
 # ===========================================
 
 # Training version
-__C.VERSION = 'no_rec'
+__C.VERSION = 'fc_rec'
 
 # Learning rate
 __C.LEARNING_RATE = 0.001
@@ -111,7 +110,7 @@ __C.MAX_IMAGE_IN_COL = 10
 # 'per_batch': evaluate on full set when n batches finished
 __C.FULL_SET_EVAL_MODE = 'per_batch'
 # None: not evaluate
-__C.FULL_SET_EVAL_STEP = 25
+__C.FULL_SET_EVAL_STEP = 50
 
 # Save model
 # 'per_epoch': save model when n epochs finished
@@ -156,22 +155,28 @@ __C.TEST_BATCH_SIZE = 256
 # Database name
 __C.DATABASE_NAME = 'mnist'
 
+# Setting test set as validation when preprocessing data
+__C.DPP_TEST_AS_VALID = False
+
 # Source data directory path
 __C.SOURCE_DATA_PATH = '../data/source_data'
 
+# Preprocessed data path
+__C.DPP_DATA_PATH = '../data/preprocessed_data'
+
 # Path for saving logs
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
+__C.TRAIN_LOG_PATH = '../train_logs'
 
 # Path for saving summaries
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
+__C.SUMMARY_PATH = '../tf_logs'
 
 # Path for saving model
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
+__C.CHECKPOINT_PATH = '../checkpoints'
 
 # Path for saving testing logs
 __C.TEST_LOG_PATH = '../test_logs'
 
-# Save variables on CPU
+# Save trainable variables on CPU
 __C.VAR_ON_CPU = True
 
 # ===========================================
@@ -192,59 +197,36 @@ __C.MOVING_AVERAGE_DECAY = 0.9999
 # get config by: from distribute_config import config
 config = __C
 
-
 # ===========================================
 # #                 Pipeline                #
 # ===========================================
 
 __C.VERSION = 'no_rec'
-__C.LEARNING_RATE = 0.001
 __C.WITH_RECONSTRUCTION = False
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_1 = copy(__C)
 
-__C.VERSION = 'with_fc_rec_mse'
+__C.VERSION = 'fc_rec_mse'
 __C.WITH_RECONSTRUCTION = True
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_2 = copy(__C)
 
-__C.VERSION = 'with_fc_rec_ce'
+__C.VERSION = 'fc_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'ce'
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_3 = copy(__C)
 
-__C.VERSION = 'with_conv_rec_mse'
+__C.VERSION = 'conv_rec_mse'
 __C.DECODER_TYPE = 'conv'
 __C.RECONSTRUCTION_LOSS = 'mse'
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_4 = copy(__C)
 
-__C.VERSION = 'with_conv_rec_ce'
+__C.VERSION = 'conv_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'ce'
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_5 = copy(__C)
 
-__C.VERSION = 'with_conv_t_rec_mse'
+__C.VERSION = 'conv_t_rec_mse'
 __C.DECODER_TYPE = 'conv_t'
 __C.RECONSTRUCTION_LOSS = 'mse'
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_6 = copy(__C)
 
-__C.VERSION = 'with_conv_t_rec_ce'
+__C.VERSION = 'conv_t_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'ce'
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
 cfg_7 = copy(__C)
