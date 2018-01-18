@@ -294,8 +294,6 @@ class Main(object):
     rec_images_ = sess.run(
         self.rec_images, feed_dict={self.inputs: x_batch})
 
-    print(rec_images_[1], '\n', x_batch[1])
-
     # Get maximum size for square grid of images
     save_col_size = math.floor(np.sqrt(rec_images_.shape[0] * 2))
     if save_col_size > self.cfg.MAX_IMAGE_IN_COL:
