@@ -4,6 +4,14 @@ from __future__ import print_function
 
 from easydict import EasyDict
 
+
+# Auto-generate version
+def _auto_version(c):
+  if c['WITH_RECONSTRUCTION']:
+    return c['DECODER_TYPE'] + '_' + c['RECONSTRUCTION_LOSS']
+  else:
+    return 'no_rec'
+
 __C = EasyDict()
 
 # ===========================================
@@ -11,7 +19,7 @@ __C = EasyDict()
 # ===========================================
 
 # Training version
-__C.VERSION = 'fc_rec'
+__C.VERSION = None
 
 # Learning rate
 __C.LEARNING_RATE = 0.001
@@ -69,7 +77,7 @@ __C.WITH_RECONSTRUCTION = True
 # 'fc': full_connected layers
 # 'conv': convolution layers
 # 'conv_t': transpose convolution layers
-__C.DECODER_TYPE = 'conv_t'
+__C.DECODER_TYPE = 'fc'
 
 # Reconstruction loss
 # 'mse': Mean Square Error
@@ -131,7 +139,7 @@ __C.SHOW_TRAINING_DETAILS = False
 # ===========================================
 
 # Testing version name
-__C.TEST_VERSION = 'with_fc_rec_mse'
+__C.TEST_VERSION = 'fc_rec_mse'
 
 # Testing checkpoint index
 __C.TEST_CKP_IDX = 29
@@ -150,6 +158,9 @@ __C.TEST_BATCH_SIZE = 256
 # ===========================================
 # #                  Others                 #
 # ===========================================
+
+if __C.VERSION is None:
+  __C.VERSION = _auto_version(__C)
 
 # Database name
 __C.DATABASE_NAME = 'mnist'

@@ -316,7 +316,6 @@ def save_test_log(file_path, loss_test, acc_test,
       f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_loss_test))
     f.write('=====================================================')
 
-
 class DLProgress(tqdm):
   """
   Handle Progress Bar while Downloading

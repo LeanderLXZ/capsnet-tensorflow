@@ -5,6 +5,14 @@ from __future__ import print_function
 from copy import copy
 from easydict import EasyDict
 
+
+# Auto-generate version
+def _auto_version(c):
+  if c['WITH_RECONSTRUCTION']:
+    return c['DECODER_TYPE'] + '_' + c['RECONSTRUCTION_LOSS']
+  else:
+    return 'no_rec'
+
 __C = EasyDict()
 
 # ===========================================
@@ -12,7 +20,7 @@ __C = EasyDict()
 # ===========================================
 
 # Training version
-__C.VERSION = 'fc_rec'
+__C.VERSION = None
 
 # Learning rate
 __C.LEARNING_RATE = 0.001
@@ -132,7 +140,7 @@ __C.SHOW_TRAINING_DETAILS = False
 # ===========================================
 
 # Testing version name
-__C.TEST_VERSION = 'with_fc_rec_mse'
+__C.TEST_VERSION = 'fc_rec_mse'
 
 # Testing checkpoint index
 __C.TEST_CKP_IDX = 29
@@ -151,6 +159,9 @@ __C.TEST_BATCH_SIZE = 256
 # ===========================================
 # #                  Others                 #
 # ===========================================
+
+if __C.VERSION is None:
+  __C.VERSION = _auto_version(__C)
 
 # Database name
 __C.DATABASE_NAME = 'mnist'
@@ -201,32 +212,32 @@ config = __C
 # #                 Pipeline                #
 # ===========================================
 
-__C.VERSION = 'no_rec'
 __C.WITH_RECONSTRUCTION = False
+__C.VERSION = _auto_version(__C)
 cfg_1 = copy(__C)
 
-__C.VERSION = 'fc_rec_mse'
 __C.WITH_RECONSTRUCTION = True
+__C.VERSION = _auto_version(__C)
 cfg_2 = copy(__C)
 
-__C.VERSION = 'fc_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'ce'
+__C.VERSION = _auto_version(__C)
 cfg_3 = copy(__C)
 
-__C.VERSION = 'conv_rec_mse'
 __C.DECODER_TYPE = 'conv'
 __C.RECONSTRUCTION_LOSS = 'mse'
+__C.VERSION = _auto_version(__C)
 cfg_4 = copy(__C)
 
-__C.VERSION = 'conv_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'ce'
+__C.VERSION = _auto_version(__C)
 cfg_5 = copy(__C)
 
-__C.VERSION = 'conv_t_rec_mse'
 __C.DECODER_TYPE = 'conv_t'
 __C.RECONSTRUCTION_LOSS = 'mse'
+__C.VERSION = _auto_version(__C)
 cfg_6 = copy(__C)
 
-__C.VERSION = 'conv_t_rec_ce'
 __C.RECONSTRUCTION_LOSS = 'ce'
+__C.VERSION = _auto_version(__C)
 cfg_7 = copy(__C)
