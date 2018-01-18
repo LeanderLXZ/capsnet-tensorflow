@@ -83,21 +83,21 @@ class DataPreProcess(object):
       self.x_test = self.x_test.reshape([-1, 28, 28, 1])
       if self.cfg.DPP_TEST_AS_VALID:
         self.x_train = self.x
-        self.x_valid = self.x_test
         self.y_train = self.y
+        self.x_valid = self.x_test
         self.y_valid = self.y_test
       else:
-        self.x_valid = self.x[55000:60000]
         self.x_train = self.x[:55000]
-        self.y_valid = self.y[55000:60000]
+        self.x_valid = self.x[55000:60000]
         self.y_train = self.y[:55000]
+        self.y_valid = self.y[55000:60000]
     else:
       raise ValueError('Wrong database name!')
 
-    assert self.x_train.shape == (5000, 28, 28, 1), self.x_train.shape
-    assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
+    assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
     assert self.y_train.shape == (55000, 10), self.y_train.shape
-    assert self.y_valid.shape == (55000, 10), self.y_valid.shape
+    assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
+    assert self.y_valid.shape == (5000, 10), self.y_valid.shape
     assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
     assert self.y_test.shape == (10000, 10), self.y_test.shape
 
