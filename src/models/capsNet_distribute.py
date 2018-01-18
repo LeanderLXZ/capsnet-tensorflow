@@ -93,26 +93,28 @@ class CapsNetDistribute(CapsNet):
     Returns:
       tuple of metrics
     """
-    loss = tf.reduce_mean(
-        tf.add_n(loss_all), name='total_loss')
+    n_tower = len(loss_all)
+
+    loss = tf.divide(
+        tf.add_n(loss_all), n_tower, name='total_loss')
     assert loss.get_shape == ()
 
-    accuracy = tf.reduce_mean(
-        tf.add_n(acc_all), name='total_acc')
+    accuracy = tf.divide(
+        tf.add_n(acc_all), n_tower, name='total_acc')
     assert accuracy.get_shape == ()
 
-    classifier_loss = tf.reduce_mean(
-        tf.add_n(clf_loss_all), name='total_clf_loss')
+    classifier_loss = tf.divide(
+        tf.add_n(clf_loss_all), n_tower, name='total_clf_loss')
     assert classifier_loss.get_shape == ()
 
-    reconstruct_loss = tf.reduce_mean(
-        tf.add_n(rec_loss_all), name='total_rec_loss')
+    reconstruct_loss = tf.divide(
+        tf.add_n(rec_loss_all), n_tower, name='total_rec_loss')
     assert reconstruct_loss.get_shape == ()
 
     reconstructed_images = tf.concat(
         rec_images_all, axis=0, name='total_rec_images')
     assert reconstructed_images.get_shape == (
-      self.cfg.GPU_BATCH_SIZE * len(rec_images_all),
+      self.cfg.GPU_BATCH_SIZE * n_tower,
       *rec_images_all[0].get_shape().as_list()[1:])
 
     return loss, accuracy, classifier_loss, \
