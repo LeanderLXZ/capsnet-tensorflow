@@ -160,7 +160,7 @@ class CapsNetDistribute(CapsNet):
       tf.summary.scalar('accuracy', accuracy)
       tf.summary.scalar('loss', loss)
       if self.cfg.WITH_RECONSTRUCTION:
-        tf.summary.scalar('cls_loss', classifier_loss)
+        tf.summary.scalar('clf_loss', classifier_loss)
         tf.summary.scalar('rec_loss', reconstruct_loss)
       summary_op = tf.summary.merge_all()
 

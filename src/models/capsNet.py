@@ -200,7 +200,7 @@ class CapsNet(ModelBase):
       reconstruct_loss = tf.reduce_mean(
           tf.square(reconstructed_ - inputs_flatten))
     elif self.cfg.RECONSTRUCTION_LOSS == 'ce':
-      if self.cfg.DECODER_TYPE == 'cf':
+      if self.cfg.DECODER_TYPE == 'fc':
         inputs_ = tf.contrib.layers.flatten(inputs)
       else:
         inputs_ = inputs
@@ -214,7 +214,7 @@ class CapsNet(ModelBase):
     # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
     classifier_loss = self._margin_loss(
         logits, labels, **self.cfg.MARGIN_LOSS_PARAMS)
-    classifier_loss = tf.identity(classifier_loss, name='classifier_loss')
+    classifier_loss = tf.identity(classifier_loss, name='clf_loss')
 
     loss = classifier_loss + \
         self.cfg.RECONSTRUCT_LOSS_SCALE * reconstruct_loss
@@ -311,7 +311,7 @@ class CapsNet(ModelBase):
       tf.summary.scalar('accuracy', accuracy)
       tf.summary.scalar('loss', loss)
       if self.cfg.WITH_RECONSTRUCTION:
-        tf.summary.scalar('cls_loss', classifier_loss)
+        tf.summary.scalar('clf_loss', classifier_loss)
         tf.summary.scalar('rec_loss', reconstruct_loss)
       summary_op = tf.summary.merge_all()
 

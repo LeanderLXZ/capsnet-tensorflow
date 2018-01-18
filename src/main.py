@@ -92,7 +92,7 @@ class Main(object):
     print('Building graph...')
     tf.reset_default_graph()
     self.train_graph, self.inputs, self.labels, self.optimizer, \
-        self.saver, self.summary, self.loss, self.accuracy, self.cls_loss, \
+        self.saver, self.summary, self.loss, self.accuracy, self.clf_loss, \
         self.rec_loss, self.rec_images = model.build_graph(
             image_size=self.x_train.shape[1:],
             num_class=self.y_train.shape[1])
@@ -107,13 +107,13 @@ class Main(object):
     y_valid_batch = self.y_valid[valid_batch_idx]
 
     if self.cfg.WITH_RECONSTRUCTION:
-      loss_train, cls_loss_train, rec_loss_train, acc_train = \
-          sess.run([self.loss, self.cls_loss,
+      loss_train, clf_loss_train, rec_loss_train, acc_train = \
+          sess.run([self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_batch,
                               self.labels: y_batch})
-      loss_valid, cls_loss_valid, rec_loss_valid, acc_valid = \
-          sess.run([self.loss, self.cls_loss,
+      loss_valid, clf_loss_valid, rec_loss_valid, acc_valid = \
+          sess.run([self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
                               self.labels: y_valid_batch})
@@ -126,13 +126,13 @@ class Main(object):
           sess.run([self.loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
                               self.labels: y_valid_batch})
-      cls_loss_train, rec_loss_train, cls_loss_valid, rec_loss_valid = \
+      clf_loss_train, rec_loss_train, clf_loss_valid, rec_loss_valid = \
           None, None, None, None
 
     utils.print_status(
         epoch_i, self.cfg.EPOCHS, step, self.start_time,
-        loss_train, cls_loss_train, rec_loss_train, acc_train,
-        loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
+        loss_train, clf_loss_train, rec_loss_train, acc_train,
+        loss_valid, clf_loss_valid, rec_loss_valid, acc_valid,
         self.cfg.WITH_RECONSTRUCTION)
 
   def _save_logs(self, sess, train_writer, valid_writer,
@@ -146,13 +146,13 @@ class Main(object):
     y_valid_batch = self.y_valid[valid_batch_idx]
 
     if self.cfg.WITH_RECONSTRUCTION:
-      summary_train, loss_train, cls_loss_train, rec_loss_train, acc_train = \
-          sess.run([self.summary, self.loss, self.cls_loss,
+      summary_train, loss_train, clf_loss_train, rec_loss_train, acc_train = \
+          sess.run([self.summary, self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_batch,
                               self.labels: y_batch})
-      summary_valid, loss_valid, cls_loss_valid, rec_loss_valid, acc_valid = \
-          sess.run([self.summary, self.loss, self.cls_loss,
+      summary_valid, loss_valid, clf_loss_valid, rec_loss_valid, acc_valid = \
+          sess.run([self.summary, self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
                               self.labels: y_valid_batch})
@@ -165,15 +165,15 @@ class Main(object):
           sess.run([self.summary, self.loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
                               self.labels: y_valid_batch})
-      cls_loss_train, rec_loss_train, cls_loss_valid, rec_loss_valid = \
+      clf_loss_train, rec_loss_train, clf_loss_valid, rec_loss_valid = \
           None, None, None, None
 
     train_writer.add_summary(summary_train, step)
     valid_writer.add_summary(summary_valid, step)
     utils.save_log(
         join(self.train_log_path, 'train_log.csv'), epoch_i + 1, step,
-        time.time() - self.start_time, loss_train, cls_loss_train,
-        rec_loss_train, acc_train, loss_valid, cls_loss_valid, rec_loss_valid,
+        time.time() - self.start_time, loss_train, clf_loss_train,
+        rec_loss_train, acc_train, loss_valid, clf_loss_valid, rec_loss_valid,
         acc_valid, self.cfg.WITH_RECONSTRUCTION)
 
   def _eval_on_batches(self, mode, sess, x, y, n_batch, silent=False):
@@ -182,7 +182,7 @@ class Main(object):
     """
     loss_all = []
     acc_all = []
-    cls_loss_all = []
+    clf_loss_all = []
     rec_loss_all = []
 
     if not silent:
@@ -194,14 +194,14 @@ class Main(object):
         for _ in tqdm(range(n_batch), total=n_batch,
                       ncols=100, unit=' batches'):
           x_batch, y_batch = next(_batch_generator)
-          loss_i, cls_loss_i, rec_loss_i, acc_i = sess.run(
-              [self.loss, self.cls_loss, self.rec_loss, self.accuracy],
+          loss_i, clf_loss_i, rec_loss_i, acc_i = sess.run(
+              [self.loss, self.clf_loss, self.rec_loss, self.accuracy],
               feed_dict={self.inputs: x_batch, self.labels: y_batch})
           loss_all.append(loss_i)
-          cls_loss_all.append(cls_loss_i)
+          clf_loss_all.append(clf_loss_i)
           rec_loss_all.append(rec_loss_i)
           acc_all.append(acc_i)
-        cls_loss = sum(cls_loss_all) / len(cls_loss_all)
+        clf_loss = sum(clf_loss_all) / len(clf_loss_all)
         rec_loss = sum(rec_loss_all) / len(rec_loss_all)
       else:
         for _ in tqdm(range(n_batch), total=n_batch,
@@ -212,19 +212,19 @@ class Main(object):
               feed_dict={self.inputs: x_batch, self.labels: y_batch})
           loss_all.append(loss_i)
           acc_all.append(acc_i)
-        cls_loss, rec_loss = None, None
+        clf_loss, rec_loss = None, None
 
     else:
       if self.cfg.WITH_RECONSTRUCTION:
         for x_batch, y_batch in utils.get_batches(x, y, self.cfg.BATCH_SIZE):
-          loss_i, cls_loss_i, rec_loss_i, acc_i = sess.run(
-              [self.loss, self.cls_loss, self.rec_loss, self.accuracy],
+          loss_i, clf_loss_i, rec_loss_i, acc_i = sess.run(
+              [self.loss, self.clf_loss, self.rec_loss, self.accuracy],
               feed_dict={self.inputs: x_batch, self.labels: y_batch})
           loss_all.append(loss_i)
-          cls_loss_all.append(cls_loss_i)
+          clf_loss_all.append(clf_loss_i)
           rec_loss_all.append(rec_loss_i)
           acc_all.append(acc_i)
-        cls_loss = sum(cls_loss_all) / len(cls_loss_all)
+        clf_loss = sum(clf_loss_all) / len(clf_loss_all)
         rec_loss = sum(rec_loss_all) / len(rec_loss_all)
       else:
         for x_batch, y_batch in utils.get_batches(x, y, self.cfg.BATCH_SIZE):
@@ -233,12 +233,12 @@ class Main(object):
               feed_dict={self.inputs: x_batch, self.labels: y_batch})
           loss_all.append(loss_i)
           acc_all.append(acc_i)
-        cls_loss, rec_loss = None, None
+        clf_loss, rec_loss = None, None
 
     loss = sum(loss_all) / len(loss_all)
     accuracy = sum(acc_all) / len(acc_all)
 
-    return loss, cls_loss, rec_loss, accuracy
+    return loss, clf_loss, rec_loss, accuracy
 
   def _eval_on_full_set(self, sess, epoch_i, step, silent=False):
     """
@@ -252,23 +252,23 @@ class Main(object):
 
     # Calculate losses and accuracies of full train set
     if self.cfg.EVAL_WITH_FULL_TRAIN_SET:
-      loss_train, cls_loss_train, rec_loss_train, acc_train = \
+      loss_train, clf_loss_train, rec_loss_train, acc_train = \
           self._eval_on_batches('train', sess, self.x_train, self.y_train,
                                 self.n_batch_train, silent=silent)
     else:
-      loss_train, cls_loss_train, rec_loss_train, acc_train = \
+      loss_train, clf_loss_train, rec_loss_train, acc_train = \
           None, None, None, None
 
     # Calculate losses and accuracies of full valid set
-    loss_valid, cls_loss_valid, rec_loss_valid, acc_valid = \
+    loss_valid, clf_loss_valid, rec_loss_valid, acc_valid = \
         self._eval_on_batches('valid', sess, self.x_valid, self.y_valid,
                               self.n_batch_valid, silent=silent)
 
     if not silent:
       utils.print_full_set_eval(
           epoch_i, self.cfg.EPOCHS, step, self.start_time,
-          loss_train, cls_loss_train, rec_loss_train, acc_train,
-          loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
+          loss_train, clf_loss_train, rec_loss_train, acc_train,
+          loss_valid, clf_loss_valid, rec_loss_valid, acc_valid,
           self.cfg.EVAL_WITH_FULL_TRAIN_SET, self.cfg.WITH_RECONSTRUCTION)
 
     file_path = join(self.train_log_path, 'full_set_eval_log.csv')
@@ -277,8 +277,8 @@ class Main(object):
       print('Saving {}...'.format(file_path))
     utils.save_log(
       file_path, epoch_i + 1, step, time.time() - self.start_time,
-      loss_train, cls_loss_train, rec_loss_train, acc_train,
-      loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
+      loss_train, clf_loss_train, rec_loss_train, acc_train,
+      loss_valid, clf_loss_valid, rec_loss_valid, acc_valid,
       self.cfg.WITH_RECONSTRUCTION)
 
     if not silent:
@@ -286,14 +286,15 @@ class Main(object):
       print('Evaluation done! Using time: {:.2f}'
             .format(time.time() - eval_start_time))
 
-  def _save_images(self, sess, img_path, x_batch, y_batch,
+  def _save_images(self, sess, img_path, x_batch,
                    step, silent=False, epoch_i=None):
     """
-    Save reconstruction images.
+    Save reconstructed images.
     """
     rec_images_ = sess.run(
-        self.rec_images, feed_dict={self.inputs: x_batch,
-                                    self.labels: y_batch})
+        self.rec_images, feed_dict={self.inputs: x_batch})
+
+    print(rec_images_[1], '\n', x_batch[1])
 
     # Get maximum size for square grid of images
     save_col_size = math.floor(np.sqrt(rec_images_.shape[0] * 2))
@@ -406,7 +407,7 @@ class Main(object):
     print('Calculating loss and accuracy on test set...')
     loss_test_all = []
     acc_test_all = []
-    cls_loss_test_all = []
+    clf_loss_test_all = []
     rec_loss_test_all = []
     step = 0
     _test_batch_generator = utils.get_batches(
@@ -417,21 +418,21 @@ class Main(object):
                     ncols=100, unit=' batches'):
         step += 1
         test_batch_x, test_batch_y = next(_test_batch_generator)
-        loss_test_i, cls_loss_i, rec_loss_i, acc_test_i = sess.run(
-            [self.loss, self.cls_loss, self.rec_loss, self.accuracy],
+        loss_test_i, clf_loss_i, rec_loss_i, acc_test_i = sess.run(
+            [self.loss, self.clf_loss, self.rec_loss, self.accuracy],
             feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
         loss_test_all.append(loss_test_i)
         acc_test_all.append(acc_test_i)
-        cls_loss_test_all.append(cls_loss_i)
+        clf_loss_test_all.append(clf_loss_i)
         rec_loss_test_all.append(rec_loss_i)
 
         # Save reconstruct images
         if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
           if step % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
-            self._save_images(sess, self.test_image_path, test_batch_x,
-                              test_batch_y, step, silent=False)
+            self._save_images(sess, self.test_image_path,
+                              test_batch_x, step, silent=False)
 
-      cls_loss_test = sum(cls_loss_test_all) / len(cls_loss_test_all)
+      clf_loss_test = sum(clf_loss_test_all) / len(clf_loss_test_all)
       rec_loss_test = sum(rec_loss_test_all) / len(rec_loss_test_all)
 
     else:
@@ -443,7 +444,7 @@ class Main(object):
             feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
         loss_test_all.append(loss_test_i)
         acc_test_all.append(acc_test_i)
-      cls_loss_test, rec_loss_test = None, None
+      clf_loss_test, rec_loss_test = None, None
 
     loss_test = sum(loss_test_all) / len(loss_test_all)
     acc_test = sum(acc_test_all) / len(acc_test_all)
@@ -454,12 +455,12 @@ class Main(object):
           'Test_Accuracy: {:.2f}%'.format(acc_test * 100))
     if self.cfg.WITH_RECONSTRUCTION:
       utils.thin_line()
-      print('Test_Train_Loss: {:.4f}\n'.format(cls_loss_test),
+      print('Test_Train_Loss: {:.4f}\n'.format(clf_loss_test),
             'Test_Reconstruction_Loss: {:.4f}'.format(rec_loss_test))
 
     # Save test log
     utils.save_test_log(
-        self.test_log_path, loss_test, acc_test, cls_loss_test,
+        self.test_log_path, loss_test, acc_test, clf_loss_test,
         rec_loss_test, self.cfg.WITH_RECONSTRUCTION)
 
     utils.thin_line()
@@ -517,8 +518,9 @@ class Main(object):
             if self.cfg.SAVE_IMAGE_STEP is not None:
               if self.cfg.WITH_RECONSTRUCTION:
                 if step % self.cfg.SAVE_IMAGE_STEP == 0:
-                  self._save_images(sess, self.train_image_path, x_batch,
-                                    y_batch, step, epoch_i=epoch_i)
+                  self._save_images(
+                      sess, self.train_image_path,
+                      x_batch, step, epoch_i=epoch_i)
 
             # Save models
             if self.cfg.SAVE_MODEL_MODE == 'per_batch':
@@ -555,9 +557,9 @@ class Main(object):
             if self.cfg.SAVE_IMAGE_STEP is not None:
               if self.cfg.WITH_RECONSTRUCTION:
                 if step % self.cfg.SAVE_IMAGE_STEP == 0:
-                  self._save_images(sess, self.train_image_path,
-                                    x_batch, y_batch, step,
-                                    silent=True, epoch_i=epoch_i)
+                  self._save_images(
+                      sess, self.train_image_path, x_batch,
+                      step, silent=True, epoch_i=epoch_i)
 
             # Save models
             if self.cfg.SAVE_MODEL_MODE == 'per_batch':

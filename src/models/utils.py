@@ -175,8 +175,8 @@ def get_batches(x, y, batch_size):
 
 
 def print_status(epoch_i, epochs, step, start_time, loss_train,
-                 cls_loss_train, rec_loss_train, acc_train, loss_valid,
-                 cls_loss_valid, rec_loss_valid, acc_valid, with_rec):
+                 clf_loss_train, rec_loss_train, acc_train, loss_valid,
+                 clf_loss_valid, rec_loss_valid, acc_valid, with_rec):
   """
   Print information while training.
   """
@@ -185,11 +185,11 @@ def print_status(epoch_i, epochs, step, start_time, loss_train,
           'Batch: {} |'.format(step),
           'Time: {:.2f}s |'.format(time.time() - start_time),
           'T_Lo: {:.4f} |'.format(loss_train),
-          'T_Cls_Lo: {:.4f} |'.format(cls_loss_train),
+          'T_Cls_Lo: {:.4f} |'.format(clf_loss_train),
           'T_Rec_Lo: {:.4f} |'.format(rec_loss_train),
           'T_Acc: {:.2f}% |'.format(acc_train * 100),
           'V_Lo: {:.4f} |'.format(loss_valid),
-          'V_Cls_Lo: {:.4f} |'.format(cls_loss_valid),
+          'V_Cls_Lo: {:.4f} |'.format(clf_loss_valid),
           'V_Rec_Lo: {:.4f} |'.format(rec_loss_valid),
           'V_Acc: {:.2f}% |'.format(acc_valid * 100))
   else:
@@ -203,8 +203,8 @@ def print_status(epoch_i, epochs, step, start_time, loss_train,
 
 
 def print_full_set_eval(epoch_i, epochs, step, start_time,
-                        loss_train, cls_loss_train, rec_loss_train, acc_train,
-                        loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
+                        loss_train, clf_loss_train, rec_loss_train, acc_train,
+                        loss_valid, clf_loss_valid, rec_loss_valid, acc_valid,
                         with_full_set_eval, with_rec):
   """
   Print information of full set evaluation.
@@ -217,12 +217,12 @@ def print_full_set_eval(epoch_i, epochs, step, start_time,
   if with_full_set_eval:
     print('Full_Set_Train_Loss: {:.4f}'.format(loss_train))
     if with_rec:
-      print('Train_Classifier_Loss: {:.4f}\n'.format(cls_loss_train),
+      print('Train_Classifier_Loss: {:.4f}\n'.format(clf_loss_train),
             'Train_Reconstruction_Loss: {:.4f}'.format(rec_loss_train))
     print('Full_Set_Train_Accuracy: {:.2f}%'.format(acc_train * 100))
   print('Full_Set_Valid_Loss: {:.4f}'.format(loss_valid))
   if with_rec:
-    print('Valid_Classifier_Loss: {:.4f}\n'.format(cls_loss_valid),
+    print('Valid_Classifier_Loss: {:.4f}\n'.format(clf_loss_valid),
           'Reconstruction_Valid_Loss: {:.4f}'.format(rec_loss_valid))
   print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid * 100))
 
@@ -246,8 +246,8 @@ def save_config_log(file_path, cfg):
 
 
 def save_log(file_path, epoch_i, step, using_time,
-             loss_train, cls_loss_train, rec_loss_train, acc_train,
-             loss_valid, cls_loss_valid, rec_loss_valid, acc_valid, with_rec):
+             loss_train, clf_loss_train, rec_loss_train, acc_train,
+             loss_valid, clf_loss_valid, rec_loss_valid, acc_valid, with_rec):
   """
   Save losses and accuracies while training.
   """
@@ -265,8 +265,8 @@ def save_log(file_path, epoch_i, step, using_time,
       local_time = time.strftime(
           '%Y/%m/%d-%H:%M:%S', time.localtime(time.time()))
       log = [local_time, epoch_i, step, using_time,
-             loss_train, cls_loss_train, rec_loss_train, acc_train,
-             loss_valid, cls_loss_valid, rec_loss_valid, acc_valid]
+             loss_train, clf_loss_train, rec_loss_train, acc_train,
+             loss_valid, clf_loss_valid, rec_loss_valid, acc_valid]
       writer = csv.writer(f)
       writer.writerow(log)
   else:
@@ -287,7 +287,7 @@ def save_log(file_path, epoch_i, step, using_time,
 
 
 def save_test_log(file_path, loss_test, acc_test,
-                  cls_loss_test, rec_loss_test, with_rec):
+                  clf_loss_test, rec_loss_test, with_rec):
   """
   Save losses and accuracies of testing.
   """
@@ -303,7 +303,7 @@ def save_test_log(file_path, loss_test, acc_test,
     f.write('Test_Loss: {:.4f}\n'.format(loss_test))
     f.write('Test_Accuracy: {:.2f}%\n'.format(acc_test * 100))
     if with_rec:
-      f.write('Test_Train_Loss: {:.4f}\n'.format(cls_loss_test))
+      f.write('Test_Train_Loss: {:.4f}\n'.format(clf_loss_test))
       f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_loss_test))
     f.write('=====================================================')
 

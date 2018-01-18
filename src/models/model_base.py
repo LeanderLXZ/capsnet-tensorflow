@@ -328,6 +328,7 @@ class ConvTransposeLayer(object):
       n_kernel: number of convolution kernels
       padding: padding type of convolution kernel
       act_fn: activation function
+      output_shape: output shape of deconvolution layer
       stddev: stddev of weights initializer
       use_bias: use bias
       idx: index of layer

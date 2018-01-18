@@ -77,18 +77,18 @@ class Test(object):
       accuracy_ = loaded_graph.get_tensor_by_name("accuracy:0")
 
       if self.cfg.TEST_WITH_RECONSTRUCTION:
-        cls_loss_ = loaded_graph.get_tensor_by_name("classifier_loss:0")
+        clf_loss_ = loaded_graph.get_tensor_by_name("classifier_loss:0")
         rec_loss_ = loaded_graph.get_tensor_by_name("rec_loss:0")
         rec_images_ = loaded_graph.get_tensor_by_name("rec_images:0")
         return inputs_, labels_, loss_, accuracy_, \
-            cls_loss_, rec_loss_, rec_images_
+            clf_loss_, rec_loss_, rec_images_
       else:
         return inputs_, labels_, loss_, accuracy_
 
   def _save_images(self, sess, rec_images, inputs, labels,
                    x_batch, y_batch, step):
     """
-    Save reconstruction images.
+    Save reconstructed images.
     """
     rec_images_ = sess.run(
         rec_images, feed_dict={inputs: x_batch, labels: y_batch})
@@ -166,13 +166,13 @@ class Test(object):
     new_im.save(save_image_path)
 
   def _eval_on_batches(self, sess, inputs, labels, loss, accuracy,
-                       cls_loss, rec_loss, rec_images,  x, y, n_batch):
+                       clf_loss, rec_loss, rec_images,  x, y, n_batch):
     """
     Calculate losses and accuracies of full train set.
     """
     loss_all = []
     acc_all = []
-    cls_loss_all = []
+    clf_loss_all = []
     rec_loss_all = []
     step = 0
     _batch_generator = utils.get_batches(x, y, self.cfg.TEST_BATCH_SIZE)
@@ -182,11 +182,11 @@ class Test(object):
                     ncols=100, unit=' batches'):
         step += 1
         x_batch, y_batch = next(_batch_generator)
-        loss_i, cls_loss_i, rec_loss_i, acc_i = \
-            sess.run([loss, cls_loss, rec_loss, accuracy],
+        loss_i, clf_loss_i, rec_loss_i, acc_i = \
+            sess.run([loss, clf_loss, rec_loss, accuracy],
                      feed_dict={inputs: x_batch, labels: y_batch})
         loss_all.append(loss_i)
-        cls_loss_all.append(cls_loss_i)
+        clf_loss_all.append(clf_loss_i)
         rec_loss_all.append(rec_loss_i)
         acc_all.append(acc_i)
 
@@ -196,7 +196,7 @@ class Test(object):
             self._save_images(sess, rec_images, inputs, labels,
                               x_batch, y_batch, step)
 
-      cls_loss = sum(cls_loss_all) / len(cls_loss_all)
+      clf_loss = sum(clf_loss_all) / len(clf_loss_all)
       rec_loss = sum(rec_loss_all) / len(rec_loss_all)
 
     else:
@@ -208,12 +208,12 @@ class Test(object):
                      feed_dict={inputs: x_batch, labels: y_batch})
         loss_all.append(loss_i)
         acc_all.append(acc_i)
-      cls_loss, rec_loss = None, None
+      clf_loss, rec_loss = None, None
 
     loss = sum(loss_all) / len(loss_all)
     accuracy = sum(acc_all) / len(acc_all)
 
-    return loss, cls_loss, rec_loss, accuracy
+    return loss, clf_loss, rec_loss, accuracy
 
   def test(self):
     """
@@ -232,11 +232,11 @@ class Test(object):
       # Get Tensors from loaded models
       if self.cfg.TEST_WITH_RECONSTRUCTION:
         inputs, labels, loss, accuracy, \
-            cls_loss, rec_loss, rec_images = \
+            clf_loss, rec_loss, rec_images = \
             self._get_tensors(loaded_graph)
       else:
         inputs, labels, loss, accuracy = self._get_tensors(loaded_graph)
-        cls_loss, rec_loss, rec_images = None, None, None
+        clf_loss, rec_loss, rec_images = None, None, None
 
       utils.thick_line()
       print('Testing on test set...')
@@ -244,23 +244,23 @@ class Test(object):
       utils.thin_line()
       print('Calculating loss and accuracy of test set...')
 
-      loss_test, cls_loss_test, rec_loss_test, acc_test = \
+      loss_test, clf_loss_test, rec_loss_test, acc_test = \
           self._eval_on_batches(
               sess, inputs, labels, loss, accuracy,
-              cls_loss, rec_loss, rec_images,
+              clf_loss, rec_loss, rec_images,
               self.x_test, self.y_test, self.n_batch_test)
 
       # Print losses and accuracy
       utils.thin_line()
       print('Test_Loss: {:.4f}'.format(loss_test))
       if self.cfg.TEST_WITH_RECONSTRUCTION:
-        print('Test_Classifier_Loss: {:.4f}\n'.format(cls_loss_test),
+        print('Test_Classifier_Loss: {:.4f}\n'.format(clf_loss_test),
               'Test_Reconstruction_Loss: {:.4f}'.format(rec_loss_test))
       print('Test_Accuracy: {:.2f}%'.format(acc_test * 100))
 
       # Save test log
       utils.save_test_log(
-          self.test_log_path, loss_test, acc_test, cls_loss_test,
+          self.test_log_path, loss_test, acc_test, clf_loss_test,
           rec_loss_test, self.cfg.TEST_WITH_RECONSTRUCTION)
 
       utils.thin_line()
