@@ -68,8 +68,8 @@ class DataPreProcess(object):
     
     encoder = LabelBinarizer()
     encoder.fit(self.y)
-    encoder.transform(self.y)
-    encoder.transform(self.y_test)
+    self.y = encoder.transform(self.y)
+    self.y_test = encoder.transform(self.y_test)
 
   def _split_data(self):
     """
