@@ -227,7 +227,7 @@ def print_full_set_eval(epoch_i, epochs, step, start_time,
   print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid * 100))
 
 
-def save_config_log(file_path, cfg, clf_arch_info, rec_arch_info):
+def save_config_log(file_path, cfg, clf_arch_info=None, rec_arch_info=None):
   """
   Save configuration of training.
   """
@@ -242,11 +242,12 @@ def save_config_log(file_path, cfg, clf_arch_info, rec_arch_info):
     f.write('-----------------------------------------------------\n')
     for key in cfg.keys():
       f.write('{}: {}\n'.format(key, cfg[key]))
-    f.write('-----------------------------------------------------\n')
-    f.write('Classifier Architecture:\n')
-    for i, (clf_name, clf_params) in enumerate(clf_arch_info):
-      f.write('\t[{}] {}: {}\n'.format(i, clf_name, clf_params))
-    if cfg.WITH_RECONSTRUCTION:
+    if clf_arch_info is not None:
+      f.write('-----------------------------------------------------\n')
+      f.write('Classifier Architecture:\n')
+      for i, (clf_name, clf_params) in enumerate(clf_arch_info):
+        f.write('\t[{}] {}: {}\n'.format(i, clf_name, clf_params))
+    if rec_arch_info is not None:
       f.write('-----------------------------------------------------\n')
       f.write('Reconstruction Architecture:\n')
       for j, (rec_name, rec_params) in enumerate(rec_arch_info):

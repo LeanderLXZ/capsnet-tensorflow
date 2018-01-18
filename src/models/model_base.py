@@ -247,9 +247,7 @@ class ConvLayer(object):
 
   @property
   def params(self):
-    """
-    Parameters of this layer.
-    """
+    """Parameters of this layer."""
     return {'kernel_size': self.kernel_size,
             'stride': self.stride,
             'n_kernel': self.n_kernel,
@@ -372,9 +370,7 @@ class ConvTLayer(object):
 
   @property
   def params(self):
-    """
-    Parameters of this layer.
-    """
+    """Parameters of this layer."""
     return {'kernel_size': self.kernel_size,
             'stride': self.stride,
             'n_kernel': self.n_kernel,
@@ -458,9 +454,7 @@ class Reshape(object):
 
   @property
   def params(self):
-    """
-    Parameters of this layer.
-    """
+    """Parameters of this layer."""
     return {'shape': self.shape,
             'name': self.name}
 
@@ -498,14 +492,10 @@ class Sequential(object):
 
   @property
   def top_layer(self):
-    """
-    The top layer of the models.
-    """
+    """The top layer of the models."""
     return self._top
 
   @property
   def info(self):
-    """
-    The architecture information of the models.
-    """
+    """The architecture information of the models."""
     return self._info

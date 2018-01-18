@@ -67,9 +67,6 @@ class Main(object):
       if cfg.SAVE_IMAGE_STEP is not None:
         utils.check_dir([self.train_image_path])
 
-    # Save config
-    utils.save_config_log(self.train_log_path, cfg)
-
     # Load data
     utils.thick_line()
     print('Loading data...')
@@ -96,6 +93,10 @@ class Main(object):
         self.rec_loss, self.rec_images = model.build_graph(
             image_size=self.x_train.shape[1:],
             num_class=self.y_train.shape[1])
+
+    # Save config
+    utils.save_config_log(
+        self.train_log_path, cfg, model.clf_arch_info, model.rec_arch_info)
 
   def _display_status(self, sess, x_batch, y_batch, epoch_i, step):
     """

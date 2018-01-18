@@ -37,9 +37,7 @@ class CapsLayer(object):
 
   @property
   def params(self):
-    """
-    Parameters of this layer.
-    """
+    """Parameters of this layer."""
     return {'num_caps': self.num_caps,
             'vec_dim': self.vec_dim,
             'route_epoch': self.route_epoch,
@@ -270,9 +268,7 @@ class Conv2CapsLayer(object):
 
   @property
   def params(self):
-    """
-    Parameters of this layer.
-    """
+    """Parameters of this layer."""
     return {'kernel_size': self.kernel_size,
             'stride': self.stride,
             'n_kernel': self.n_kernel,
@@ -388,9 +384,7 @@ class Dense2CapsLayer(object):
 
   @property
   def params(self):
-    """
-    Parameters of this layer.
-    """
+    """Parameters of this layer."""
     return {'identity_map': self.identity_map,
             'num_caps': self.num_caps,
             'act_fn': self.act_fn,
