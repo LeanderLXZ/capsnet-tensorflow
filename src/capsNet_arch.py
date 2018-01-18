@@ -22,7 +22,7 @@ def classifier(inputs, cfg, batch_size=None):
       atrous=False,
       idx=0
   ))
-  model.add(Conv2Capsule(
+  model.add(Conv2CapsLayer(
       cfg,
       kernel_size=9,
       stride=2,
@@ -41,7 +41,7 @@ def classifier(inputs, cfg, batch_size=None):
   #     vec_dim=8,
   #     batch_size=batch_size
   # ))
-  model.add(CapsuleLayer(
+  model.add(CapsLayer(
       cfg,
       num_caps=10,
       vec_dim=16,
@@ -50,7 +50,7 @@ def classifier(inputs, cfg, batch_size=None):
       idx=0
   ))
 
-  return model.top_layer
+  return model.top_layer, model.info
 
 
 def decoder(inputs, cfg, batch_size=None):
@@ -108,7 +108,7 @@ def decoder(inputs, cfg, batch_size=None):
   elif cfg.DECODER_TYPE == 'conv_t':
     model.add(Reshape(
         (batch_size, 1, 1, -1), name='reshape'))
-    model.add(ConvTransposeLayer(
+    model.add(ConvTLayer(
         cfg,
         kernel_size=4,
         stride=1,
@@ -116,7 +116,7 @@ def decoder(inputs, cfg, batch_size=None):
         output_shape=[batch_size, 4, 4, 16],
         padding='VALID',
         idx=0))
-    model.add(ConvTransposeLayer(
+    model.add(ConvTLayer(
         cfg,
         kernel_size=9,
         stride=1,
@@ -124,7 +124,7 @@ def decoder(inputs, cfg, batch_size=None):
         output_shape=[batch_size, 12, 12, 32],
         padding='VALID',
         idx=1))
-    model.add(ConvTransposeLayer(
+    model.add(ConvTLayer(
         cfg,
         kernel_size=9,
         stride=1,
@@ -132,7 +132,7 @@ def decoder(inputs, cfg, batch_size=None):
         output_shape=[batch_size, 20, 20, 16],
         padding='VALID',
         idx=2))
-    model.add(ConvTransposeLayer(
+    model.add(ConvTLayer(
         cfg,
         kernel_size=9,
         stride=1,
@@ -140,7 +140,7 @@ def decoder(inputs, cfg, batch_size=None):
         output_shape=[batch_size, 28, 28, 8],
         padding='VALID',
         idx=3))
-    model.add(ConvTransposeLayer(
+    model.add(ConvTLayer(
         cfg,
         kernel_size=3,
         stride=1,
@@ -152,4 +152,4 @@ def decoder(inputs, cfg, batch_size=None):
   else:
     raise ValueError('Wrong decoder type!')
 
-  return model.top_layer
+  return model.top_layer, model.info

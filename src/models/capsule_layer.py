@@ -8,7 +8,7 @@ from models.caps_activate_fn import ActivationFunc
 from models.model_base import ModelBase
 
 
-class CapsuleLayer(object):
+class CapsLayer(object):
 
   def __init__(self,
                cfg,
@@ -34,6 +34,17 @@ class CapsuleLayer(object):
     self.route_epoch = route_epoch
     self.batch_size = batch_size
     self.idx = idx
+
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'num_caps': self.num_caps,
+            'vec_dim': self.vec_dim,
+            'route_epoch': self.route_epoch,
+            'batch_size': self.batch_size,
+            'idx': self.idx}
 
   def __call__(self, inputs):
     """
@@ -218,7 +229,7 @@ class CapsuleLayer(object):
     return v_j
 
 
-class Conv2Capsule(object):
+class Conv2CapsLayer(object):
 
   def __init__(self,
                cfg,
@@ -228,6 +239,7 @@ class Conv2Capsule(object):
                vec_dim=None,
                padding='SAME',
                act_fn='relu',
+               stddev=None,
                use_bias=True,
                batch_size=None):
     """
@@ -238,9 +250,10 @@ class Conv2Capsule(object):
       kernel_size: size of convolution kernel
       stride: stride of convolution kernel
       n_kernel: depth of convolution kernel
-      vec_dim: dimensions of vectors of capsule
       padding: padding type of convolution kernel
       act_fn: activation function of convolution layer
+      vec_dim: dimensions of vectors of capsule
+      stddev: stddev of weights initializer
       use_bias: add biases
       batch_size: number of samples per batch
     """
@@ -248,11 +261,27 @@ class Conv2Capsule(object):
     self.kernel_size = kernel_size
     self.stride = stride
     self.n_kernel = n_kernel
-    self.vec_dim = vec_dim
     self.padding = padding
     self.act_fn = act_fn
+    self.vec_dim = vec_dim
+    self.stddev = stddev
     self.use_bias = use_bias
     self.batch_size = batch_size
+
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'kernel_size': self.kernel_size,
+            'stride': self.stride,
+            'n_kernel': self.n_kernel,
+            'padding': self.padding,
+            'act_fn': self.act_fn,
+            'vec_dim': self.vec_dim,
+            'stddev': self.stddev,
+            'use_bias': self.use_bias,
+            'batch_size': self.batch_size}
 
   def __call__(self, inputs):
     """
@@ -268,7 +297,11 @@ class Conv2Capsule(object):
     with tf.variable_scope('conv2caps'):
       # Convolution layer
       activation_fn = ModelBase.get_act_fn(self.act_fn)
-      weights_initializer = tf.contrib.layers.xavier_initializer()
+      if self.stddev is None:
+        weights_initializer = tf.contrib.layers.xavier_initializer()
+      else:
+        weights_initializer = tf.truncated_normal_initializer(
+            stddev=self.stddev)
 
       if self.cfg.VAR_ON_CPU:
         kernels = ModelBase.variable_on_cpu(
@@ -325,7 +358,7 @@ class Conv2Capsule(object):
       return caps_activated
 
 
-class Dense2Capsule(object):
+class Dense2CapsLayer(object):
 
   def __init__(self,
                cfg,
@@ -352,6 +385,17 @@ class Dense2Capsule(object):
     self.act_fn = act_fn
     self.vec_dim = vec_dim
     self.batch_size = batch_size
+
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'identity_map': self.identity_map,
+            'num_caps': self.num_caps,
+            'act_fn': self.act_fn,
+            'vec_dim': self.vec_dim,
+            'batch_size': self.batch_size}
 
   def _fc_layer(self,
                 x,

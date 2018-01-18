@@ -64,9 +64,6 @@ class MainDistribute(object):
       if self.cfg.SAVE_IMAGE_STEP is not None:
         utils.check_dir([self.train_image_path])
 
-    # Save config
-    utils.save_config_log(self.train_log_path, cfg)
-
     # Load data
     utils.thick_line()
     print('Loading data...')
@@ -93,6 +90,10 @@ class MainDistribute(object):
         self.rec_loss, self.rec_images = model.build_graph(
             image_size=self.x_train.shape[1:],
             num_class=self.y_train.shape[1])
+
+    # Save config
+    utils.save_config_log(
+        self.train_log_path, cfg, model.clf_arch_info, model.rec_arch_info)
 
   def _display_status(self, sess, x_batch, y_batch, epoch_i, step):
     """
@@ -303,8 +304,6 @@ class MainDistribute(object):
                             (rec_images_.max() - rec_images_.min()))
     real_images_ = np.divide(((x_batch - x_batch.min()) * 255),
                              (x_batch.max() - x_batch.min()))
-
-    print(rec_images_[0], '\n', real_images_[0], '\n', y_batch[0])
 
     # Put images in a square arrangement
     rec_images_in_square = np.reshape(

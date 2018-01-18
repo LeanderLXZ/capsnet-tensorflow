@@ -227,9 +227,9 @@ def print_full_set_eval(epoch_i, epochs, step, start_time,
   print('Full_Set_Valid_Accuracy: {:.2f}%'.format(acc_valid * 100))
 
 
-def save_config_log(file_path, cfg):
+def save_config_log(file_path, cfg, clf_arch_info, rec_arch_info):
   """
-  Save config of training.
+  Save configuration of training.
   """
   file_path = os.path.join(file_path, 'config_log.txt')
   thick_line()
@@ -242,6 +242,15 @@ def save_config_log(file_path, cfg):
     f.write('-----------------------------------------------------\n')
     for key in cfg.keys():
       f.write('{}: {}\n'.format(key, cfg[key]))
+    f.write('-----------------------------------------------------\n')
+    f.write('Classifier Architecture:\n')
+    for i, (clf_name, clf_params) in enumerate(clf_arch_info):
+      f.write('\t[{}] {}: {}\n'.format(i, clf_name, clf_params))
+    if cfg.WITH_RECONSTRUCTION:
+      f.write('-----------------------------------------------------\n')
+      f.write('Reconstruction Architecture:\n')
+      for j, (rec_name, rec_params) in enumerate(rec_arch_info):
+        f.write('\t[{}] {}: {}\n'.format(j, rec_name, rec_params))
     f.write('=====================================================')
 
 

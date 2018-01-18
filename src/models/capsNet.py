@@ -17,6 +17,8 @@ class CapsNet(ModelBase):
     super(CapsNet, self).__init__(cfg)
 
     self.batch_size = cfg.BATCH_SIZE
+    self.clf_arch_info = None
+    self.rec_arch_info = None
 
   def _get_inputs(self, image_size, num_class):
     """
@@ -45,7 +47,7 @@ class CapsNet(ModelBase):
     Returns:
       output tensor of capsule layer
     """
-    _caps = capsule_layer.CapsuleLayer(
+    _caps = capsule_layer.CapsLayer(
         self.cfg, **caps_param, batch_size=self.batch_size, idx=idx)
     return _caps(x)
 
@@ -64,7 +66,7 @@ class CapsNet(ModelBase):
       # conv2caps_params:
       # {'kernel_size': None, 'stride': None, 'n_kernel': None,
       #  'vec_dim': None, 'padding': 'VALID'}
-      _conv2caps = capsule_layer.Conv2Capsule(
+      _conv2caps = capsule_layer.Conv2CapsLayer(
           self.cfg, **conv2caps_params, batch_size=self.batch_size)
       return _conv2caps(x)
 
@@ -145,7 +147,8 @@ class CapsNet(ModelBase):
 
     with tf.variable_scope('decoder'):
       # _reconstructed shape: (batch_size, image_size*image_size)
-      _reconstructed = decoder(_masked, self.cfg, batch_size=self.batch_size)
+      _reconstructed, self.rec_arch_info = decoder(
+          _masked, self.cfg, batch_size=self.batch_size)
 
     return _reconstructed
 
@@ -252,7 +255,7 @@ class CapsNet(ModelBase):
       logits: output tensor of models
         - shape: (batch_size, num_caps, vec_dim)
     """
-    logits = classifier(inputs, self.cfg, self.batch_size)
+    logits, self.clf_arch_info = classifier(inputs, self.cfg, self.batch_size)
 
     # Logits shape: (batch_size, num_caps, vec_dim, 1)
     logits = tf.squeeze(logits, name='logits')

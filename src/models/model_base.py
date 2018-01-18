@@ -148,6 +148,16 @@ class DenseLayer(object):
     self.use_bias = use_bias
     self.idx = idx
 
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'out_dim': self.out_dim,
+            'act_fn': self.act_fn,
+            'use_bias': self.use_bias,
+            'idx': self.idx}
+
   def __call__(self, inputs):
     """
     Single full-connected layer
@@ -235,6 +245,22 @@ class ConvLayer(object):
     self.atrous = atrous
     self.idx = idx
 
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'kernel_size': self.kernel_size,
+            'stride': self.stride,
+            'n_kernel': self.n_kernel,
+            'padding': self.padding,
+            'act_fn': self.act_fn,
+            'stddev': self.stddev,
+            'resize': self.resize,
+            'use_bias': self.use_bias,
+            'atrous': self.atrous,
+            'idx': self.idx}
+
   def __call__(self, inputs):
     """
     Single convolution layer
@@ -306,7 +332,7 @@ class ConvLayer(object):
       return conv
 
 
-class ConvTransposeLayer(object):
+class ConvTLayer(object):
   def __init__(self,
                cfg,
                kernel_size=None,
@@ -343,6 +369,21 @@ class ConvTransposeLayer(object):
     self.stddev = stddev
     self.use_bias = use_bias
     self.idx = idx
+
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'kernel_size': self.kernel_size,
+            'stride': self.stride,
+            'n_kernel': self.n_kernel,
+            'padding': self.padding,
+            'act_fn': self.act_fn,
+            'output_shape': self.output_shape,
+            'stddev': self.stddev,
+            'use_bias': self.use_bias,
+            'idx': self.idx}
 
   def __call__(self, inputs):
     """
@@ -415,6 +456,14 @@ class Reshape(object):
     self.shape = shape
     self.name = name
 
+  @property
+  def params(self):
+    """
+    Parameters of this layer.
+    """
+    return {'shape': self.shape,
+            'name': self.name}
+
   def __call__(self, inputs):
     """
     Reshape a tensor.
@@ -433,6 +482,7 @@ class Sequential(object):
   """
   def __init__(self, inputs):
     self._top = inputs
+    self._info = []
 
   def add(self, layer):
     """
@@ -442,13 +492,20 @@ class Sequential(object):
       layer: the layer to be added
     """
     self._top = layer(self._top)
+    layer_name_ = layer.__class__.__name__
+    layer_params_ = layer.params
+    self._info.append((layer_name_, layer_params_))
 
   @property
   def top_layer(self):
     """
-    Get the top layer of the models.
-
-    Return:
-      top layer
+    The top layer of the models.
     """
     return self._top
+
+  @property
+  def info(self):
+    """
+    The architecture information of the models.
+    """
+    return self._info
