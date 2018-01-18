@@ -17,18 +17,8 @@ class CapsNet(ModelBase):
     super(CapsNet, self).__init__(cfg)
 
     self.batch_size = cfg.BATCH_SIZE
-    self._clf_arch_info = None
-    self._rec_arch_info = None
-
-  @property
-  def clf_arch_info(self):
-    """Classifier architecture information."""
-    return self._clf_arch_info
-
-  @property
-  def rec_arch_info(self):
-    """Reconstruction architecture information."""
-    return self._rec_arch_info
+    self.clf_arch_info = None
+    self.rec_arch_info = None
 
   def _get_inputs(self, image_size, num_class):
     """
@@ -157,7 +147,7 @@ class CapsNet(ModelBase):
 
     with tf.variable_scope('decoder'):
       # _reconstructed shape: (batch_size, image_size*image_size)
-      _reconstructed, self._rec_arch_info = decoder(
+      _reconstructed, self.rec_arch_info = decoder(
           _masked, self.cfg, batch_size=self.batch_size)
 
     return _reconstructed
@@ -265,7 +255,7 @@ class CapsNet(ModelBase):
       logits: output tensor of models
         - shape: (batch_size, num_caps, vec_dim)
     """
-    logits, self._clf_arch_info = classifier(inputs, self.cfg, self.batch_size)
+    logits, self.clf_arch_info = classifier(inputs, self.cfg, self.batch_size)
 
     # Logits shape: (batch_size, num_caps, vec_dim, 1)
     logits = tf.squeeze(logits, name='logits')
