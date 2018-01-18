@@ -93,7 +93,7 @@ class CapsNetDistribute(CapsNet):
     Returns:
       tuple of metrics
     """
-    n_tower = len(loss_all)
+    n_tower = float(len(loss_all))
 
     loss = tf.divide(
         tf.add_n(loss_all), n_tower, name='total_loss')
