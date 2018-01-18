@@ -283,16 +283,18 @@ class Conv2Capsule(object):
             filter=kernels,
             strides=[1, self.stride, self.stride, 1],
             padding=self.padding)
+
         if self.use_bias:
           biases = ModelBase.variable_on_cpu(
               name='biases',
               shape=[self.n_kernel * self.vec_dim],
               initializer=tf.zeros_initializer(),
               dtype=tf.float32)
-          if activation_fn is None:
-            return tf.add(caps, biases)
-          else:
-            return activation_fn(tf.add(caps, biases))
+          caps = tf.add(caps, biases)
+
+        if activation_fn is not None:
+          caps = activation_fn(caps)
+
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
         caps = tf.contrib.layers.conv2d(
@@ -379,23 +381,29 @@ class Dense2Capsule(object):
             shape=[x.get_shape().as_list()[1], out_dim],
             initializer=weights_initializer,
             dtype=tf.float32)
-        biases = ModelBase.variable_on_cpu(
-            name='biases',
-            shape=[out_dim],
-            initializer=tf.zeros_initializer(),
-            dtype=tf.float32)
-        if activation_fn is None:
-          return tf.add(tf.matmul(x, weights), biases)
-        else:
-          return activation_fn(tf.add(tf.matmul(x, weights), biases))
+        fc = tf.matmul(x, weights)
+
+        if use_bias:
+          biases = ModelBase.variable_on_cpu(
+              name='biases',
+              shape=[out_dim],
+              initializer=tf.zeros_initializer(),
+              dtype=tf.float32)
+          fc = tf.add(fc, biases)
+
+        if activation_fn is not None:
+          fc = activation_fn(fc)
+
       else:
         biases_initializer = tf.zeros_initializer() if use_bias else None
-        return tf.contrib.layers.fully_connected(
+        fc = tf.contrib.layers.fully_connected(
             inputs=x,
             num_outputs=out_dim,
             activation_fn=activation_fn,
             weights_initializer=weights_initializer,
             biases_initializer=biases_initializer)
+
+      return fc
 
   def __call__(self, inputs):
     """

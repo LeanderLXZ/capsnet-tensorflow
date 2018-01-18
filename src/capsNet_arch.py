@@ -60,37 +60,94 @@ def decoder(inputs, cfg, batch_size=None):
 
   if cfg.DECODER_TYPE == 'fc':
     model.add(DenseLayer(
-        cfg, out_dim=512, idx=0))
+        cfg,
+        out_dim=512,
+        idx=0))
     model.add(DenseLayer(
-        cfg, out_dim=1024, idx=1))
+        cfg,
+        out_dim=1024,
+        idx=1))
     model.add(DenseLayer(
-        cfg, out_dim=784, act_fn=act_fn_last, idx=2))
+        cfg,
+        out_dim=784,
+        act_fn=act_fn_last,
+        idx=2))
 
   elif cfg.DECODER_TYPE == 'conv':
     model.add(Reshape(
         (batch_size, 4, 4, -1), name='reshape'))
     model.add(ConvLayer(
-        cfg, kernel_size=3, stride=1, n_kernel=16, resize=7, idx=0))
+        cfg,
+        kernel_size=3,
+        stride=1,
+        n_kernel=16,
+        resize=7,
+        idx=0))
     model.add(ConvLayer(
-        cfg, kernel_size=3, stride=1, n_kernel=32, resize=14, idx=1))
+        cfg,
+        kernel_size=3,
+        stride=1,
+        n_kernel=32,
+        resize=14,
+        idx=1))
     model.add(ConvLayer(
-        cfg, kernel_size=3, stride=1, n_kernel=32, resize=28, idx=2))
+        cfg,
+        kernel_size=3,
+        stride=1,
+        n_kernel=32,
+        resize=28,
+        idx=2))
     model.add(ConvLayer(
-        cfg, kernel_size=3, stride=1, n_kernel=1, act_fn=act_fn_last, idx=3))
+        cfg,
+        kernel_size=3,
+        stride=1,
+        n_kernel=1,
+        act_fn=act_fn_last,
+        idx=3))
 
   elif cfg.DECODER_TYPE == 'conv_t':
     model.add(Reshape(
         (batch_size, 1, 1, -1), name='reshape'))
     model.add(ConvTransposeLayer(
-        cfg, kernel_size=4, stride=1, n_kernel=16, padding='VALID', idx=0))
+        cfg,
+        kernel_size=4,
+        stride=1,
+        n_kernel=16,
+        output_shape=[batch_size, 4, 4, 16],
+        padding='VALID',
+        idx=0))
     model.add(ConvTransposeLayer(
-        cfg, kernel_size=9, stride=1, n_kernel=32, padding='VALID', idx=1))
+        cfg,
+        kernel_size=9,
+        stride=1,
+        n_kernel=32,
+        output_shape=[batch_size, 12, 12, 32],
+        padding='VALID',
+        idx=1))
     model.add(ConvTransposeLayer(
-        cfg, kernel_size=9, stride=1, n_kernel=16, padding='VALID', idx=2))
+        cfg,
+        kernel_size=9,
+        stride=1,
+        n_kernel=16,
+        output_shape=[batch_size, 20, 20, 16],
+        padding='VALID',
+        idx=2))
     model.add(ConvTransposeLayer(
-        cfg, kernel_size=9, stride=1, n_kernel=8, padding='VALID', idx=3))
+        cfg,
+        kernel_size=9,
+        stride=1,
+        n_kernel=8,
+        output_shape=[batch_size, 28, 28, 8],
+        padding='VALID',
+        idx=3))
     model.add(ConvTransposeLayer(
-        cfg, kernel_size=3, stride=1, n_kernel=1, act_fn=act_fn_last, idx=4))
+        cfg,
+        kernel_size=3,
+        stride=1,
+        n_kernel=1,
+        output_shape=[batch_size, 28, 28, 1],
+        act_fn=act_fn_last,
+        idx=4))
 
   else:
     raise ValueError('Wrong decoder type!')

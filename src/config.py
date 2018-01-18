@@ -69,7 +69,7 @@ __C.WITH_RECONSTRUCTION = True
 # 'fc': full_connected layers
 # 'conv': convolution layers
 # 'conv_t': transpose convolution layers
-__C.DECODER_TYPE = 'fc'
+__C.DECODER_TYPE = 'conv_t'
 
 # Reconstruction loss
 # 'mse': Mean Square Error

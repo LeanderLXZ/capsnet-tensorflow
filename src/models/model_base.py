@@ -168,23 +168,29 @@ class DenseLayer(object):
             shape=[inputs.get_shape().as_list()[1], self.out_dim],
             initializer=weights_initializer,
             dtype=tf.float32)
-        biases = ModelBase.variable_on_cpu(
-            name='biases',
-            shape=[self.out_dim],
-            initializer=tf.zeros_initializer(),
-            dtype=tf.float32)
-        if activation_fn is None:
-          return tf.add(tf.matmul(inputs, weights), biases)
-        else:
-          return activation_fn(tf.add(tf.matmul(inputs, weights), biases))
+        fc = tf.matmul(inputs, weights)
+
+        if self.use_bias:
+          biases = ModelBase.variable_on_cpu(
+              name='biases',
+              shape=[self.out_dim],
+              initializer=tf.zeros_initializer(),
+              dtype=tf.float32)
+          fc = tf.add(fc, biases)
+
+        if activation_fn is not None:
+          fc = activation_fn(fc)
+
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
-        return tf.contrib.layers.fully_connected(
+        fc = tf.contrib.layers.fully_connected(
             inputs=inputs,
             num_outputs=self.out_dim,
             activation_fn=activation_fn,
             weights_initializer=weights_initializer,
             biases_initializer=biases_initializer)
+
+      return fc
 
 
 class ConvLayer(object):
@@ -273,6 +279,7 @@ class ConvLayer(object):
                             filter=kernels,
                             strides=[1, self.stride, self.stride, 1],
                             padding=self.padding)
+
         if self.use_bias:
           biases = ModelBase.variable_on_cpu(
               name='biases',
@@ -280,13 +287,13 @@ class ConvLayer(object):
               initializer=tf.zeros_initializer(),
               dtype=tf.float32)
           conv = tf.nn.bias_add(conv, biases)
-        if activation_fn is None:
-          return conv
-        else:
-          return activation_fn(conv)
+
+        if activation_fn is not None:
+          conv = activation_fn(conv)
+
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
-        return tf.contrib.layers.conv2d(
+        conv = tf.contrib.layers.conv2d(
             inputs=inputs,
             num_outputs=self.n_kernel,
             kernel_size=self.kernel_size,
@@ -295,6 +302,8 @@ class ConvLayer(object):
             activation_fn=activation_fn,
             weights_initializer=weights_initializer,
             biases_initializer=biases_initializer)
+
+      return conv
 
 
 class ConvTransposeLayer(object):
@@ -305,6 +314,8 @@ class ConvTransposeLayer(object):
                n_kernel=None,
                padding='SAME',
                act_fn='relu',
+               output_shape=None,
+               stddev=None,
                use_bias=True,
                idx=None):
     """
@@ -317,6 +328,7 @@ class ConvTransposeLayer(object):
       n_kernel: number of convolution kernels
       padding: padding type of convolution kernel
       act_fn: activation function
+      stddev: stddev of weights initializer
       use_bias: use bias
       idx: index of layer
     """
@@ -326,6 +338,8 @@ class ConvTransposeLayer(object):
     self.n_kernel = n_kernel
     self.padding = padding
     self.act_fn = act_fn
+    self.output_shape = output_shape
+    self.stddev = stddev
     self.use_bias = use_bias
     self.idx = idx
 
@@ -341,18 +355,50 @@ class ConvTransposeLayer(object):
     """
     with tf.variable_scope('conv_t_{}'.format(self.idx)):
       activation_fn = ModelBase.get_act_fn(self.act_fn)
-      weights_initializer = tf.contrib.layers.xavier_initializer()
-      biases_initializer = tf.zeros_initializer() if self.use_bias else None
+      if self.stddev is None:
+        weights_initializer = tf.contrib.layers.xavier_initializer()
+      else:
+        weights_initializer = tf.truncated_normal_initializer(
+            stddev=self.stddev)
 
-      return tf.contrib.layers.conv2d_transpose(
-          inputs=inputs,
-          num_outputs=self.n_kernel,
-          kernel_size=self.kernel_size,
-          stride=self.stride,
-          padding=self.padding,
-          activation_fn=activation_fn,
-          weights_initializer=weights_initializer,
-          biases_initializer=biases_initializer)
+      if self.cfg.VAR_ON_CPU:
+        kernels = ModelBase.variable_on_cpu(
+            name='kernels',
+            shape=[self.kernel_size, self.kernel_size,
+                   self.n_kernel, inputs.get_shape().as_list()[3]],
+            initializer=weights_initializer,
+            dtype=tf.float32)
+        conv_t = tf.nn.conv2d_transpose(
+            value=inputs,
+            filter=kernels,
+            output_shape=self.output_shape,
+            strides=[1, self.stride, self.stride, 1],
+            padding=self.padding)
+
+        if self.use_bias:
+          biases = ModelBase.variable_on_cpu(
+              name='biases',
+              shape=[self.n_kernel],
+              initializer=tf.zeros_initializer(),
+              dtype=tf.float32)
+          conv_t = tf.nn.bias_add(conv_t, biases)
+
+        if activation_fn is not None:
+          conv_t = activation_fn(conv_t)
+
+      else:
+        biases_initializer = tf.zeros_initializer() if self.use_bias else None
+        conv_t = tf.contrib.layers.conv2d_transpose(
+            inputs=inputs,
+            num_outputs=self.n_kernel,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            activation_fn=activation_fn,
+            weights_initializer=weights_initializer,
+            biases_initializer=biases_initializer)
+
+      return conv_t
 
 
 class Reshape(object):
