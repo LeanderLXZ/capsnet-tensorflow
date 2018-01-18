@@ -97,23 +97,23 @@ class CapsNetDistribute(CapsNet):
 
     loss = tf.divide(
         tf.add_n(loss_all), n_tower, name='total_loss')
-    assert loss.get_shape == ()
+    assert loss.get_shape() == ()
 
     accuracy = tf.divide(
         tf.add_n(acc_all), n_tower, name='total_acc')
-    assert accuracy.get_shape == ()
+    assert accuracy.get_shape() == ()
 
     classifier_loss = tf.divide(
         tf.add_n(clf_loss_all), n_tower, name='total_clf_loss')
-    assert classifier_loss.get_shape == ()
+    assert classifier_loss.get_shape() == ()
 
     reconstruct_loss = tf.divide(
         tf.add_n(rec_loss_all), n_tower, name='total_rec_loss')
-    assert reconstruct_loss.get_shape == ()
+    assert reconstruct_loss.get_shape() == ()
 
     reconstructed_images = tf.concat(
         rec_images_all, axis=0, name='total_rec_images')
-    assert reconstructed_images.get_shape == (
+    assert reconstructed_images.get_shape() == (
       self.cfg.GPU_BATCH_SIZE * n_tower,
       *rec_images_all[0].get_shape().as_list()[1:])
 
