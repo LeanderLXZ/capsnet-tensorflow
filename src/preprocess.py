@@ -94,12 +94,12 @@ class DataPreProcess(object):
     else:
       raise ValueError('Wrong database name!')
 
-    assert self.x_train.shape == (5000, 28, 28, 1)
-    assert self.x_valid.shape == (5000, 28, 28, 1)
-    assert self.y_train.shape == (55000, 10)
-    assert self.y_valid.shape == (55000, 10)
-    assert self.x_test.shape == (10000, 28, 28, 1)
-    assert self.y_test.shape == (10000, 10)
+    assert self.x_train.shape == (5000, 28, 28, 1), self.x_train.shape
+    assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
+    assert self.y_train.shape == (55000, 10), self.y_train.shape
+    assert self.y_valid.shape == (55000, 10), self.y_valid.shape
+    assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
+    assert self.y_test.shape == (10000, 10), self.y_test.shape
 
   def _save_data(self):
     """
