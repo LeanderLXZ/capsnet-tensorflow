@@ -283,15 +283,14 @@ class MainDistribute(object):
       print('Evaluation done! Using time: {:.2f}'
             .format(time.time() - eval_start_time))
 
-  def _save_images(self, sess, img_path, x_batch,
+  def _save_images(self, sess, img_path, x_batch, y_batch,
                    step, silent=False, epoch_i=None):
     """
     Save reconstructed images.
     """
     rec_images_ = sess.run(
-        self.rec_images, feed_dict={self.inputs: x_batch})
-
-    print(rec_images_[1], '\n', x_batch[1])
+        self.rec_images, feed_dict={self.inputs: x_batch,
+                                    self.labels: y_batch})
 
     # Get maximum size for square grid of images
     save_col_size = math.floor(np.sqrt(rec_images_.shape[0] * 2))
@@ -304,6 +303,8 @@ class MainDistribute(object):
                             (rec_images_.max() - rec_images_.min()))
     real_images_ = np.divide(((x_batch - x_batch.min()) * 255),
                              (x_batch.max() - x_batch.min()))
+
+    print(rec_images_[1], '\n', real_images_[1], '\n', y_batch[1])
 
     # Put images in a square arrangement
     rec_images_in_square = np.reshape(
@@ -426,8 +427,9 @@ class MainDistribute(object):
         # Save reconstruct images
         if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
           if step % self.cfg.TEST_SAVE_IMAGE_STEP == 0:
-            self._save_images(sess, self.test_image_path,
-                              test_batch_x, step, silent=False)
+            self._save_images(
+                sess, self.test_image_path, test_batch_x,
+                test_batch_y, step, silent=False)
 
       clf_loss_test = sum(clf_loss_test_all) / len(clf_loss_test_all)
       rec_loss_test = sum(rec_loss_test_all) / len(rec_loss_test_all)
@@ -519,8 +521,8 @@ class MainDistribute(object):
                 if self.cfg.WITH_RECONSTRUCTION:
                   if step % self.cfg.SAVE_IMAGE_STEP == 0:
                     self._save_images(
-                        sess, self.train_image_path,
-                        x_batch, step, epoch_i=epoch_i)
+                        sess, self.train_image_path, x_batch,
+                        y_batch, step, epoch_i=epoch_i)
 
               # Save models
               if self.cfg.SAVE_MODEL_MODE == 'per_batch':
@@ -560,7 +562,7 @@ class MainDistribute(object):
                   if step % self.cfg.SAVE_IMAGE_STEP == 0:
                     self._save_images(
                         sess, self.train_image_path, x_batch,
-                        step, silent=True, epoch_i=epoch_i)
+                        y_batch, step, silent=True, epoch_i=epoch_i)
 
               # Save models
               if self.cfg.SAVE_MODEL_MODE == 'per_batch':
