@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from models.activation_fn import ActivationFunc
+from models.caps_activate_fn import ActivationFunc
 from models.model_base import ModelBase
 
 
@@ -289,7 +289,10 @@ class Conv2Capsule(object):
               shape=[self.n_kernel * self.vec_dim],
               initializer=tf.zeros_initializer(),
               dtype=tf.float32)
-          caps = tf.nn.bias_add(caps, biases)
+          if activation_fn is None:
+            return tf.add(caps, biases)
+          else:
+            return activation_fn(tf.add(caps, biases))
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
         caps = tf.contrib.layers.conv2d(
@@ -381,7 +384,10 @@ class Dense2Capsule(object):
             shape=[out_dim],
             initializer=tf.zeros_initializer(),
             dtype=tf.float32)
-        return activation_fn(tf.add(tf.matmul(x, weights), biases))
+        if activation_fn is None:
+          return tf.add(tf.matmul(x, weights), biases)
+        else:
+          return activation_fn(tf.add(tf.matmul(x, weights), biases))
       else:
         biases_initializer = tf.zeros_initializer() if use_bias else None
         return tf.contrib.layers.fully_connected(

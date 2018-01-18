@@ -173,7 +173,10 @@ class DenseLayer(object):
             shape=[self.out_dim],
             initializer=tf.zeros_initializer(),
             dtype=tf.float32)
-        return activation_fn(tf.add(tf.matmul(inputs, weights), biases))
+        if activation_fn is None:
+          return tf.add(tf.matmul(inputs, weights), biases)
+        else:
+          return activation_fn(tf.add(tf.matmul(inputs, weights), biases))
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
         return tf.contrib.layers.fully_connected(
@@ -277,7 +280,10 @@ class ConvLayer(object):
               initializer=tf.zeros_initializer(),
               dtype=tf.float32)
           conv = tf.nn.bias_add(conv, biases)
-        return activation_fn(conv)
+        if activation_fn is None:
+          return conv
+        else:
+          return activation_fn(conv)
       else:
         biases_initializer = tf.zeros_initializer() if self.use_bias else None
         return tf.contrib.layers.conv2d(
