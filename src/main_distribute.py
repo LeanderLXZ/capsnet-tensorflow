@@ -2,18 +2,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import getopt
 import math
-import os
-import sys
 import time
+from os.path import join, isdir
 
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 from tqdm import tqdm
 
-from config_distribute import config
+from config import config
 from model import utils
 from model.capsNet_distribute import CapsNetDistribute
 
@@ -35,9 +33,9 @@ class MainDistribute(object):
 
     # Get log path, append information if the directory exist.
     self.log_path = self.cfg.LOG_PATH
-    test_log_path_ = os.path.join(self.cfg.TEST_LOG_PATH, self.cfg.TEST_VERSION)
+    test_log_path_ = join(self.cfg.TEST_LOG_PATH, self.cfg.TEST_VERSION)
     i_append_info = 0
-    while os.path.isdir(self.log_path):
+    while isdir(self.log_path):
       i_append_info += 1
       self.log_path = self.cfg.LOG_PATH + '({})'.format(i_append_info)
 
@@ -52,8 +50,8 @@ class MainDistribute(object):
       self.test_log_path = test_log_path_
 
     # Images saving path
-    self.train_image_path = os.path.join(self.log_path, 'images')
-    self.test_image_path = os.path.join(self.test_log_path, 'images')
+    self.train_image_path = join(self.log_path, 'images')
+    self.test_image_path = join(self.test_log_path, 'images')
 
     # Check directory of paths
     utils.check_dir([self.log_path, self.checkpoint_path])
@@ -68,22 +66,14 @@ class MainDistribute(object):
     utils.thick_line()
     print('Loading data...')
     utils.thin_line()
-    x_train = utils.load_data_from_pickle(
-        os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/train_image.p'))
-    y_train = utils.load_data_from_pickle(
-        os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/train_label.p'))
-
-    # Split training/validation/test set
-    x_train = np.divide(x_train, 255.)
-    x_train = x_train.reshape([-1, 28, 28, 1])
-    self.x_valid = x_train[55000:60000]
-    assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
-    self.x_train = x_train[:55000]
-    assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
-    self.y_valid = y_train[55000:60000]
-    assert self.y_valid.shape == (5000, 10), self.y_valid.shape
-    self.y_train = y_train[:55000]
-    assert self.y_train.shape == (55000, 10), self.y_train.shape
+    self.x_train = utils.load_data_from_pkl(
+        join(cfg.DPP_DATA_PATH, 'x_train.p'))
+    self.y_train = utils.load_data_from_pkl(
+        join(cfg.DPP_DATA_PATH, 'y_train.p'))
+    self.x_valid = utils.load_data_from_pkl(
+        join(cfg.DPP_DATA_PATH, 'x_valid.p'))
+    self.y_valid = utils.load_data_from_pkl(
+        join(cfg.DPP_DATA_PATH, 'y_valid.p'))
 
     # Calculate number of batches
     self.n_batch_train = len(self.y_train) // self.cfg.BATCH_SIZE
@@ -173,7 +163,7 @@ class MainDistribute(object):
     train_writer.add_summary(summary_train, step)
     valid_writer.add_summary(summary_valid, step)
     utils.save_log(
-        os.path.join(self.log_path, 'train_log.csv'), epoch_i + 1, step,
+        join(self.log_path, 'train_log.csv'), epoch_i + 1, step,
         time.time() - self.start_time, loss_train, cls_loss_train,
         rec_loss_train, acc_train, loss_valid, cls_loss_valid, rec_loss_valid,
         acc_valid, self.cfg.WITH_RECONSTRUCTION)
@@ -273,7 +263,7 @@ class MainDistribute(object):
           loss_valid, cls_loss_valid, rec_loss_valid, acc_valid,
           self.cfg.EVAL_WITH_FULL_TRAIN_SET, self.cfg.WITH_RECONSTRUCTION)
 
-    file_path = os.path.join(self.log_path, 'full_set_eval_log.csv')
+    file_path = join(self.log_path, 'full_set_eval_log.csv')
     if not silent:
       utils.thin_line()
       print('Saving {}...'.format(file_path))
@@ -358,10 +348,10 @@ class MainDistribute(object):
               int(row_i * (rec_images.shape[1] + avg_gap) + thick_gap)))
 
     if epoch_i is None:
-      save_image_path = os.path.join(
+      save_image_path = join(
           img_path, 'batch_{}.jpg'.format(step))
     else:
-      save_image_path = os.path.join(
+      save_image_path = join(
           img_path,
           'epoch_{}_batch_{}.jpg'.format(epoch_i, step))
     if not silent:
@@ -373,7 +363,7 @@ class MainDistribute(object):
     """
     Save model.
     """
-    save_path = os.path.join(self.checkpoint_path, 'model.ckpt')
+    save_path = join(self.checkpoint_path, 'model.ckpt')
     if not silent:
       utils.thin_line()
       print('Saving model to {}...'.format(save_path))
@@ -398,14 +388,10 @@ class MainDistribute(object):
     utils.thin_line()
     print('Loading test set...')
     utils.thin_line()
-    x_test = utils.load_data_from_pickle(
-        os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_image.p'))
-    y_test = utils.load_data_from_pickle(
-        os.path.join(self.cfg.SOURCE_DATA_PATH, 'mnist/test_label.p'))
-    x_test = np.divide(x_test, 255.)
-    x_test = x_test.reshape([-1, 28, 28, 1])
-    assert x_test.shape == (10000, 28, 28, 1), x_test.shape
-    assert y_test.shape == (10000, 10), y_test.shape
+    x_test = utils.load_data_from_pkl(
+        join(self.cfg.DPP_DATA_PATH, 'x_test.p'))
+    y_test = utils.load_data_from_pkl(
+        join(self.cfg.DPP_DATA_PATH, 'y_test.p'))
     n_batch_test = len(y_test) // self.cfg.BATCH_SIZE
 
     utils.thin_line()
@@ -485,8 +471,8 @@ class MainDistribute(object):
         print('Training...')
 
         # Merge all the summaries and create writers
-        train_log_path = os.path.join(self.summary_path, 'train')
-        valid_log_path = os.path.join(self.summary_path, 'valid')
+        train_log_path = join(self.summary_path, 'train')
+        valid_log_path = join(self.summary_path, 'valid')
         utils.check_dir([train_log_path, valid_log_path])
         train_writer = tf.summary.FileWriter(train_log_path, sess.graph)
         valid_writer = tf.summary.FileWriter(valid_log_path)

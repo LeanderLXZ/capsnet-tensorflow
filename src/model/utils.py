@@ -16,7 +16,7 @@ from tqdm import tqdm
 from urllib.request import urlretrieve
 
 
-def save_data_to_pickle(data, data_path):
+def save_data_to_pkl(data, data_path):
   """
   Save data to pickle file.
   """
@@ -25,7 +25,7 @@ def save_data_to_pickle(data, data_path):
     pickle.dump(data, f)
 
 
-def load_data_from_pickle(data_path):
+def load_data_from_pkl(data_path):
   """
   Load data from pickle file.
   """
@@ -107,7 +107,7 @@ def extract_image(save_path, extract_path):
       buf = bytestream.read(rows * cols * num_images)
       data = np.frombuffer(buf, dtype=np.uint8)
       data = data.reshape(num_images, rows, cols)
-      save_data_to_pickle(data, extract_path + '.p')
+      save_data_to_pkl(data, extract_path + '.p')
 
 
 def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
@@ -130,7 +130,7 @@ def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
       labels = np.frombuffer(buf, dtype=np.uint8)
       if one_hot:
         labels = _dense_to_one_hot(labels, num_classes)
-      save_data_to_pickle(labels, extract_path + '.p')
+      save_data_to_pkl(labels, extract_path + '.p')
 
 
 def download_and_extract_mnist(url, save_path, extract_path,
@@ -145,7 +145,7 @@ def download_and_extract_mnist(url, save_path, extract_path,
     if data_type == 'image':
       extract_image(save_path, extract_path)
     elif data_type == 'label':
-      extract_labels(save_path, extract_path, one_hot=True, num_classes=10)
+      extract_labels(save_path, extract_path, one_hot=False, num_classes=10)
     else:
       raise ValueError('Wrong data_type!')
   except Exception as err:

@@ -3,8 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import math
-import os
 import time
+from os.path import join, isdir
 
 import numpy as np
 import tensorflow as tf
@@ -28,17 +28,17 @@ class Test(object):
             self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX)
 
     # Get log path, append information if the directory exist.
-    test_log_path_ = os.path.join(
+    test_log_path_ = join(
         self.cfg.TEST_LOG_PATH, '{}-{}'
             .format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
     self.test_log_path = test_log_path_
     i_append_info = 0
-    while os.path.isdir(self.test_log_path):
+    while isdir(self.test_log_path):
       i_append_info += 1
       self.test_log_path = test_log_path_ + '({})'.format(i_append_info)
 
     # Path for saving images
-    self.test_image_path = os.path.join(self.test_log_path, 'images')
+    self.test_image_path = join(self.test_log_path, 'images')
 
     # Check directory of paths
     utils.check_dir([self.test_log_path])
@@ -53,16 +53,10 @@ class Test(object):
     utils.thick_line()
     print('Loading data...')
     utils.thin_line()
-    x_test = utils.load_data_from_pickle(os.path.join(
-        self.cfg.SOURCE_DATA_PATH, 'mnist/test_image.p'))
-    y_test = utils.load_data_from_pickle(os.path.join(
-        self.cfg.SOURCE_DATA_PATH, 'mnist/test_label.p'))
-
-    x_test = np.divide(x_test, 255.)
-    self.x_test = x_test.reshape([-1, 28, 28, 1])
-    assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
-    self.y_test = y_test
-    assert self.y_test.shape == (10000, 10), self.y_test.shape
+    self.x_test = utils.load_data_from_pkl(
+        join(self.cfg.DPP_DATA_PATH, 'x_test.p'))
+    self.y_test = utils.load_data_from_pkl(
+        join(self.cfg.DPP_DATA_PATH, 'y_test.p'))
 
     # Calculate number of batches
     self.n_batch_test = len(self.y_test) // self.cfg.TEST_BATCH_SIZE
@@ -166,7 +160,7 @@ class Test(object):
               int(row_i * (rec_images.shape[1] + avg_gap)
                   + thick_gap)))
 
-    save_image_path = os.path.join(
+    save_image_path = join(
         self.test_image_path, 'batch_{}.jpg'.format(step))
     new_im.save(save_image_path)
 

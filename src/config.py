@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
+from os.path import join
 from easydict import EasyDict
 
 __C = EasyDict()
@@ -155,25 +155,44 @@ __C.TEST_BATCH_SIZE = 256
 # Database name
 __C.DATABASE_NAME = 'mnist'
 
+# Setting test set as validation when preprocessing data
+__C.DPP_TEST_AS_VALID = False
+
 # Source data directory path
-__C.SOURCE_DATA_PATH = '../data/source_data'
+__C.SOURCE_DATA_PATH = join('../data/source_data', __C.DATABASE_NAME)
+
+# Preprocessed data path
+__C.DPP_DATA_PATH = join('../data/preprocessed_data', __C.DATABASE_NAME)
 
 # Path for saving logs
-__C.LOG_PATH = os.path.join('../train_logs', __C.VERSION)
+__C.LOG_PATH = join('../train_logs', __C.VERSION)
 
 # Path for saving summaries
-__C.SUMMARY_PATH = os.path.join('../tf_logs', __C.VERSION)
+__C.SUMMARY_PATH = join('../tf_logs', __C.VERSION)
 
 # Path for saving model
-__C.CHECKPOINT_PATH = os.path.join('../checkpoints', __C.VERSION)
+__C.CHECKPOINT_PATH = join('../checkpoints', __C.VERSION)
 
 # Path for saving testing logs
 __C.TEST_LOG_PATH = '../test_logs'
 
-# Save variables on CPU
+# Save trainable variables on CPU
 __C.VAR_ON_CPU = True
 
 # ===========================================
+# #          Multi-GPUs Config              #
+# ===========================================
 
-# get config by: from config import config
+# Number of GPUs
+__C.GPU_NUMBER = 2
+
+# Batch size on a single GPU
+__C.GPU_BATCH_SIZE = __C.BATCH_SIZE // __C.GPU_NUMBER
+
+# The decay to use for the moving average.
+__C.MOVING_AVERAGE_DECAY = 0.9999
+
+# ===========================================
+
+# get config by: from distribute_config import config
 config = __C
