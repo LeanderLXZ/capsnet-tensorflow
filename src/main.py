@@ -103,10 +103,10 @@ class Main(object):
     """
     Display information during training.
     """
-    valid_stepdx = np.random.choice(
+    valid_batch_idx = np.random.choice(
         range(len(self.x_valid)), self.cfg.BATCH_SIZE).tolist()
-    x_valid_batch = self.x_valid[valid_stepdx]
-    y_valid_batch = self.y_valid[valid_stepdx]
+    x_valid_batch = self.x_valid[valid_batch_idx]
+    y_valid_batch = self.y_valid[valid_batch_idx]
 
     if self.cfg.WITH_RECONSTRUCTION:
       loss_train, cls_loss_train, rec_loss_train, acc_train = \
@@ -142,10 +142,10 @@ class Main(object):
     """
     Save logs and ddd summaries to TensorBoard while training.
     """
-    valid_stepdx = np.random.choice(
+    valid_batch_idx = np.random.choice(
         range(len(self.x_valid)), self.cfg.BATCH_SIZE).tolist()
-    x_valid_batch = self.x_valid[valid_stepdx]
-    y_valid_batch = self.y_valid[valid_stepdx]
+    x_valid_batch = self.x_valid[valid_batch_idx]
+    y_valid_batch = self.y_valid[valid_batch_idx]
 
     if self.cfg.WITH_RECONSTRUCTION:
       summary_train, loss_train, cls_loss_train, rec_loss_train, acc_train = \
@@ -390,7 +390,7 @@ class Main(object):
 
     # Check directory of paths
     utils.check_dir([self.test_log_path])
-    if self.cfg.TEST_WITH_RECONSTRUCTION:
+    if self.cfg.WITH_RECONSTRUCTION:
       if self.cfg.TEST_SAVE_IMAGE_STEP is not None:
         utils.check_dir([self.test_image_path])
 
@@ -418,7 +418,7 @@ class Main(object):
     _test_batch_generator = utils.get_batches(
         x_test, y_test, self.cfg.BATCH_SIZE)
 
-    if self.cfg.TEST_WITH_RECONSTRUCTION:
+    if self.cfg.WITH_RECONSTRUCTION:
       for _ in tqdm(range(n_batch_test), total=n_batch_test,
                     ncols=100, unit=' batches'):
         step += 1
@@ -458,7 +458,7 @@ class Main(object):
     utils.thin_line()
     print('Test_Loss: {:.4f}\n'.format(loss_test),
           'Test_Accuracy: {:.2f}%'.format(acc_test * 100))
-    if self.cfg.TEST_WITH_RECONSTRUCTION:
+    if self.cfg.WITH_RECONSTRUCTION:
       utils.thin_line()
       print('Test_Train_Loss: {:.4f}\n'.format(cls_loss_test),
             'Test_Reconstruction_Loss: {:.4f}'.format(rec_loss_test))
@@ -466,7 +466,7 @@ class Main(object):
     # Save test log
     utils.save_test_log(
         self.test_log_path, loss_test, acc_test, cls_loss_test,
-        rec_loss_test, self.cfg.TEST_WITH_RECONSTRUCTION)
+        rec_loss_test, self.cfg.WITH_RECONSTRUCTION)
 
     utils.thin_line()
     print('Testing finished! Using time: {:.2f}'
