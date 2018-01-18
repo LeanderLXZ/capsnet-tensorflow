@@ -304,7 +304,7 @@ class MainDistribute(object):
     real_images_ = np.divide(((x_batch - x_batch.min()) * 255),
                              (x_batch.max() - x_batch.min()))
 
-    print(rec_images_[1], '\n', real_images_[1], '\n', y_batch[1])
+    print(rec_images_[0], '\n', real_images_[0], '\n', y_batch[0])
 
     # Put images in a square arrangement
     rec_images_in_square = np.reshape(

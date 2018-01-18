@@ -119,6 +119,11 @@ class CapsNetDistribute(CapsNet):
 
       # Calculate the gradients for each models tower.
       tower_grads = []
+      loss_all = []
+      acc_all = []
+      clf_loss_all = []
+      rec_loss_all = []
+      rec_images_all = []
       for i in range(self.cfg.GPU_NUMBER):
         with tf.variable_scope(tf.get_variable_scope(), reuse=bool(i != 0)):
           with tf.device('/gpu:%d' % i):
@@ -128,9 +133,14 @@ class CapsNetDistribute(CapsNet):
               x_tower, y_tower = x_splits[i], y_splits[i]
 
               # Calculate the loss for one tower.
-              loss, accuracy, classifier_loss, reconstruct_loss, \
-                  reconstructed_images = self._tower_loss(
+              loss_, accuracy_, classifier_loss_, reconstruct_loss_, \
+                  reconstructed_images_ = self._tower_loss(
                       x_tower, y_tower, image_size)
+              loss_all.append(loss_)
+              acc_all.append(accuracy_)
+              clf_loss_all.append(classifier_loss_)
+              rec_loss_all.append(reconstruct_loss_)
+              rec_images_all.append(reconstructed_images_)
 
               # Calculate the gradients on this tower.
               grads = optimizer.compute_gradients(loss)
