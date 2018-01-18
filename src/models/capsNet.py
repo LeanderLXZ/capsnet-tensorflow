@@ -6,9 +6,9 @@ import tensorflow as tf
 
 from capsNet_arch import classifier
 from capsNet_arch import decoder
-from model import utils
-from model import capsule_layer
-from model.model_base import ModelBase
+from models import utils
+from models import capsule_layer
+from models.model_base import ModelBase
 
 
 class CapsNet(ModelBase):
@@ -154,7 +154,7 @@ class CapsNet(ModelBase):
     Calculate loss without reconstruction.
 
     Args:
-      logits: output tensor of model
+      logits: output tensor of models
         - shape (batch_size, num_caps, vec_dim)
       labels: labels
     Return:
@@ -172,7 +172,7 @@ class CapsNet(ModelBase):
     Args:
       inputs: input tensor
         - shape (batch_size, *image_size)
-      logits: output tensor of model
+      logits: output tensor of models
         - shape (batch_size, num_caps, vec_dim)
       labels: labels
       image_size: size of image, 3D
@@ -249,7 +249,7 @@ class CapsNet(ModelBase):
         - shape (batch_size, *image_size)
       labels: labels tensor
     Return:
-      logits: output tensor of model
+      logits: output tensor of models
         - shape: (batch_size, num_caps, vec_dim)
     """
     logits = classifier(inputs, self.cfg, self.batch_size)

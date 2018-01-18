@@ -7,7 +7,7 @@ import numpy as np
 from os.path import join
 from sklearn.preprocessing import LabelBinarizer
 
-from model import utils
+from models import utils
 from config import config
 
 

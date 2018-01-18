@@ -2,8 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from model.model_base import *
-from model.capsule_layer import *
+from models.model_base import *
+from models.capsule_layer import *
 
 
 def classifier(inputs, cfg, batch_size=None):
@@ -33,7 +33,7 @@ def classifier(inputs, cfg, batch_size=None):
       use_bias=True,
       batch_size=batch_size
   ))
-  # model.add(Dense2Capsule(
+  # models.add(Dense2Capsule(
   #     cfg,
   #     identity_map=True,
   #     num_caps=None,

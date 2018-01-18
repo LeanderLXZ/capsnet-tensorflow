@@ -26,7 +26,7 @@ class ModelBase(object):
       shape: list of ints
       initializer: initializer for Variable
       dtype: data type
-      trainable: variable can be trained by model
+      trainable: variable can be trained by models
     Returns:
       Variable Tensor
     """
@@ -376,14 +376,14 @@ class Reshape(object):
 
 class Sequential(object):
   """
-  Build model architecture by sequential.
+  Build models architecture by sequential.
   """
   def __init__(self, inputs):
     self._top = inputs
 
   def add(self, layer):
     """
-    Add a layer to the top of the model.
+    Add a layer to the top of the models.
 
     Args:
       layer: the layer to be added
@@ -393,7 +393,7 @@ class Sequential(object):
   @property
   def top_layer(self):
     """
-    Get the top layer of the model.
+    Get the top layer of the models.
 
     Return:
       top layer

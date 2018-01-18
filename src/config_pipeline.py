@@ -112,11 +112,11 @@ __C.FULL_SET_EVAL_MODE = 'per_batch'
 # None: not evaluate
 __C.FULL_SET_EVAL_STEP = 50
 
-# Save model
-# 'per_epoch': save model when n epochs finished
-# 'per_batch': save model when n batches finished
+# Save models
+# 'per_epoch': save models when n epochs finished
+# 'per_batch': save models when n batches finished
 __C.SAVE_MODEL_MODE = 'per_epoch'
-# None: not save model
+# None: not save models
 __C.SAVE_MODEL_STEP = 5
 # Maximum number of recent checkpoints to keep.
 __C.MAX_TO_KEEP_CKP = 5
@@ -170,7 +170,7 @@ __C.TRAIN_LOG_PATH = '../train_logs'
 # Path for saving summaries
 __C.SUMMARY_PATH = '../tf_logs'
 
-# Path for saving model
+# Path for saving models
 __C.CHECKPOINT_PATH = '../checkpoints'
 
 # Path for saving testing logs

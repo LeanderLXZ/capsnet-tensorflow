@@ -15,18 +15,18 @@ from PIL import Image
 from tqdm import tqdm
 
 from config import config
-from model import utils
-from model.capsNet import CapsNet
+from models import utils
+from models.capsNet import CapsNet
 
 
 class Main(object):
 
   def __init__(self, model, cfg):
     """
-    Load data and initialize model.
+    Load data and initialize models.
 
     Args:
-      model: the model which will be trained
+      model: the models which will be trained
     """
     # Global start time
     self.start_time = time.time()
@@ -369,12 +369,12 @@ class Main(object):
 
   def _save_model(self, sess, saver, step, silent=False):
     """
-    Save model.
+    Save models.
     """
-    save_path = join(self.checkpoint_path, 'model.ckpt')
+    save_path = join(self.checkpoint_path, 'models.ckpt')
     if not silent:
       utils.thin_line()
-      print('Saving model to {}...'.format(save_path))
+      print('Saving models to {}...'.format(save_path))
     saver.save(sess, save_path, global_step=step)
 
   def _test_after_training(self, sess):
@@ -468,7 +468,7 @@ class Main(object):
 
   def train(self):
     """
-    Training model
+    Training models
     """
     session_cfg = tf.ConfigProto()
     session_cfg.gpu_options.allow_growth = True
@@ -520,7 +520,7 @@ class Main(object):
                   self._save_images(sess, self.train_image_path, x_batch,
                                     y_batch, step, epoch_i=epoch_i)
 
-            # Save model
+            # Save models
             if self.cfg.SAVE_MODEL_MODE == 'per_batch':
               if step % self.cfg.SAVE_MODEL_STEP == 0:
                 self._save_model(sess, self.saver, step)
@@ -559,7 +559,7 @@ class Main(object):
                                     x_batch, y_batch, step,
                                     silent=True, epoch_i=epoch_i)
 
-            # Save model
+            # Save models
             if self.cfg.SAVE_MODEL_MODE == 'per_batch':
               if step % self.cfg.SAVE_MODEL_STEP == 0:
                 self._save_model(sess, self.saver, step, silent=True)

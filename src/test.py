@@ -12,7 +12,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from config import config
-from model import utils
+from models import utils
 
 
 class Test(object):
@@ -25,7 +25,7 @@ class Test(object):
     # Get checkpoint path
     self.checkpoint_path = join(
         cfg.CHECKPOINT_PATH,
-        '{}/model.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
+        '{}/models.ckpt-{}'.format(self.cfg.TEST_VERSION, self.cfg.TEST_CKP_IDX))
 
     # Get log path, append information if the directory exist.
     test_log_path_ = join(
@@ -217,7 +217,7 @@ class Test(object):
 
   def test(self):
     """
-    Test model
+    Test models
     """
     start_time = time.time()
     tf.reset_default_graph()
@@ -225,11 +225,11 @@ class Test(object):
 
     with tf.Session(graph=loaded_graph) as sess:
 
-      # Load saved model
+      # Load saved models
       loader = tf.train.import_meta_graph(self.checkpoint_path + '.meta')
       loader.restore(sess, self.checkpoint_path)
 
-      # Get Tensors from loaded model
+      # Get Tensors from loaded models
       if self.cfg.TEST_WITH_RECONSTRUCTION:
         inputs, labels, loss, accuracy, \
             cls_loss, rec_loss, rec_images = \

@@ -4,8 +4,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from model.activation_fn import ActivationFunc
-from model.model_base import ModelBase
+from models.activation_fn import ActivationFunc
+from models.model_base import ModelBase
 
 
 class CapsuleLayer(object):

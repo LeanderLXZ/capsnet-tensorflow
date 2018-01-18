@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from model.capsNet import CapsNet
+from models.capsNet import CapsNet
 
 
 class CapsNetDistribute(CapsNet):
@@ -16,7 +16,7 @@ class CapsNetDistribute(CapsNet):
 
   def _tower_loss(self, inputs, labels, image_size):
     """
-    Calculate the total loss on a single tower running the model.
+    Calculate the total loss on a single tower running the models.
 
     Args:
       inputs: inputs. 4D tensor
@@ -117,7 +117,7 @@ class CapsNetDistribute(CapsNet):
       y_splits = tf.split(
           axis=0, num_or_size_splits=self.cfg.GPU_NUMBER, value=labels)
 
-      # Calculate the gradients for each model tower.
+      # Calculate the gradients for each models tower.
       tower_grads = []
       for i in range(self.cfg.GPU_NUMBER):
         with tf.variable_scope(tf.get_variable_scope(), reuse=bool(i != 0)):

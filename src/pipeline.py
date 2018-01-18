@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from config_pipeline import *
 from main_distribute import MainDistribute
-from model.capsNet_distribute import CapsNetDistribute
+from models.capsNet_distribute import CapsNetDistribute
 
 
 def training_capsnet(cfg):
