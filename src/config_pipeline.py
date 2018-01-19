@@ -26,7 +26,7 @@ __C = EasyDict()
 # Database name
 # 'mnist': MNIST
 # 'cifar10' CIFAR-10
-__C.DATABASE_NAME = 'mnist'
+__C.DATABASE_NAME = 'cifar10'
 
 # Training version
 # Set None to auto generate version
@@ -42,7 +42,7 @@ __C.EPOCHS = 50
 __C.BATCH_SIZE = 512
 
 # Setting test set as validation when preprocessing data
-__C.DPP_TEST_AS_VALID = True
+__C.DPP_TEST_AS_VALID = False
 
 # ===========================================
 # #            Model Architecture           #
