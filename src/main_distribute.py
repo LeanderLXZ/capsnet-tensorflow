@@ -300,12 +300,14 @@ class MainDistribute(object):
     save_row_size = save_col_size // 2
 
     # Scale to 0-255
-    rec_images_ = np.divide(((rec_images_ - rec_images_.min()) * 255),
-                            (rec_images_.max() - rec_images_.min()))
-    real_images_ = np.divide(((x_batch - x_batch.min()) * 255),
-                             (x_batch.max() - x_batch.min()))
+    rec_images_ = np.array(
+        [np.divide(((img - img.min()) * 255), (img.max() - img.min()))
+         for img in rec_images_])
+    real_images_ = np.array(
+        [np.divide(((img - img.min()) * 255), (img.max() - img.min()))
+         for img in x_batch])
 
-    print(rec_images_.max(), rec_images_.min())
+    print(rec_images_.shape, real_images_.shape)
 
     # Put images in a square arrangement
     rec_images_in_square = np.reshape(
