@@ -370,7 +370,7 @@ def download_and_extract_cifar10(url, save_path, file_name, extract_path):
 
   # Remove compressed data
   os.remove(archive_save_path)
-  os.removedirs(extracted_dir_path)
+  shutil.rmtree(extracted_dir_path)
 
 
 class DLProgress(tqdm):
