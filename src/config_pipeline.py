@@ -39,7 +39,7 @@ __C.LEARNING_RATE = 0.001
 __C.EPOCHS = 50
 
 # Batch size
-__C.BATCH_SIZE = 512
+__C.BATCH_SIZE = 256
 
 # Setting test set as validation when preprocessing data
 __C.DPP_TEST_AS_VALID = False
@@ -202,7 +202,7 @@ __C.VAR_ON_CPU = True
 # ===========================================
 
 # Number of GPUs
-__C.GPU_NUMBER = 2
+__C.GPU_NUMBER = 1
 
 # Batch size on a single GPU
 __C.GPU_BATCH_SIZE = __C.BATCH_SIZE // __C.GPU_NUMBER
