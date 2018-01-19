@@ -93,6 +93,9 @@ class Test(object):
     rec_images_ = sess.run(
         rec_images, feed_dict={inputs: x_batch, labels: y_batch})
 
+    # Image shape
+    img_shape = x_batch.shape[1:]
+
     # Get maximum size for square grid of images
     save_col_size = math.floor(np.sqrt(rec_images_.shape[0] * 2))
     if save_col_size > self.cfg.MAX_IMAGE_IN_COL:
@@ -100,20 +103,20 @@ class Test(object):
     save_row_size = save_col_size // 2
 
     # Scale to 0-255
-    rec_images_ = np.divide(((rec_images_ - rec_images_.min()) * 255),
-                            (rec_images_.max() - rec_images_.min()))
-    real_images_ = np.divide(((x_batch - x_batch.min()) * 255),
-                             (x_batch.max() - x_batch.min()))
+    rec_images_ = np.array(
+        [np.divide(((img_ - img_.min()) * 255), (img_.max() - img_.min()))
+         for img_ in rec_images_])
+    real_images_ = np.array(
+        [np.divide(((img_ - img_.min()) * 255), (img_.max() - img_.min()))
+         for img_ in x_batch])
 
     # Put images in a square arrangement
     rec_images_in_square = np.reshape(
         rec_images_[: save_row_size * save_col_size],
-        (save_row_size, save_col_size, rec_images_.shape[1],
-         rec_images_.shape[2], rec_images_.shape[3])).astype(np.uint8)
+        (save_row_size, save_col_size, *img_shape)).astype(np.uint8)
     real_images_in_square = np.reshape(
         real_images_[: save_row_size*save_col_size],
-        (save_row_size, save_col_size, real_images_.shape[1],
-         real_images_.shape[2], real_images_.shape[3])).astype(np.uint8)
+        (save_row_size, save_col_size, *img_shape)).astype(np.uint8)
 
     if self.cfg.DATABASE_NAME == 'mnist':
       mode = 'L'
@@ -127,9 +130,9 @@ class Test(object):
     thick_gap = 3
     avg_gap = (thin_gap + thick_gap) / 2
     new_im = Image.new(mode, (
-        int((rec_images_.shape[2] + thin_gap)
+        int((img_shape[1] + thin_gap)
             * save_col_size - thin_gap + thick_gap * 2),
-        int((rec_images_.shape[1] + avg_gap)
+        int((img_shape[0] + avg_gap)
             * save_row_size * 2 + thick_gap)), 'white')
 
     for row_i in range(save_row_size * 2):
@@ -143,10 +146,9 @@ class Test(object):
                 (row_i + 1) // 2 - 1, col_i, :, :, :]
           im = Image.fromarray(image, mode)
           new_im.paste(im, (
-              int(col_i * (rec_images_.shape[2] + thin_gap)
-                  + thick_gap),
-              int(row_i * rec_images_.shape[1]
-                  + (row_i + 1) * avg_gap)))
+              int(col_i * (img_shape[1] + thin_gap) + thick_gap),
+              int(row_i * img_shape[0] + (row_i + 1) * avg_gap)))
+
         else:  # Even
           if mode == 'L':
             image = real_images_in_square[
@@ -156,10 +158,8 @@ class Test(object):
                     int((row_i + 1) // 2), col_i, :, :, :]
           im = Image.fromarray(image, mode)
           new_im.paste(im, (
-              int(col_i * (rec_images_.shape[2] + thin_gap)
-                  + thick_gap),
-              int(row_i * (rec_images_.shape[1] + avg_gap)
-                  + thick_gap)))
+              int(col_i * (img_shape[1] + thin_gap) + thick_gap),
+              int(row_i * (img_shape[0] + avg_gap) + thick_gap)))
 
     save_image_path = join(
         self.test_image_path, 'batch_{}.jpg'.format(step))
