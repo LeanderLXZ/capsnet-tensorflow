@@ -36,10 +36,13 @@ __C.VERSION = None
 __C.LEARNING_RATE = 0.001
 
 # Epochs
-__C.EPOCHS = 30
+__C.EPOCHS = 50
 
 # Batch size
 __C.BATCH_SIZE = 512
+
+# Setting test set as validation when preprocessing data
+__C.DPP_TEST_AS_VALID = True
 
 # ===========================================
 # #            Model Architecture           #
@@ -135,7 +138,7 @@ __C.FULL_SET_EVAL_STEP = 50
 # 'per_batch': save models when n batches finished
 __C.SAVE_MODEL_MODE = 'per_epoch'
 # None: not save models
-__C.SAVE_MODEL_STEP = 5
+__C.SAVE_MODEL_STEP = 10
 # Maximum number of recent checkpoints to keep.
 __C.MAX_TO_KEEP_CKP = 5
 
@@ -172,9 +175,6 @@ __C.TEST_BATCH_SIZE = 256
 
 if __C.VERSION is None:
   __C.VERSION = _auto_version(__C)
-
-# Setting test set as validation when preprocessing data
-__C.DPP_TEST_AS_VALID = False
 
 # Source data directory path
 __C.SOURCE_DATA_PATH = '../data/source_data'
