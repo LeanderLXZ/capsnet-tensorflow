@@ -33,7 +33,7 @@ class MainDistribute(object):
 
     # Get paths from configuration
     train_log_path_ = join(cfg.TRAIN_LOG_PATH, cfg.VERSION)
-    test_log_path_ = join(cfg.TEST_LOG_PATH, cfg.TEST_VERSION)
+    test_log_path_ = join(cfg.TEST_LOG_PATH, cfg.VERSION)
     summary_path_ = join(cfg.SUMMARY_PATH, cfg.VERSION)
     checkpoint_path_ = join(cfg.CHECKPOINT_PATH, cfg.VERSION)
     self.preprocessed_path = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)
@@ -304,6 +304,8 @@ class MainDistribute(object):
                             (rec_images_.max() - rec_images_.min()))
     real_images_ = np.divide(((x_batch - x_batch.min()) * 255),
                              (x_batch.max() - x_batch.min()))
+
+    print(rec_images_.max(), rec_images_.min())
 
     # Put images in a square arrangement
     rec_images_in_square = np.reshape(

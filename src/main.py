@@ -36,7 +36,7 @@ class Main(object):
 
     # Get paths from configuration
     train_log_path_ = join(cfg.TRAIN_LOG_PATH, cfg.VERSION)
-    test_log_path_ = join(cfg.TEST_LOG_PATH, cfg.TEST_VERSION)
+    test_log_path_ = join(cfg.TEST_LOG_PATH, cfg.VERSION)
     summary_path_ = join(cfg.SUMMARY_PATH, cfg.VERSION)
     checkpoint_path_ = join(cfg.CHECKPOINT_PATH, cfg.VERSION)
     self.preprocessed_path = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)

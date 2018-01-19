@@ -13,46 +13,6 @@ class ModelBase(object):
     self.cfg = cfg
 
   @staticmethod
-  def variable_on_cpu(name,
-                      shape,
-                      initializer,
-                      dtype=tf.float32,
-                      trainable=True):
-    """
-    Helper to create a Variable stored on CPU memory.
-
-    Args:
-      name: name of the variable
-      shape: list of ints
-      initializer: initializer for Variable
-      dtype: data type
-      trainable: variable can be trained by models
-    Returns:
-      Variable Tensor
-    """
-    with tf.device('/cpu:0'):
-      var = tf.get_variable(name, shape, initializer=initializer,
-                            dtype=dtype, trainable=trainable)
-    return var
-
-  @staticmethod
-  def get_act_fn(act_fn):
-    """
-    Get activation function from name
-    """
-    if act_fn == 'relu':
-      activation_fn = tf.nn.relu
-    elif act_fn == 'sigmoid':
-      activation_fn = tf.nn.sigmoid
-    elif act_fn == 'elu':
-      activation_fn = tf.nn.elu
-    elif act_fn is None:
-      activation_fn = None
-    else:
-      raise ValueError('Wrong activation function name!')
-    return activation_fn
-
-  @staticmethod
   def _batch_norm(x,
                   is_training,
                   batch_norm_decay,
@@ -169,11 +129,11 @@ class DenseLayer(object):
       output tensor of full-connected layer
     """
     with tf.variable_scope('fc_{}'.format(self.idx)):
-      activation_fn = ModelBase.get_act_fn(self.act_fn)
+      activation_fn = get_act_fn(self.act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
 
       if self.cfg.VAR_ON_CPU:
-        weights = ModelBase.variable_on_cpu(
+        weights = variable_on_cpu(
             name='weights',
             shape=[inputs.get_shape().as_list()[1], self.out_dim],
             initializer=weights_initializer,
@@ -181,7 +141,7 @@ class DenseLayer(object):
         fc = tf.matmul(inputs, weights)
 
         if self.use_bias:
-          biases = ModelBase.variable_on_cpu(
+          biases = variable_on_cpu(
               name='biases',
               shape=[self.out_dim],
               initializer=tf.zeros_initializer(),
@@ -201,6 +161,46 @@ class DenseLayer(object):
             biases_initializer=biases_initializer)
 
       return fc
+
+
+def variable_on_cpu(name,
+                    shape,
+                    initializer,
+                    dtype=tf.float32,
+                    trainable=True):
+  """
+  Helper to create a Variable stored on CPU memory.
+
+  Args:
+    name: name of the variable
+    shape: list of ints
+    initializer: initializer for Variable
+    dtype: data type
+    trainable: variable can be trained by models
+  Returns:
+    Variable Tensor
+  """
+  with tf.device('/cpu:0'):
+    var = tf.get_variable(name, shape, initializer=initializer,
+                          dtype=dtype, trainable=trainable)
+  return var
+
+
+def get_act_fn(act_fn):
+  """
+  Helper to get activation function from name.
+  """
+  if act_fn == 'relu':
+    activation_fn = tf.nn.relu
+  elif act_fn == 'sigmoid':
+    activation_fn = tf.nn.sigmoid
+  elif act_fn == 'elu':
+    activation_fn = tf.nn.elu
+  elif act_fn is None:
+    activation_fn = None
+  else:
+    raise ValueError('Wrong activation function name!')
+  return activation_fn
 
 
 class ConvLayer(object):
@@ -284,7 +284,7 @@ class ConvLayer(object):
             inputs, [[0, 0], [pad_beg, pad_end], [pad_beg, pad_end], [0, 0]])
         self.padding = 'VALID'
 
-      activation_fn = ModelBase.get_act_fn(self.act_fn)
+      activation_fn = get_act_fn(self.act_fn)
 
       if self.stddev is None:
         weights_initializer = tf.contrib.layers.xavier_initializer()
@@ -293,7 +293,7 @@ class ConvLayer(object):
             stddev=self.stddev)
 
       if self.cfg.VAR_ON_CPU:
-        kernels = ModelBase.variable_on_cpu(
+        kernels = variable_on_cpu(
             name='kernels',
             shape=[self.kernel_size, self.kernel_size,
                    inputs.get_shape().as_list()[3], self.n_kernel],
@@ -305,7 +305,7 @@ class ConvLayer(object):
                             padding=self.padding)
 
         if self.use_bias:
-          biases = ModelBase.variable_on_cpu(
+          biases = variable_on_cpu(
               name='biases',
               shape=[self.n_kernel],
               initializer=tf.zeros_initializer(),
@@ -392,7 +392,7 @@ class ConvTLayer(object):
       output tensor of transpose convolution layer
     """
     with tf.variable_scope('conv_t_{}'.format(self.idx)):
-      activation_fn = ModelBase.get_act_fn(self.act_fn)
+      activation_fn = get_act_fn(self.act_fn)
       if self.stddev is None:
         weights_initializer = tf.contrib.layers.xavier_initializer()
       else:
@@ -400,7 +400,7 @@ class ConvTLayer(object):
             stddev=self.stddev)
 
       if self.cfg.VAR_ON_CPU:
-        kernels = ModelBase.variable_on_cpu(
+        kernels = variable_on_cpu(
             name='kernels',
             shape=[self.kernel_size, self.kernel_size,
                    self.n_kernel, inputs.get_shape().as_list()[3]],
@@ -414,7 +414,7 @@ class ConvTLayer(object):
             padding=self.padding)
 
         if self.use_bias:
-          biases = ModelBase.variable_on_cpu(
+          biases = variable_on_cpu(
               name='biases',
               shape=[self.n_kernel],
               initializer=tf.zeros_initializer(),

@@ -190,9 +190,6 @@ class CapsNet(ModelBase):
           reconstructed, [tf.constant(4)],
           message="\nRECONSTRUCTION layers passed...")
 
-    reconstructed_images = tf.reshape(
-        reconstructed, shape=[-1, *image_size], name='rec_images')
-
     # Reconstruction loss
     if self.cfg.RECONSTRUCTION_LOSS == 'mse':
       inputs_flatten = tf.contrib.layers.flatten(inputs)
@@ -202,6 +199,8 @@ class CapsNet(ModelBase):
         reconstructed_ = reconstructed
       reconstruct_loss = tf.reduce_mean(
           tf.square(reconstructed_ - inputs_flatten))
+      reconstructed_images_ = reconstructed
+
     elif self.cfg.RECONSTRUCTION_LOSS == 'ce':
       if self.cfg.DECODER_TYPE == 'fc':
         inputs_ = tf.contrib.layers.flatten(inputs)
@@ -210,9 +209,14 @@ class CapsNet(ModelBase):
       reconstruct_loss = tf.reduce_mean(
           tf.nn.sigmoid_cross_entropy_with_logits(
               labels=inputs_, logits=reconstructed))
+      reconstructed_images_ = tf.nn.sigmoid(reconstructed)
+
     else:
-      reconstruct_loss = None
+      raise ValueError('Wrong reconstruction loss type!')
+
     reconstruct_loss = tf.identity(reconstruct_loss, name='rec_loss')
+    reconstructed_images = tf.reshape(
+        reconstructed_images_, shape=[-1, *image_size], name='rec_images')
 
     # margin_loss_params: {'m_plus': 0.9, 'm_minus': 0.1, 'lambda_': 0.5}
     classifier_loss = self._margin_loss(

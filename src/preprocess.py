@@ -22,7 +22,7 @@ class DataPreProcess(object):
     """
     self.cfg = cfg
     self.preprocessed_path = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)
-    self.souce_data_path = join(cfg.SOURCE_DATA_PATH, cfg.DATABASE_NAME)
+    self.source_data_path = join(cfg.SOURCE_DATA_PATH, cfg.DATABASE_NAME)
 
   def _load_data(self):
     """
@@ -33,13 +33,13 @@ class DataPreProcess(object):
 
     if self.cfg.DATABASE_NAME == 'mnist':
       self.x = utils.load_data_from_pkl(
-          join(self.souce_data_path, 'train_image.p'))
+          join(self.source_data_path, 'train_image.p'))
       self.y = utils.load_data_from_pkl(
-          join(self.souce_data_path, 'train_label.p'))
+          join(self.source_data_path, 'train_label.p'))
       self.x_test = utils.load_data_from_pkl(
-          join(self.souce_data_path, 'test_image.p'))
+          join(self.source_data_path, 'test_image.p'))
       self.y_test = utils.load_data_from_pkl(
-          join(self.souce_data_path, 'test_label.p'))
+          join(self.source_data_path, 'test_label.p'))
     else:
       raise ValueError('Wrong database name!')
 

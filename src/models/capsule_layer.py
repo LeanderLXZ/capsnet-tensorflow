@@ -5,7 +5,8 @@ from __future__ import print_function
 import tensorflow as tf
 
 from models.caps_activate_fn import ActivationFunc
-from models.model_base import ModelBase
+from models.model_base import variable_on_cpu
+from models.model_base import get_act_fn
 
 
 class CapsLayer(object):
@@ -95,7 +96,7 @@ class CapsLayer(object):
     weights_shape = [1, num_caps_i, num_caps_j, vec_dim_j, vec_dim_i]
     # Reuse weights
     if self.cfg.VAR_ON_CPU:
-      weights = ModelBase.variable_on_cpu(
+      weights = variable_on_cpu(
           name='weights',
           shape=weights_shape,
           initializer=tf.truncated_normal_initializer(
@@ -127,7 +128,7 @@ class CapsLayer(object):
 
     # Initializing b_ij
     if self.cfg.VAR_ON_CPU:
-      b_ij = ModelBase.variable_on_cpu(
+      b_ij = variable_on_cpu(
           name='b_ij',
           shape=[batch_size, num_caps_i, num_caps_j, 1, 1],
           initializer=tf.zeros_initializer(),
@@ -292,7 +293,7 @@ class Conv2CapsLayer(object):
     """
     with tf.variable_scope('conv2caps'):
       # Convolution layer
-      activation_fn = ModelBase.get_act_fn(self.act_fn)
+      activation_fn = get_act_fn(self.act_fn)
       if self.stddev is None:
         weights_initializer = tf.contrib.layers.xavier_initializer()
       else:
@@ -300,7 +301,7 @@ class Conv2CapsLayer(object):
             stddev=self.stddev)
 
       if self.cfg.VAR_ON_CPU:
-        kernels = ModelBase.variable_on_cpu(
+        kernels = variable_on_cpu(
             name='kernels',
             shape=[self.kernel_size, self.kernel_size,
                    inputs.get_shape().as_list()[3],
@@ -314,7 +315,7 @@ class Conv2CapsLayer(object):
             padding=self.padding)
 
         if self.use_bias:
-          biases = ModelBase.variable_on_cpu(
+          biases = variable_on_cpu(
               name='biases',
               shape=[self.n_kernel * self.vec_dim],
               initializer=tf.zeros_initializer(),
@@ -410,11 +411,11 @@ class Dense2CapsLayer(object):
       output tensor of full_connected layer
     """
     with tf.variable_scope('fc_{}'.format(idx)):
-      activation_fn = ModelBase.get_act_fn(act_fn)
+      activation_fn = get_act_fn(act_fn)
       weights_initializer = tf.contrib.layers.xavier_initializer()
 
       if self.cfg.VAR_ON_CPU:
-        weights = ModelBase.variable_on_cpu(
+        weights = variable_on_cpu(
             name='weights',
             shape=[x.get_shape().as_list()[1], out_dim],
             initializer=weights_initializer,
@@ -422,7 +423,7 @@ class Dense2CapsLayer(object):
         fc = tf.matmul(x, weights)
 
         if use_bias:
-          biases = ModelBase.variable_on_cpu(
+          biases = variable_on_cpu(
               name='biases',
               shape=[out_dim],
               initializer=tf.zeros_initializer(),
