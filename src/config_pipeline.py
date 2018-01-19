@@ -8,10 +8,14 @@ from easydict import EasyDict
 
 # Auto-generate version
 def _auto_version(c):
+  _version = c['DATABASE_NAME']
   if c['WITH_RECONSTRUCTION']:
-    return c['DECODER_TYPE'] + '_' + c['RECONSTRUCTION_LOSS']
+    _version += '_{}_{}'.format(c['DECODER_TYPE'], c['RECONSTRUCTION_LOSS'])
   else:
-    return 'no_rec'
+    _version += '_no_rec'
+  if c['DPP_TEST_AS_VALID']:
+    _version += '_tav'
+  return _version
 
 __C = EasyDict()
 
@@ -19,7 +23,13 @@ __C = EasyDict()
 # #             Hyperparameters             #
 # ===========================================
 
+# Database name
+# 'mnist': MNIST
+# 'cifar10' CIFAR-10
+__C.DATABASE_NAME = 'mnist'
+
 # Training version
+# Set None to auto generate version
 __C.VERSION = None
 
 # Learning rate
@@ -162,9 +172,6 @@ __C.TEST_BATCH_SIZE = 256
 
 if __C.VERSION is None:
   __C.VERSION = _auto_version(__C)
-
-# Database name
-__C.DATABASE_NAME = 'mnist'
 
 # Setting test set as validation when preprocessing data
 __C.DPP_TEST_AS_VALID = False

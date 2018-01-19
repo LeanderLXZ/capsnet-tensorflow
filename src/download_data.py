@@ -74,9 +74,9 @@ def download_data(data_base_name):
 if __name__ == '__main__':
 
   utils.thick_line()
-  print('Input [ 1 ] to download the mnist database.')
-  print('Input [ 2 ] to download the cifar10 database.')
-  print("Input [ 3 ] to download the mnist and cifar10 database.")
+  print('Input [ 1 ] to download the MNIST database.')
+  print('Input [ 2 ] to download the CIFAR-10 database.')
+  print("Input [ 3 ] to download the MNIST and CIFAR-10 database.")
   utils.thin_line()
   input_ = input('Input: ')
 

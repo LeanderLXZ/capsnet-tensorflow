@@ -6,6 +6,7 @@ import time
 import numpy as np
 from os.path import join
 from sklearn.preprocessing import LabelBinarizer
+from sklearn.utils import shuffle
 
 from models import utils
 from config import config
@@ -21,27 +22,25 @@ class DataPreProcess(object):
       cfg: configuration
     """
     self.cfg = cfg
-    self.preprocessed_path = join(cfg.DPP_DATA_PATH, cfg.DATABASE_NAME)
-    self.source_data_path = join(cfg.SOURCE_DATA_PATH, cfg.DATABASE_NAME)
+    self.data_base_name = None
+    self.preprocessed_path = None
+    self.source_data_path = None
 
   def _load_data(self):
     """
     Load data set from files.
     """
     utils.thin_line()
-    print('Loading...')
+    print('Loading {} data set...'.format(self.data_base_name))
 
-    if self.cfg.DATABASE_NAME == 'mnist':
-      self.x = utils.load_data_from_pkl(
-          join(self.source_data_path, 'train_images.p'))
-      self.y = utils.load_data_from_pkl(
-          join(self.source_data_path, 'train_labels.p'))
-      self.x_test = utils.load_data_from_pkl(
-          join(self.source_data_path, 'test_images.p'))
-      self.y_test = utils.load_data_from_pkl(
-          join(self.source_data_path, 'test_labels.p'))
-    else:
-      raise ValueError('Wrong database name!')
+    self.x = utils.load_data_from_pkl(
+        join(self.source_data_path, 'train_images.p'))
+    self.y = utils.load_data_from_pkl(
+        join(self.source_data_path, 'train_labels.p'))
+    self.x_test = utils.load_data_from_pkl(
+        join(self.source_data_path, 'test_images.p'))
+    self.y_test = utils.load_data_from_pkl(
+        join(self.source_data_path, 'test_labels.p'))
 
   def _augment_data(self):
     """
@@ -49,12 +48,23 @@ class DataPreProcess(object):
     """
     pass
 
+  def _shuffle(self):
+    """
+    Shuffle data sets.
+    """
+    utils.thin_line()
+    print('Shuffling images and labels...')
+    self.x, self.y = shuffle(
+        self.x, self.y, random_state=0)
+    self.x_test, self.y_test = shuffle(
+        self.x_test, self.y_test, random_state=0)
+
   def _scaling(self):
     """
     Scaling input images to (0, 1).
     """
     utils.thin_line()
-    print('Scaling...')
+    print('Scaling features...')
     
     self.x = np.divide(self.x, 255.)
     self.x_test = np.divide(self.x_test, 255.)
@@ -64,7 +74,7 @@ class DataPreProcess(object):
     Scaling images to (0, 1).
     """
     utils.thin_line()
-    print('One-hot-encoding...')
+    print('One-hot-encoding labels...')
     
     encoder = LabelBinarizer()
     encoder.fit(self.y)
@@ -76,37 +86,49 @@ class DataPreProcess(object):
     Split data set for training, validation and testing.
     """
     utils.thin_line()
-    print('Splitting...')
+    print('Splitting train/valid/test set...')
     
-    if self.cfg.DATABASE_NAME == 'mnist':
-      self.x = self.x.reshape([-1, 28, 28, 1])
-      self.x_test = self.x_test.reshape([-1, 28, 28, 1])
-      if self.cfg.DPP_TEST_AS_VALID:
-        self.x_train = self.x
-        self.y_train = self.y
-        self.x_valid = self.x_test
-        self.y_valid = self.y_test
-      else:
-        self.x_train = self.x[:55000]
-        self.x_valid = self.x[55000:60000]
-        self.y_train = self.y[:55000]
-        self.y_valid = self.y[55000:60000]
+    if self.data_base_name == 'mnist':
+      train_stop = 55000
+    elif self.data_base_name == 'cifar10':
+      train_stop = 45000
     else:
       raise ValueError('Wrong database name!')
 
-    assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
-    assert self.y_train.shape == (55000, 10), self.y_train.shape
-    assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
-    assert self.y_valid.shape == (5000, 10), self.y_valid.shape
-    assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
-    assert self.y_test.shape == (10000, 10), self.y_test.shape
+    if self.cfg.DPP_TEST_AS_VALID:
+      self.x_train = self.x
+      self.y_train = self.y
+      self.x_valid = self.x_test
+      self.y_valid = self.y_test
+    else:
+      self.x_train = self.x[:train_stop]
+      self.x_valid = self.x[train_stop:]
+      self.y_train = self.y[:train_stop]
+      self.y_valid = self.y[train_stop:]
+
+    if self.data_base_name == 'mnist':
+      assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
+      assert self.y_train.shape == (55000, 10), self.y_train.shape
+      assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
+      assert self.y_valid.shape == (5000, 10), self.y_valid.shape
+      assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
+      assert self.y_test.shape == (10000, 10), self.y_test.shape
+    elif self.data_base_name == 'cifar10':
+      assert self.x_train.shape == (45000, 32, 32, 3), self.x_train.shape
+      assert self.y_train.shape == (45000, 10), self.y_train.shape
+      assert self.x_valid.shape == (5000, 32, 32, 3), self.x_valid.shape
+      assert self.y_valid.shape == (5000, 10), self.y_valid.shape
+      assert self.x_test.shape == (10000, 32, 32, 3), self.x_test.shape
+      assert self.y_test.shape == (10000, 10), self.y_test.shape
+    else:
+      raise ValueError('Wrong database name!')
 
   def _save_data(self):
     """
     Save data set to pickle files.
     """
     utils.thin_line()
-    print('Saving...')
+    print('Saving pickle files...')
 
     utils.check_dir([self.preprocessed_path])
     
@@ -123,20 +145,30 @@ class DataPreProcess(object):
     utils.save_data_to_pkl(
         self.y_test, join(self.preprocessed_path, 'y_test.p'))
 
-  def pipeline(self):
+  def pipeline(self, data_base_name):
     """
-    Pipeline.
+    Pipeline of preprocessing data.
+
+    Arg:
+      data_base_name: name of data base
     """
     utils.thick_line()
     print('Start Preprocessing...')
 
     start_time = time.time()
 
+    self.data_base_name = data_base_name
+    self.preprocessed_path = join(self.cfg.DPP_DATA_PATH, data_base_name)
+    self.source_data_path = join(self.cfg.SOURCE_DATA_PATH, data_base_name)
+
     # Load data
     self._load_data()
 
     # Augment data
     self._augment_data()
+
+    # Shuffle data set
+    self._shuffle()
 
     # Scaling images to (0, 1)
     self._scaling()
@@ -157,5 +189,21 @@ class DataPreProcess(object):
 
 if __name__ == '__main__':
 
+  utils.thick_line()
+  print('Input [ 1 ] to preprocess the MNIST database.')
+  print('Input [ 2 ] to preprocess the CIFAR-10 database.')
+  print("Input [ 3 ] to preprocess the MNIST and CIFAR-10 database.")
+  utils.thin_line()
+  input_ = input('Input: ')
+
   DPP = DataPreProcess(config)
-  DPP.pipeline()
+
+  if input_ == '1':
+    DPP.pipeline('mnist')
+  elif input_ == '2':
+    DPP.pipeline('cifar10')
+  elif input_ == '3':
+    DPP.pipeline('mnist')
+    DPP.pipeline('cifar10')
+  else:
+    raise ValueError('Wrong input! Found: ', input_)

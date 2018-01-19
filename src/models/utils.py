@@ -257,7 +257,7 @@ def extract_image(save_path, extract_path):
       cols = _read32(bytestream)
       buf = bytestream.read(rows * cols * num_images)
       data = np.frombuffer(buf, dtype=np.uint8)
-      data = data.reshape(num_images, rows, cols)
+      data = data.reshape(num_images, rows, cols, 1)
       save_data_to_pkl(data, extract_path + '.p')
 
 
@@ -323,49 +323,54 @@ def load_cifar10_batch(dataset_path, mode, batch_id=None):
       (len(batch['data']), 3, 32, 32)).transpose(0, 2, 3, 1)
   labels = batch['labels']
 
-  return features, labels
+  return features, np.array(labels)
 
 
 def download_and_extract_cifar10(url, save_path, file_name, extract_path):
 
-  file_save_path = os.path.join(save_path, file_name)
+  archive_save_path = os.path.join(save_path, file_name)
+  extracted_dir_path = os.path.join(save_path, 'cifar-10-batches-py')
 
   if not os.path.exists(os.path.join(save_path, 'cifar10')):
-    with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
-      urlretrieve(url, file_save_path, pbar.hook)
+      with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
+        urlretrieve(url, archive_save_path, pbar.hook)
   else:
     raise ValueError('Files already exist!')
 
   try:
-    with tarfile.open(file_save_path) as tar:
-      tar.extractall(extract_path)
-      tar.close()
+    if not os.path.exists(extracted_dir_path):
+      with tarfile.open(archive_save_path) as tar:
+        tar.extractall(extract_path)
+        tar.close()
   except Exception as err:
     # Remove extraction folder if there is an error
     shutil.rmtree(extract_path)
     raise err
 
+  # Extract images and labels from batches
   features = []
   labels = []
   for batch_i in range(1, 6):
     features_i, labels_i = load_cifar10_batch(
-        os.path.join(save_path, 'cifar-10-batches-py'), 'train', batch_i)
+        extracted_dir_path, 'train', batch_i)
     features.append(features_i)
     labels.append(labels_i)
   train_images = np.concatenate(features, axis=0)
   train_labels = np.concatenate(labels, axis=0)
   test_images, test_labels = load_cifar10_batch(
-      os.path.join(save_path, 'cifar-10-batches-py'), 'test')
+      extracted_dir_path, 'test')
 
+  # Save concatenated images and labels to pickles
   pickle_path = os.path.join(save_path, 'cifar10')
+  check_dir([pickle_path])
   save_data_to_pkl(train_images, pickle_path + '/train_images.p')
   save_data_to_pkl(train_labels, pickle_path + '/train_labels.p')
   save_data_to_pkl(test_images, pickle_path + '/test_images.p')
   save_data_to_pkl(test_labels, pickle_path + '/test_labels.p')
 
   # Remove compressed data
-  os.remove(file_save_path)
-  os.remove(os.path.join(save_path, 'cifar-10-batches-py'))
+  os.remove(archive_save_path)
+  os.remove(extracted_dir_path)
 
 
 class DLProgress(tqdm):
