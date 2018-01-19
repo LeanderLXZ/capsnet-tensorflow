@@ -33,13 +33,13 @@ class DataPreProcess(object):
 
     if self.cfg.DATABASE_NAME == 'mnist':
       self.x = utils.load_data_from_pkl(
-          join(self.source_data_path, 'train_image.p'))
+          join(self.source_data_path, 'train_images.p'))
       self.y = utils.load_data_from_pkl(
-          join(self.source_data_path, 'train_label.p'))
+          join(self.source_data_path, 'train_labels.p'))
       self.x_test = utils.load_data_from_pkl(
-          join(self.source_data_path, 'test_image.p'))
+          join(self.source_data_path, 'test_images.p'))
       self.y_test = utils.load_data_from_pkl(
-          join(self.source_data_path, 'test_label.p'))
+          join(self.source_data_path, 'test_labels.p'))
     else:
       raise ValueError('Wrong database name!')
 

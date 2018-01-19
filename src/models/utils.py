@@ -8,6 +8,7 @@ import time
 import gzip
 import shutil
 import pickle
+import tarfile
 
 import numpy as np
 import tensorflow as tf
@@ -60,101 +61,6 @@ def check_dir(path_list):
   for dir_path in path_list:
     if not isdir(dir_path):
       os.makedirs(dir_path)
-
-
-def _read32(bytestream):
-  """
-  Read 32-bit integer from bytesteam
-
-  Args:
-    bytestream: A bytestream
-  Returns:
-    32-bit integer
-  """
-  dt = np.dtype(np.uint32).newbyteorder('>')
-  return np.frombuffer(bytestream.read(4), dtype=dt)[0]
-
-
-def _dense_to_one_hot(labels_dense, num_classes):
-  """
-  Convert class labels from scalars to one-hot vectors.
-  """
-  num_labels = labels_dense.shape[0]
-  index_offset = np.arange(num_labels) * num_classes
-  labels_one_hot = np.zeros((num_labels, num_classes))
-  labels_one_hot.flat[index_offset + labels_dense.ravel()] = 1
-  return labels_one_hot
-
-
-def extract_image(save_path, extract_path):
-  """
-  Extract the images into a 4D unit8 numpy array [index, y, x, depth].
-  """
-  # Get data from save_path
-  with open(save_path, 'rb') as f:
-
-    print('Extracting {}...'.format(f.name))
-
-    with gzip.GzipFile(fileobj=f) as bytestream:
-
-      magic = _read32(bytestream)
-      if magic != 2051:
-        raise ValueError(
-            'Invalid magic number {} in file: {}'.format(magic, f.name))
-      num_images = _read32(bytestream)
-      rows = _read32(bytestream)
-      cols = _read32(bytestream)
-      buf = bytestream.read(rows * cols * num_images)
-      data = np.frombuffer(buf, dtype=np.uint8)
-      data = data.reshape(num_images, rows, cols)
-      save_data_to_pkl(data, extract_path + '.p')
-
-
-def extract_labels(save_path, extract_path, one_hot=False, num_classes=10):
-  """
-  Extract the labels into a 1D uint8 numpy array [index].
-  """
-  # Get data from save_path
-  with open(save_path, 'rb') as f:
-
-    print('Extracting {}...'.format(f.name))
-
-    with gzip.GzipFile(fileobj=f) as bytestream:
-
-      magic = _read32(bytestream)
-      if magic != 2049:
-        raise ValueError('Invalid magic number %d in MNIST label file: %s' %
-                         (magic, f.name))
-      num_items = _read32(bytestream)
-      buf = bytestream.read(num_items)
-      labels = np.frombuffer(buf, dtype=np.uint8)
-      if one_hot:
-        labels = _dense_to_one_hot(labels, num_classes)
-      save_data_to_pkl(labels, extract_path + '.p')
-
-
-def download_and_extract_mnist(url, save_path, extract_path,
-                               database_name, data_type):
-
-  if not os.path.exists(save_path):
-    with DLProgress(unit='B', unit_scale=True, miniters=1,
-                    desc='Downloading {}'.format(database_name)) as pbar:
-      urlretrieve(url, save_path, pbar.hook)
-
-  try:
-    if data_type == 'image':
-      extract_image(save_path, extract_path)
-    elif data_type == 'label':
-      extract_labels(save_path, extract_path, one_hot=False, num_classes=10)
-    else:
-      raise ValueError('Wrong data_type!')
-  except Exception as err:
-    # Remove extraction folder if there is an error
-    shutil.rmtree(extract_path)
-    raise err
-
-  # Remove compressed data
-  os.remove(save_path)
 
 
 def thin_line():
@@ -316,6 +222,151 @@ def save_test_log(file_path, loss_test, acc_test,
       f.write('Test_Train_Loss: {:.4f}\n'.format(clf_loss_test))
       f.write('Test_Reconstruction_Loss: {:.4f}\n'.format(rec_loss_test))
     f.write('=====================================================')
+
+
+def _read32(bytestream):
+  """
+  Read 32-bit integer from bytesteam
+
+  Args:
+    bytestream: A bytestream
+  Returns:
+    32-bit integer
+  """
+  dt = np.dtype(np.uint32).newbyteorder('>')
+  return np.frombuffer(bytestream.read(4), dtype=dt)[0]
+
+
+def extract_image(save_path, extract_path):
+  """
+  Extract the images into a 4D unit8 numpy array [index, y, x, depth].
+  """
+  # Get data from save_path
+  with open(save_path, 'rb') as f:
+
+    print('Extracting {}...'.format(f.name))
+
+    with gzip.GzipFile(fileobj=f) as bytestream:
+
+      magic = _read32(bytestream)
+      if magic != 2051:
+        raise ValueError(
+            'Invalid magic number {} in file: {}'.format(magic, f.name))
+      num_images = _read32(bytestream)
+      rows = _read32(bytestream)
+      cols = _read32(bytestream)
+      buf = bytestream.read(rows * cols * num_images)
+      data = np.frombuffer(buf, dtype=np.uint8)
+      data = data.reshape(num_images, rows, cols)
+      save_data_to_pkl(data, extract_path + '.p')
+
+
+def extract_labels_mnist(save_path, extract_path):
+  """
+  Extract the labels into a 1D uint8 numpy array [index].
+  """
+  # Get data from save_path
+  with open(save_path, 'rb') as f:
+
+    print('Extracting {}...'.format(f.name))
+
+    with gzip.GzipFile(fileobj=f) as bytestream:
+
+      magic = _read32(bytestream)
+      if magic != 2049:
+        raise ValueError('Invalid magic number %d in MNIST label file: %s' %
+                         (magic, f.name))
+      num_items = _read32(bytestream)
+      buf = bytestream.read(num_items)
+      labels = np.frombuffer(buf, dtype=np.uint8)
+      save_data_to_pkl(labels, extract_path + '.p')
+
+
+def download_and_extract_mnist(url, save_path, extract_path, data_type):
+
+  if not os.path.exists(save_path):
+    with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
+      urlretrieve(url, save_path, pbar.hook)
+
+  try:
+    if data_type == 'images':
+      extract_image(save_path, extract_path)
+    elif data_type == 'labels':
+      extract_labels_mnist(save_path, extract_path)
+    else:
+      raise ValueError('Wrong data_type!')
+  except Exception as err:
+    # Remove extraction folder if there is an error
+    shutil.rmtree(extract_path)
+    raise err
+
+  # Remove compressed data
+  os.remove(save_path)
+
+
+def load_cifar10_batch(dataset_path, mode, batch_id=None):
+  """
+  Load a batch of the dataset
+  """
+  if mode == 'train':
+    with open(dataset_path + '/data_batch_' + str(batch_id),
+              mode='rb') as file:
+      batch = pickle.load(file, encoding='latin1')
+  elif mode == 'test':
+    with open(dataset_path + '/test_batch',
+              mode='rb') as file:
+      batch = pickle.load(file, encoding='latin1')
+  else:
+    raise ValueError('Wrong mode!')
+
+  features = batch['data'].reshape(
+      (len(batch['data']), 3, 32, 32)).transpose(0, 2, 3, 1)
+  labels = batch['labels']
+
+  return features, labels
+
+
+def download_and_extract_cifar10(url, save_path, file_name, extract_path):
+
+  file_save_path = os.path.join(save_path, file_name)
+
+  if not os.path.exists(os.path.join(save_path, 'cifar10')):
+    with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
+      urlretrieve(url, file_save_path, pbar.hook)
+  else:
+    raise ValueError('Files already exist!')
+
+  try:
+    with tarfile.open(file_save_path) as tar:
+      tar.extractall(extract_path)
+      tar.close()
+  except Exception as err:
+    # Remove extraction folder if there is an error
+    shutil.rmtree(extract_path)
+    raise err
+
+  features = []
+  labels = []
+  for batch_i in range(1, 6):
+    features_i, labels_i = load_cifar10_batch(
+        os.path.join(save_path, 'cifar-10-batches-py'), 'train', batch_i)
+    features.append(features_i)
+    labels.append(labels_i)
+  train_images = np.concatenate(features, axis=0)
+  train_labels = np.concatenate(labels, axis=0)
+  test_images, test_labels = load_cifar10_batch(
+      os.path.join(save_path, 'cifar-10-batches-py'), 'test')
+
+  pickle_path = os.path.join(save_path, 'cifar10')
+  save_data_to_pkl(train_images, pickle_path + '/train_images.p')
+  save_data_to_pkl(train_labels, pickle_path + '/train_labels.p')
+  save_data_to_pkl(test_images, pickle_path + '/test_images.p')
+  save_data_to_pkl(test_labels, pickle_path + '/test_labels.p')
+
+  # Remove compressed data
+  os.remove(file_save_path)
+  os.remove(os.path.join(save_path, 'cifar-10-batches-py'))
+
 
 class DLProgress(tqdm):
   """
