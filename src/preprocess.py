@@ -9,7 +9,8 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import shuffle
 
 from models import utils
-from config import config
+from config import config as cfg_1
+from config_pipeline import config as cfg_2
 
 
 class DataPreProcess(object):
@@ -119,8 +120,8 @@ class DataPreProcess(object):
 
     else:
       self.x_train = self.x[:train_stop]
-      self.x_valid = self.x[train_stop:]
       self.y_train = self.y[:train_stop]
+      self.x_valid = self.x[train_stop:]
       self.y_valid = self.y[train_stop:]
       if self.data_base_name == 'mnist':
         assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
@@ -184,7 +185,7 @@ class DataPreProcess(object):
     self._augment_data()
 
     # Shuffle data set
-    self._shuffle()
+    # self._shuffle()
 
     # Scaling images to (0, 1)
     self._scaling()
@@ -210,16 +211,27 @@ if __name__ == '__main__':
   print('Input [ 2 ] to preprocess the CIFAR-10 database.')
   print("Input [ 3 ] to preprocess the MNIST and CIFAR-10 database.")
   utils.thin_line()
-  input_ = input('Input: ')
+  input_mode = input('Input: ')
 
-  DPP = DataPreProcess(config)
+  utils.thick_line()
+  print('Input [ 1 ] to use config.')
+  print('Input [ 2 ] to use config_pipeline.')
+  utils.thin_line()
+  input_cfg = input('Input: ')
 
-  if input_ == '1':
+  if input_cfg == '1':
+    DPP = DataPreProcess(cfg_1)
+  elif input_cfg == '2':
+    DPP = DataPreProcess(cfg_2)
+  else:
+    raise ValueError('Wrong config input! Found: ', input_cfg)
+
+  if input_mode == '1':
     DPP.pipeline('mnist')
-  elif input_ == '2':
+  elif input_mode == '2':
     DPP.pipeline('cifar10')
-  elif input_ == '3':
+  elif input_mode == '3':
     DPP.pipeline('mnist')
     DPP.pipeline('cifar10')
   else:
-    raise ValueError('Wrong input! Found: ', input_)
+    raise ValueError('Wrong database input! Found: ', input_mode)
