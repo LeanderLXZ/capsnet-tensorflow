@@ -26,7 +26,7 @@ __C = EasyDict()
 # Database name
 # 'mnist': MNIST
 # 'cifar10' CIFAR-10
-__C.DATABASE_NAME = 'mnist'
+__C.DATABASE_NAME = 'cifar10'
 
 # Training version
 # Set None to auto generate version
@@ -39,10 +39,10 @@ __C.LEARNING_RATE = 0.001
 __C.EPOCHS = 50
 
 # Batch size
-__C.BATCH_SIZE = 256
+__C.BATCH_SIZE = 512
 
 # Setting test set as validation when preprocessing data
-__C.DPP_TEST_AS_VALID = True
+__C.DPP_TEST_AS_VALID = False
 
 # ===========================================
 # #            Model Architecture           #
@@ -202,7 +202,7 @@ __C.VAR_ON_CPU = True
 # ===========================================
 
 # Number of GPUs
-__C.GPU_NUMBER = 1
+__C.GPU_NUMBER = 2
 
 # Batch size on a single GPU
 __C.GPU_BATCH_SIZE = __C.BATCH_SIZE // __C.GPU_NUMBER
