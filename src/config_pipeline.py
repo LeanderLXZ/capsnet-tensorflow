@@ -42,7 +42,7 @@ __C.EPOCHS = 50
 __C.BATCH_SIZE = 256
 
 # Setting test set as validation when preprocessing data
-__C.DPP_TEST_AS_VALID = False
+__C.DPP_TEST_AS_VALID = True
 
 # ===========================================
 # #            Model Architecture           #
@@ -143,7 +143,7 @@ __C.SAVE_MODEL_STEP = 10
 __C.MAX_TO_KEEP_CKP = 5
 
 # Calculate the train loss of full data set, which may take lots of time.
-__C.EVAL_WITH_FULL_TRAIN_SET = False
+__C.EVAL_WITH_FULL_TRAIN_SET = True
 
 # Show details of training progress
 __C.SHOW_TRAINING_DETAILS = False

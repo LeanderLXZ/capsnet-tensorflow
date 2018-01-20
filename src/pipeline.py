@@ -2,29 +2,50 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from models import utils
+from main import Main
+from models.capsNet import CapsNet
 from config_pipeline import *
 from main_distribute import MainDistribute
 from models.capsNet_distribute import CapsNetDistribute
 
 
-def training_capsnet(cfg):
+def training_capsnet(cfg, mode):
 
-  CapsNet_ = CapsNetDistribute(cfg)
-  Main_ = MainDistribute(CapsNet_, cfg)
-  Main_.train()
+  if mode == 'single-gpu':
+    CapsNet_ = CapsNet(cfg)
+    Main_ = Main(CapsNet_, cfg)
+    Main_.train()
+  elif mode == 'multi-gpu':
+    CapsNet_ = CapsNetDistribute(cfg)
+    Main_ = MainDistribute(CapsNet_, cfg)
+    Main_.train()
+  else:
+    raise ValueError('Wrong mode!')
 
 
-def pipeline():
+def pipeline(mode):
 
-  training_capsnet(cfg_1)
-  training_capsnet(cfg_2)
-  training_capsnet(cfg_3)
-  training_capsnet(cfg_4)
-  training_capsnet(cfg_5)
-  training_capsnet(cfg_6)
-  training_capsnet(cfg_7)
+  training_capsnet(cfg_1, mode)
+  training_capsnet(cfg_2, mode)
+  training_capsnet(cfg_3, mode)
+  training_capsnet(cfg_4, mode)
+  training_capsnet(cfg_5, mode)
+  training_capsnet(cfg_6, mode)
+  training_capsnet(cfg_7, mode)
 
 
 if __name__ == '__main__':
 
-  pipeline()
+  utils.thick_line()
+  print('Input [ 1 ] to use single-gpu version.')
+  print('Input [ 2 ] to use multi-gpu version.')
+  utils.thin_line()
+  input_ = input('Input: ')
+
+  if input_ == '1':
+    pipeline('single-gpu')
+  elif input_ == '2':
+    pipeline('multi-gpu')
+  else:
+    raise ValueError('Wrong input! Found: ', input_)
