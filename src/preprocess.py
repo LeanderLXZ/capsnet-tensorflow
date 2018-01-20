@@ -100,28 +100,44 @@ class DataPreProcess(object):
       self.y_train = self.y
       self.x_valid = self.x_test
       self.y_valid = self.y_test
+      if self.data_base_name == 'mnist':
+        assert self.x_train.shape == (60000, 28, 28, 1), self.x_train.shape
+        assert self.y_train.shape == (60000, 10), self.y_train.shape
+        assert self.x_valid.shape == (10000, 28, 28, 1), self.x_valid.shape
+        assert self.y_valid.shape == (10000, 10), self.y_valid.shape
+        assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
+        assert self.y_test.shape == (10000, 10), self.y_test.shape
+      elif self.data_base_name == 'cifar10':
+        assert self.x_train.shape == (50000, 32, 32, 3), self.x_train.shape
+        assert self.y_train.shape == (50000, 10), self.y_train.shape
+        assert self.x_valid.shape == (10000, 32, 32, 3), self.x_valid.shape
+        assert self.y_valid.shape == (10000, 10), self.y_valid.shape
+        assert self.x_test.shape == (10000, 32, 32, 3), self.x_test.shape
+        assert self.y_test.shape == (10000, 10), self.y_test.shape
+      else:
+        raise ValueError('Wrong database name!')
+
     else:
       self.x_train = self.x[:train_stop]
       self.x_valid = self.x[train_stop:]
       self.y_train = self.y[:train_stop]
       self.y_valid = self.y[train_stop:]
-
-    if self.data_base_name == 'mnist':
-      assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
-      assert self.y_train.shape == (55000, 10), self.y_train.shape
-      assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
-      assert self.y_valid.shape == (5000, 10), self.y_valid.shape
-      assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
-      assert self.y_test.shape == (10000, 10), self.y_test.shape
-    elif self.data_base_name == 'cifar10':
-      assert self.x_train.shape == (45000, 32, 32, 3), self.x_train.shape
-      assert self.y_train.shape == (45000, 10), self.y_train.shape
-      assert self.x_valid.shape == (5000, 32, 32, 3), self.x_valid.shape
-      assert self.y_valid.shape == (5000, 10), self.y_valid.shape
-      assert self.x_test.shape == (10000, 32, 32, 3), self.x_test.shape
-      assert self.y_test.shape == (10000, 10), self.y_test.shape
-    else:
-      raise ValueError('Wrong database name!')
+      if self.data_base_name == 'mnist':
+        assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
+        assert self.y_train.shape == (55000, 10), self.y_train.shape
+        assert self.x_valid.shape == (5000, 28, 28, 1), self.x_valid.shape
+        assert self.y_valid.shape == (5000, 10), self.y_valid.shape
+        assert self.x_test.shape == (10000, 28, 28, 1), self.x_test.shape
+        assert self.y_test.shape == (10000, 10), self.y_test.shape
+      elif self.data_base_name == 'cifar10':
+        assert self.x_train.shape == (45000, 32, 32, 3), self.x_train.shape
+        assert self.y_train.shape == (45000, 10), self.y_train.shape
+        assert self.x_valid.shape == (5000, 32, 32, 3), self.x_valid.shape
+        assert self.y_valid.shape == (5000, 10), self.y_valid.shape
+        assert self.x_test.shape == (10000, 32, 32, 3), self.x_test.shape
+        assert self.y_test.shape == (10000, 10), self.y_test.shape
+      else:
+        raise ValueError('Wrong database name!')
 
   def _save_data(self):
     """
