@@ -26,9 +26,9 @@ def training_capsnet(cfg, mode):
 
 def pipeline(mode):
 
-  training_capsnet(cfg_1, mode)
-  training_capsnet(cfg_2, mode)
-  training_capsnet(cfg_3, mode)
+  # training_capsnet(cfg_1, mode)
+  # training_capsnet(cfg_2, mode)
+  # training_capsnet(cfg_3, mode)
   training_capsnet(cfg_4, mode)
   training_capsnet(cfg_5, mode)
   training_capsnet(cfg_6, mode)
