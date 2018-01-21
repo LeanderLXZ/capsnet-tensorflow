@@ -135,8 +135,8 @@ class CapsNetDistribute(CapsNet):
       num_class: number of class of label
       n_train_samples: number of train samples
     Returns:
-      tuple of (train_graph, inputs, labels, loss,
-                optimizer, accuracy, classifier_loss,
+      tuple of (global_step, train_graph, inputs, labels, train_op,
+                saver, summary_op, loss, accuracy, classifier_loss,
                 reconstruct_loss, reconstructed_images)
     """
     tf.reset_default_graph()

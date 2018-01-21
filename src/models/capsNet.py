@@ -276,16 +276,18 @@ class CapsNet(ModelBase):
 
     return logits, accuracy
 
-  def build_graph(self, image_size=(None, None, None), num_class=None):
+  def build_graph(self, image_size=(None, None, None),
+                  num_class=None, n_train_samples=None):
     """
     Build the graph of CapsNet.
 
     Args:
       image_size: size of input images, should be 3 dimensional
       num_class: number of class of label
+      n_train_samples: number of train samples
     Returns:
-      tuple of (train_graph, inputs, labels, loss,
-                optimizer, accuracy, classifier_loss,
+      tuple of (global_step, train_graph, inputs, labels, train_op,
+                saver, summary_op, loss, accuracy, classifier_loss,
                 reconstruct_loss, reconstructed_images)
     """
     tf.reset_default_graph()
@@ -295,6 +297,14 @@ class CapsNet(ModelBase):
 
       # Get input placeholders
       inputs, labels = self._get_inputs(image_size, num_class)
+
+      # Global step
+      global_step = tf.placeholder(tf.int16, name='global_step')
+
+      # Optimizer
+      optimizer = self._optimizer(opt_name=self.cfg.OPTIMIZER,
+                                  n_train_samples=n_train_samples,
+                                  global_step=global_step)
 
       # Build inference Graph
       logits, accuracy = self._inference(inputs, labels)
@@ -307,8 +317,7 @@ class CapsNet(ModelBase):
       if self.cfg.SHOW_TRAINING_DETAILS:
         loss = tf.Print(loss, [tf.constant(6)],
                         message="\nUpdating gradients...")
-      opt = self._optimizer(opt_name=self.cfg.OPTIMIZER)
-      train_op = opt.minimize(loss)
+      train_op = optimizer.minimize(loss)
 
       # Create a saver.
       saver = tf.train.Saver(tf.global_variables(),
@@ -322,6 +331,6 @@ class CapsNet(ModelBase):
         tf.summary.scalar('rec_loss', reconstruct_loss)
       summary_op = tf.summary.merge_all()
 
-      return train_graph, inputs, labels, train_op, saver, \
-          summary_op, loss, accuracy, classifier_loss, \
+      return global_step, train_graph, inputs, labels, train_op, \
+          saver, summary_op, loss, accuracy, classifier_loss, \
           reconstruct_loss, reconstructed_images

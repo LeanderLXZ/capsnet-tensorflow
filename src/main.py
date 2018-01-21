@@ -17,6 +17,7 @@ from tqdm import tqdm
 from config import config
 from models import utils
 from models.capsNet import CapsNet
+from models.capsNet_distribute import CapsNetDistribute
 
 
 class Main(object):
@@ -88,7 +89,7 @@ class Main(object):
     utils.thick_line()
     print('Building graph...')
     tf.reset_default_graph()
-    self.train_graph, self.inputs, self.labels, self.optimizer, \
+    self.step, self.train_graph, self.inputs, self.labels, self.optimizer, \
         self.saver, self.summary, self.loss, self.accuracy, self.clf_loss, \
         self.rec_loss, self.rec_images = model.build_graph(
             image_size=self.x_train.shape[1:],
@@ -471,6 +472,130 @@ class Main(object):
     print('Testing finished! Using time: {:.2f}'
           .format(time.time() - test_start_time))
 
+  def _trainer(self, sess):
+
+    utils.thick_line()
+    print('Training...')
+
+    # Merge all the summaries and create writers
+    train_summary_path = join(self.summary_path, 'train')
+    valid_summary_path = join(self.summary_path, 'valid')
+    utils.check_dir([train_summary_path, valid_summary_path])
+    train_writer = tf.summary.FileWriter(train_summary_path, sess.graph)
+    valid_writer = tf.summary.FileWriter(valid_summary_path)
+
+    sess.run(tf.global_variables_initializer())
+    step = 0
+
+    for epoch_i in range(self.cfg.EPOCHS):
+
+      epoch_start_time = time.time()
+      utils.thick_line()
+      print('Training on epoch: {}/{}'.format(epoch_i + 1, self.cfg.EPOCHS))
+
+      if self.cfg.DISPLAY_STEP is not None:
+        for x_batch, y_batch in utils.get_batches(self.x_train,
+                                                  self.y_train,
+                                                  self.cfg.BATCH_SIZE):
+          step += 1
+
+          # Training optimizer
+          sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
+                                              self.labels: y_batch,
+                                              self.step: step - 1})
+
+          # Display training information
+          if step % self.cfg.DISPLAY_STEP == 0:
+            self._display_status(sess, x_batch, y_batch, epoch_i, step)
+
+          # Save training logs
+          if self.cfg.SAVE_LOG_STEP is not None:
+            if step % self.cfg.SAVE_LOG_STEP == 0:
+              self._save_logs(sess, train_writer, valid_writer,
+                              x_batch, y_batch, epoch_i, step)
+
+          # Save reconstruction images
+          if self.cfg.SAVE_IMAGE_STEP is not None:
+            if self.cfg.WITH_RECONSTRUCTION:
+              if step % self.cfg.SAVE_IMAGE_STEP == 0:
+                self._save_images(
+                    sess, self.train_image_path, x_batch,
+                    y_batch, step, epoch_i=epoch_i)
+
+          # Save models
+          if self.cfg.SAVE_MODEL_MODE == 'per_batch':
+            if step % self.cfg.SAVE_MODEL_STEP == 0:
+              self._save_model(sess, self.saver, step)
+
+          # Evaluate on full set
+          if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
+            if step % self.cfg.FULL_SET_EVAL_STEP == 0:
+              self._eval_on_full_set(sess, epoch_i, step)
+              utils.thick_line()
+      else:
+        utils.thin_line()
+        train_batch_generator = utils.get_batches(
+            self.x_train, self.y_train, self.cfg.BATCH_SIZE)
+        for _ in tqdm(range(self.n_batch_train),
+                      total=self.n_batch_train,
+                      ncols=100, unit=' batches'):
+
+          step += 1
+          x_batch, y_batch = next(train_batch_generator)
+
+          # Training optimizer
+          sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
+                                              self.labels: y_batch})
+
+          # Save training logs
+          if self.cfg.SAVE_LOG_STEP is not None:
+            if step % self.cfg.SAVE_LOG_STEP == 0:
+              self._save_logs(sess, train_writer, valid_writer,
+                              x_batch, y_batch, epoch_i, step)
+
+          # Save reconstruction images
+          if self.cfg.SAVE_IMAGE_STEP is not None:
+            if self.cfg.WITH_RECONSTRUCTION:
+              if step % self.cfg.SAVE_IMAGE_STEP == 0:
+                self._save_images(
+                    sess, self.train_image_path, x_batch,
+                    y_batch, step, silent=True, epoch_i=epoch_i)
+
+          # Save models
+          if self.cfg.SAVE_MODEL_MODE == 'per_batch':
+            if step % self.cfg.SAVE_MODEL_STEP == 0:
+              self._save_model(sess, self.saver, step, silent=True)
+
+          # Evaluate on full set
+          if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
+            if step % self.cfg.FULL_SET_EVAL_STEP == 0:
+              self._eval_on_full_set(sess, epoch_i, step, silent=True)
+
+      if self.cfg.SAVE_MODEL_MODE == 'per_epoch':
+        if (epoch_i + 1) % self.cfg.SAVE_MODEL_STEP == 0:
+          self._save_model(sess, self.saver, epoch_i)
+      if self.cfg.FULL_SET_EVAL_MODE == 'per_epoch':
+        if (epoch_i + 1) % self.cfg.FULL_SET_EVAL_MODE == 0:
+          self._eval_on_full_set(sess, epoch_i, step)
+
+      utils.thin_line()
+      print('Epoch done! Using time: {:.2f}'
+            .format(time.time() - epoch_start_time))
+
+    utils.thick_line()
+    print('Training finished! Using time: {:.2f}'
+          .format(time.time() - self.start_time))
+    utils.thick_line()
+
+    # Evaluate on test set after training
+    if self.cfg.TEST_AFTER_TRAINING:
+      self._test_after_training(sess)
+
+    utils.thick_line()
+    print('All task finished! Total time: {:.2f}'
+          .format(time.time() - self.start_time))
+    utils.thick_line()
+
   def train(self):
     """
     Training models
@@ -478,127 +603,29 @@ class Main(object):
     session_cfg = tf.ConfigProto()
     session_cfg.gpu_options.allow_growth = True
     with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
+      self._trainer(sess)
 
-      utils.thick_line()
-      print('Training...')
 
-      # Merge all the summaries and create writers
-      train_summary_path = join(self.summary_path, 'train')
-      valid_summary_path = join(self.summary_path, 'valid')
-      utils.check_dir([train_summary_path, valid_summary_path])
-      train_writer = tf.summary.FileWriter(train_summary_path, sess.graph)
-      valid_writer = tf.summary.FileWriter(valid_summary_path)
+class MainDistribute(Main):
 
-      sess.run(tf.global_variables_initializer())
-      step = 0
+  def __init__(self, model, cfg):
+    """
+    Load data and initialize models.
 
-      for epoch_i in range(self.cfg.EPOCHS):
+    Args:
+      model: the models which will be trained
+    """
+    super(MainDistribute).__init__(model, cfg)
 
-        epoch_start_time = time.time()
-        utils.thick_line()
-        print('Training on epoch: {}/{}'.format(epoch_i + 1, self.cfg.EPOCHS))
-
-        if self.cfg.DISPLAY_STEP is not None:
-          for x_batch, y_batch in utils.get_batches(self.x_train,
-                                                    self.y_train,
-                                                    self.cfg.BATCH_SIZE):
-            step += 1
-
-            # Training optimizer
-            sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
-                                                self.labels: y_batch})
-
-            # Display training information
-            if step % self.cfg.DISPLAY_STEP == 0:
-              self._display_status(sess, x_batch, y_batch, epoch_i, step)
-
-            # Save training logs
-            if self.cfg.SAVE_LOG_STEP is not None:
-              if step % self.cfg.SAVE_LOG_STEP == 0:
-                self._save_logs(sess, train_writer, valid_writer,
-                                x_batch, y_batch, epoch_i, step)
-
-            # Save reconstruction images
-            if self.cfg.SAVE_IMAGE_STEP is not None:
-              if self.cfg.WITH_RECONSTRUCTION:
-                if step % self.cfg.SAVE_IMAGE_STEP == 0:
-                  self._save_images(
-                      sess, self.train_image_path, x_batch,
-                      y_batch, step, epoch_i=epoch_i)
-
-            # Save models
-            if self.cfg.SAVE_MODEL_MODE == 'per_batch':
-              if step % self.cfg.SAVE_MODEL_STEP == 0:
-                self._save_model(sess, self.saver, step)
-
-            # Evaluate on full set
-            if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
-              if step % self.cfg.FULL_SET_EVAL_STEP == 0:
-                self._eval_on_full_set(sess, epoch_i, step)
-                utils.thick_line()
-        else:
-          utils.thin_line()
-          train_batch_generator = utils.get_batches(
-              self.x_train, self.y_train, self.cfg.BATCH_SIZE)
-          for _ in tqdm(range(self.n_batch_train),
-                        total=self.n_batch_train,
-                        ncols=100, unit=' batches'):
-
-            step += 1
-            x_batch, y_batch = next(train_batch_generator)
-
-            # Training optimizer
-            sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
-                                                self.labels: y_batch})
-
-            # Save training logs
-            if self.cfg.SAVE_LOG_STEP is not None:
-              if step % self.cfg.SAVE_LOG_STEP == 0:
-                self._save_logs(sess, train_writer, valid_writer,
-                                x_batch, y_batch, epoch_i, step)
-
-            # Save reconstruction images
-            if self.cfg.SAVE_IMAGE_STEP is not None:
-              if self.cfg.WITH_RECONSTRUCTION:
-                if step % self.cfg.SAVE_IMAGE_STEP == 0:
-                  self._save_images(
-                      sess, self.train_image_path, x_batch,
-                      y_batch, step, silent=True, epoch_i=epoch_i)
-
-            # Save models
-            if self.cfg.SAVE_MODEL_MODE == 'per_batch':
-              if step % self.cfg.SAVE_MODEL_STEP == 0:
-                self._save_model(sess, self.saver, step, silent=True)
-
-            # Evaluate on full set
-            if self.cfg.FULL_SET_EVAL_MODE == 'per_batch':
-              if step % self.cfg.FULL_SET_EVAL_STEP == 0:
-                self._eval_on_full_set(sess, epoch_i, step, silent=True)
-
-        if self.cfg.SAVE_MODEL_MODE == 'per_epoch':
-          if (epoch_i + 1) % self.cfg.SAVE_MODEL_STEP == 0:
-            self._save_model(sess, self.saver, epoch_i)
-        if self.cfg.FULL_SET_EVAL_MODE == 'per_epoch':
-          if (epoch_i + 1) % self.cfg.FULL_SET_EVAL_MODE == 0:
-            self._eval_on_full_set(sess, epoch_i, step)
-
-        utils.thin_line()
-        print('Epoch done! Using time: {:.2f}'
-              .format(time.time() - epoch_start_time))
-
-      utils.thick_line()
-      print('Training finished! Using time: {:.2f}'
-            .format(time.time() - self.start_time))
-      utils.thick_line()
-
-      # Evaluate on test set after training
-      if self.cfg.TEST_AFTER_TRAINING:
-        self._test_after_training(sess)
-
-      utils.thick_line()
-      print('All task finished! Total time: {:.2f}'
-            .format(time.time() - self.start_time))
-      utils.thick_line()
+  def train(self):
+    """
+    Training models
+    """
+    session_cfg = tf.ConfigProto()
+    session_cfg.gpu_options.allow_growth = True
+    with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
+      with tf.device('/cpu:0'):
+        self._trainer(sess)
 
 
 if __name__ == '__main__':
@@ -609,6 +636,19 @@ if __name__ == '__main__':
       print('Using /gpu: %d' % value)
       environ["CUDA_VISIBLE_DEVICES"] = str(value)
 
-  CapsNet_ = CapsNet(config)
-  Main_ = Main(CapsNet_, config)
-  Main_.train()
+  utils.thick_line()
+  print('Input [ 1 ] to run normal version.')
+  print('Input [ 2 ] to run multi-gpu version.')
+  utils.thin_line()
+  input_ = input('Input: ')
+
+  if input_ == '1':
+    CapsNet_ = CapsNet(config)
+    Main_ = Main(CapsNet_, config)
+    Main_.train()
+  elif input_ == '2':
+    CapsNet_ = CapsNetDistribute(config)
+    Main_ = MainDistribute(CapsNet_, config)
+    Main_.train()
+  else:
+    raise ValueError('Wrong input! Found: ', input_)

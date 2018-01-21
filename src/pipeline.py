@@ -6,13 +6,13 @@ from models import utils
 from main import Main
 from models.capsNet import CapsNet
 from config_pipeline import *
-from main_distribute import MainDistribute
+from main import MainDistribute
 from models.capsNet_distribute import CapsNetDistribute
 
 
 def training_capsnet(cfg, mode):
 
-  if mode == 'single-gpu':
+  if mode == 'normal':
     CapsNet_ = CapsNet(cfg)
     Main_ = Main(CapsNet_, cfg)
     Main_.train()
@@ -38,13 +38,13 @@ def pipeline(mode):
 if __name__ == '__main__':
 
   utils.thick_line()
-  print('Input [ 1 ] to use single-gpu version.')
-  print('Input [ 2 ] to use multi-gpu version.')
+  print('Input [ 1 ] to run normal version.')
+  print('Input [ 2 ] to run multi-gpu version.')
   utils.thin_line()
   input_ = input('Input: ')
 
   if input_ == '1':
-    pipeline('single-gpu')
+    pipeline('normal')
   elif input_ == '2':
     pipeline('multi-gpu')
   else:
