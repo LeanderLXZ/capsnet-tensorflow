@@ -183,14 +183,14 @@ def decoder(inputs, cfg, batch_size=None):
           kernel_size=3,
           stride=1,
           n_kernel=32,
-          resize=14,
+          resize=16,
           idx=1))
       model.add(ConvLayer(    # (b, 32, 32, 16)
           cfg,
           kernel_size=3,
           stride=1,
           n_kernel=16,
-          resize=28,
+          resize=32,
           idx=2))
       model.add(ConvLayer(    # (b, 32, 32, 3)
           cfg,
