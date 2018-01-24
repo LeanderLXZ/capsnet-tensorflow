@@ -436,7 +436,7 @@ class BatchNorm(object):
       self.act_fn = get_act_fn(self.act_fn)
 
     return tf.contrib.layers.batch_norm(
-           input=inputs,
+           inputs=inputs,
            decay=self.decay,
            center=self.center,
            scale=self.scale,
