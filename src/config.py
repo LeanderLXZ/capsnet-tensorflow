@@ -25,7 +25,7 @@ __C = EasyDict()
 # Database name
 # 'mnist': MNIST
 # 'cifar10' CIFAR-10
-__C.DATABASE_NAME = 'mnist'
+__C.DATABASE_NAME = 'cifar10'
 
 # Training version
 # Set None to auto generate version
@@ -41,7 +41,7 @@ __C.EPOCHS = 50
 __C.BATCH_SIZE = 512
 
 # Setting test set as validation when preprocessing data
-__C.DPP_TEST_AS_VALID = False
+__C.DPP_TEST_AS_VALID = True
 
 # ===========================================
 # #            Model Architecture           #
@@ -90,12 +90,12 @@ __C.WITH_RECONSTRUCTION = True
 # 'fc': full_connected layers
 # 'conv': convolution layers
 # 'conv_t': transpose convolution layers
-__C.DECODER_TYPE = 'fc'
+__C.DECODER_TYPE = 'conv_t'
 
 # Reconstruction loss
 # 'mse': Mean Square Error
 # 'ce' : sigmoid_cross_entropy_with_logits
-__C.RECONSTRUCTION_LOSS = 'mse'
+__C.RECONSTRUCTION_LOSS = 'ce'
 
 # Scaling for reconstruction loss
 __C.RECONSTRUCT_LOSS_SCALE = 0.392  # 0.0005*784=0.392
@@ -123,7 +123,7 @@ __C.SAVE_LOG_STEP = 20  # batches
 __C.SAVE_IMAGE_STEP = 50  # batches
 
 # Maximum images number in a col
-__C.MAX_IMAGE_IN_COL = 10
+__C.MAX_IMAGE_IN_COL = 20
 
 # Calculate train loss and valid loss using full data set
 # 'per_epoch': evaluate on full set when n epochs finished
@@ -193,12 +193,12 @@ __C.CHECKPOINT_PATH = '../checkpoints'
 # Path for saving testing logs
 __C.TEST_LOG_PATH = '../test_logs'
 
-# Save trainable variables on CPU
-__C.VAR_ON_CPU = True
-
 # ===========================================
 # #          Multi-GPUs Config              #
 # ===========================================
+
+# Save trainable variables on CPU
+__C.VAR_ON_CPU = True
 
 # Number of GPUs
 __C.GPU_NUMBER = 2

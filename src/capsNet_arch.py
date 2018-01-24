@@ -6,59 +6,42 @@ from models.model_base import *
 from models.capsule_layer import *
 
 
-def classifier(inputs, cfg, batch_size=None):
+def classifier(inputs, cfg, batch_size=None, is_training=None):
 
   model = Sequential(inputs)
   model.add(ConvLayer(
       cfg,
-      kernel_size=3,
+      kernel_size=5,
       stride=1,
-      n_kernel=256,
+      n_kernel=64,
       padding='VALID',
-      act_fn='relu',
-      stddev=None,
-      resize=None,
-      use_bias=True,
-      atrous=False,
+      act_fn=None,
       idx=0
   ))
+  model.add(BatchNorm(
+      cfg, decay=0.997, is_training=is_training, act_fn='relu'))
   model.add(ConvLayer(
       cfg,
-      kernel_size=3,
+      kernel_size=5,
       stride=1,
-      n_kernel=256,
+      n_kernel=128,
       padding='VALID',
-      act_fn='relu',
-      stddev=None,
-      resize=None,
-      use_bias=True,
-      atrous=False,
+      act_fn=None,
       idx=0
   ))
+  model.add(BatchNorm(
+      cfg, decay=0.997, is_training=is_training, act_fn='relu'))
   model.add(ConvLayer(
       cfg,
-      kernel_size=3,
+      kernel_size=5,
       stride=1,
       n_kernel=256,
       padding='VALID',
-      act_fn='relu',
-      stddev=None,
-      resize=None,
-      use_bias=True,
-      atrous=False,
+      act_fn=None,
       idx=0
   ))
-  model.add(Conv2CapsLayer(
-      cfg,
-      kernel_size=9,
-      stride=2,
-      n_kernel=32,
-      vec_dim=8,
-      padding='VALID',
-      act_fn='relu',
-      use_bias=True,
-      batch_size=batch_size
-  ))
+  model.add(BatchNorm(
+      cfg, decay=0.997, is_training=is_training, act_fn='relu'))
   # models.add(Dense2Capsule(
   #     cfg,
   #     identity_map=True,
@@ -67,10 +50,27 @@ def classifier(inputs, cfg, batch_size=None):
   #     vec_dim=8,
   #     batch_size=batch_size
   # ))
+  model.add(Conv2CapsLayer(
+      cfg,
+      kernel_size=5,
+      stride=2,
+      n_kernel=32,
+      vec_dim=16,
+      padding='VALID',
+      batch_size=batch_size
+  ))
+  model.add(CapsLayer(
+      cfg,
+      num_caps=128,
+      vec_dim=32,
+      route_epoch=3,
+      batch_size=batch_size,
+      idx=0
+  ))
   model.add(CapsLayer(
       cfg,
       num_caps=10,
-      vec_dim=16,
+      vec_dim=64,
       route_epoch=3,
       batch_size=batch_size,
       idx=0
@@ -79,7 +79,7 @@ def classifier(inputs, cfg, batch_size=None):
   return model.top_layer, model.info
 
 
-def decoder(inputs, cfg, batch_size=None):
+def decoder(inputs, cfg, batch_size=None, is_training=None):
 
   model = Sequential(inputs)
   act_fn_last = None if cfg.RECONSTRUCTION_LOSS == 'ce' else 'relu'
@@ -143,6 +143,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 4, 4, 16],
           padding='VALID',
           idx=0))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -151,6 +153,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 12, 12, 32],
           padding='VALID',
           idx=1))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -159,6 +163,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 20, 20, 16],
           padding='VALID',
           idx=2))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -167,6 +173,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 28, 28, 8],
           padding='VALID',
           idx=3))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=3,
@@ -237,6 +245,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 4, 4, 16],
           padding='VALID',
           idx=0))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -245,6 +255,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 12, 12, 32],
           padding='VALID',
           idx=1))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -253,6 +265,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 20, 20, 16],
           padding='VALID',
           idx=2))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -261,6 +275,8 @@ def decoder(inputs, cfg, batch_size=None):
           output_shape=[batch_size, 28, 28, 8],
           padding='VALID',
           idx=3))
+      model.add(BatchNorm(
+          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
       model.add(ConvTLayer(
           cfg,
           kernel_size=5,

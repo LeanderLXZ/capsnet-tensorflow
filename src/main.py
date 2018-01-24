@@ -89,9 +89,9 @@ class Main(object):
     utils.thick_line()
     print('Building graph...')
     tf.reset_default_graph()
-    self.step, self.train_graph, self.inputs, self.labels, self.optimizer, \
-        self.saver, self.summary, self.loss, self.accuracy, self.clf_loss, \
-        self.rec_loss, self.rec_images = model.build_graph(
+    self.step, self.train_graph, self.inputs, self.labels, self.is_training, \
+        self.optimizer, self.saver, self.summary, self.loss, self.accuracy,\
+        self.clf_loss, self.rec_loss, self.rec_images = model.build_graph(
             image_size=self.x_train.shape[1:],
             num_class=self.y_train.shape[1])
 
@@ -113,21 +113,25 @@ class Main(object):
           sess.run([self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_batch,
-                              self.labels: y_batch})
+                              self.labels: y_batch,
+                              self.is_training: False})
       loss_valid, clf_loss_valid, rec_loss_valid, acc_valid = \
           sess.run([self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
-                              self.labels: y_valid_batch})
+                              self.labels: y_valid_batch,
+                              self.is_training: False})
     else:
       loss_train, acc_train = \
           sess.run([self.loss, self.accuracy],
                    feed_dict={self.inputs: x_batch,
-                              self.labels: y_batch})
+                              self.labels: y_batch,
+                              self.is_training: False})
       loss_valid, acc_valid = \
           sess.run([self.loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
-                              self.labels: y_valid_batch})
+                              self.labels: y_valid_batch,
+                              self.is_training: False})
       clf_loss_train, rec_loss_train, clf_loss_valid, rec_loss_valid = \
           None, None, None, None
 
@@ -152,21 +156,25 @@ class Main(object):
           sess.run([self.summary, self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_batch,
-                              self.labels: y_batch})
+                              self.labels: y_batch,
+                              self.is_training: False})
       summary_valid, loss_valid, clf_loss_valid, rec_loss_valid, acc_valid = \
           sess.run([self.summary, self.loss, self.clf_loss,
                     self.rec_loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
-                              self.labels: y_valid_batch})
+                              self.labels: y_valid_batch,
+                              self.is_training: False})
     else:
       summary_train, loss_train, acc_train = \
           sess.run([self.summary, self.loss, self.accuracy],
                    feed_dict={self.inputs: x_batch,
-                              self.labels: y_batch})
+                              self.labels: y_batch,
+                              self.is_training: False})
       summary_valid, loss_valid, acc_valid = \
           sess.run([self.summary, self.loss, self.accuracy],
                    feed_dict={self.inputs: x_valid_batch,
-                              self.labels: y_valid_batch})
+                              self.labels: y_valid_batch,
+                              self.is_training: False})
       clf_loss_train, rec_loss_train, clf_loss_valid, rec_loss_valid = \
           None, None, None, None
 
@@ -198,7 +206,9 @@ class Main(object):
           x_batch, y_batch = next(_batch_generator)
           loss_i, clf_loss_i, rec_loss_i, acc_i = sess.run(
               [self.loss, self.clf_loss, self.rec_loss, self.accuracy],
-              feed_dict={self.inputs: x_batch, self.labels: y_batch})
+              feed_dict={self.inputs: x_batch,
+                         self.labels: y_batch,
+                         self.is_training: False})
           loss_all.append(loss_i)
           clf_loss_all.append(clf_loss_i)
           rec_loss_all.append(rec_loss_i)
@@ -211,7 +221,9 @@ class Main(object):
           x_batch, y_batch = next(_batch_generator)
           loss_i, acc_i = sess.run(
               [self.loss, self.accuracy],
-              feed_dict={self.inputs: x_batch, self.labels: y_batch})
+              feed_dict={self.inputs: x_batch,
+                         self.labels: y_batch,
+                         self.is_training: False})
           loss_all.append(loss_i)
           acc_all.append(acc_i)
         clf_loss, rec_loss = None, None
@@ -221,7 +233,9 @@ class Main(object):
         for x_batch, y_batch in utils.get_batches(x, y, self.cfg.BATCH_SIZE):
           loss_i, clf_loss_i, rec_loss_i, acc_i = sess.run(
               [self.loss, self.clf_loss, self.rec_loss, self.accuracy],
-              feed_dict={self.inputs: x_batch, self.labels: y_batch})
+              feed_dict={self.inputs: x_batch,
+                         self.labels: y_batch,
+                         self.is_training: False})
           loss_all.append(loss_i)
           clf_loss_all.append(clf_loss_i)
           rec_loss_all.append(rec_loss_i)
@@ -232,7 +246,9 @@ class Main(object):
         for x_batch, y_batch in utils.get_batches(x, y, self.cfg.BATCH_SIZE):
           loss_i, acc_i = sess.run(
               [self.loss, self.accuracy],
-              feed_dict={self.inputs: x_batch, self.labels: y_batch})
+              feed_dict={self.inputs: x_batch,
+                         self.labels: y_batch,
+                         self.is_training: False})
           loss_all.append(loss_i)
           acc_all.append(acc_i)
         clf_loss, rec_loss = None, None
@@ -295,7 +311,8 @@ class Main(object):
     """
     rec_images_ = sess.run(
         self.rec_images, feed_dict={self.inputs: x_batch,
-                                    self.labels: y_batch})
+                                    self.labels: y_batch,
+                                    self.is_training: False})
 
     # Image shape
     img_shape = x_batch.shape[1:]
@@ -424,7 +441,9 @@ class Main(object):
         test_batch_x, test_batch_y = next(_test_batch_generator)
         loss_test_i, clf_loss_i, rec_loss_i, acc_test_i = sess.run(
             [self.loss, self.clf_loss, self.rec_loss, self.accuracy],
-            feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
+            feed_dict={self.inputs: test_batch_x,
+                       self.labels: test_batch_y,
+                       self.is_training: False})
         loss_test_all.append(loss_test_i)
         acc_test_all.append(acc_test_i)
         clf_loss_test_all.append(clf_loss_i)
@@ -446,7 +465,9 @@ class Main(object):
         test_batch_x, test_batch_y = next(_test_batch_generator)
         loss_test_i, acc_test_i = sess.run(
             [self.loss, self.accuracy],
-            feed_dict={self.inputs: test_batch_x, self.labels: test_batch_y})
+            feed_dict={self.inputs: test_batch_x,
+                       self.labels: test_batch_y,
+                       self.is_training: False})
         loss_test_all.append(loss_test_i)
         acc_test_all.append(acc_test_i)
       clf_loss_test, rec_loss_test = None, None
@@ -494,6 +515,7 @@ class Main(object):
       print('Training on epoch: {}/{}'.format(epoch_i + 1, self.cfg.EPOCHS))
 
       if self.cfg.DISPLAY_STEP is not None:
+
         for x_batch, y_batch in utils.get_batches(self.x_train,
                                                   self.y_train,
                                                   self.cfg.BATCH_SIZE):
@@ -502,7 +524,8 @@ class Main(object):
           # Training optimizer
           sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
                                               self.labels: y_batch,
-                                              self.step: step - 1})
+                                              self.step: step - 1,
+                                              self.is_training: True})
 
           # Display training information
           if step % self.cfg.DISPLAY_STEP == 0:
@@ -545,7 +568,9 @@ class Main(object):
 
           # Training optimizer
           sess.run(self.optimizer, feed_dict={self.inputs: x_batch,
-                                              self.labels: y_batch})
+                                              self.labels: y_batch,
+                                              self.step: step - 1,
+                                              self.is_training: True})
 
           # Save training logs
           if self.cfg.SAVE_LOG_STEP is not None:
@@ -602,29 +627,13 @@ class Main(object):
     """
     session_cfg = tf.ConfigProto()
     session_cfg.gpu_options.allow_growth = True
-    with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
-      self._trainer(sess)
 
-
-class MainDistribute(Main):
-
-  def __init__(self, model, cfg):
-    """
-    Load data and initialize models.
-
-    Args:
-      model: the models which will be trained
-    """
-    super(MainDistribute).__init__(model, cfg)
-
-  def train(self):
-    """
-    Training models
-    """
-    session_cfg = tf.ConfigProto()
-    session_cfg.gpu_options.allow_growth = True
-    with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
-      with tf.device('/cpu:0'):
+    if self.cfg.VAR_ON_CPU:
+      with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
+        with tf.device('/cpu:0'):
+          self._trainer(sess)
+    else:
+      with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
         self._trainer(sess)
 
 
@@ -644,11 +653,10 @@ if __name__ == '__main__':
 
   if input_ == '1':
     CapsNet_ = CapsNet(config)
-    Main_ = Main(CapsNet_, config)
-    Main_.train()
   elif input_ == '2':
     CapsNet_ = CapsNetDistribute(config)
-    Main_ = MainDistribute(CapsNet_, config)
-    Main_.train()
   else:
     raise ValueError('Wrong input! Found: ', input_)
+
+  Main_ = Main(CapsNet_, config)
+  Main_.train()

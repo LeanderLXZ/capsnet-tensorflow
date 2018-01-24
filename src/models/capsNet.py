@@ -3,19 +3,18 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy as np
 
 from capsNet_arch import classifier
 from capsNet_arch import decoder
 from models import utils
-from models import capsule_layer
-from models.model_base import ModelBase
 
 
-class CapsNet(ModelBase):
+class CapsNet(object):
 
   def __init__(self, cfg):
-    super(CapsNet, self).__init__(cfg)
 
+    self.cfg = cfg
     self.batch_size = cfg.BATCH_SIZE
     self.clf_arch_info = None
     self.rec_arch_info = None
@@ -34,64 +33,46 @@ class CapsNet(ModelBase):
         tf.float32, shape=[self.cfg.BATCH_SIZE, *image_size], name='inputs')
     _labels = tf.placeholder(
         tf.float32, shape=[self.cfg.BATCH_SIZE, num_class], name='labels')
+    _is_training = tf.placeholder(tf.bool, name='is_training')
 
-    return _inputs, _labels
+    return _inputs, _labels, _is_training
 
-  def _caps_layer(self, x, caps_param, idx=0):
+  def _optimizer(self,
+                 opt_name='adam',
+                 n_train_samples=None,
+                 global_step=None):
     """
-    Single capsule layer
-
-    Args:
-      x: input tensor
-      caps_param: parameters of capsule layer
-    Returns:
-      output tensor of capsule layer
+    Optimizer.
     """
-    _caps = capsule_layer.CapsLayer(
-        self.cfg, **caps_param, batch_size=self.batch_size, idx=idx)
-    return _caps(x)
+    if opt_name == 'adam':
+      return tf.train.AdamOptimizer(self.cfg.LEARNING_RATE)
 
-  def _conv2caps_layer(self, x, conv2caps_params):
-    """
-    Build convolution to capsule layer.
+    elif opt_name == 'momentum':
+      n_batches_per_epoch = \
+          n_train_samples // self.cfg.GPU_BATCH_SIZE * self.cfg.GPU_NUMBER
+      boundaries = [
+          n_batches_per_epoch * x
+          for x in np.array(self.cfg.LR_BOUNDARIES, dtype=np.int64)]
+      staged_lr = [self.cfg.LEARNING_RATE * x
+                   for x in self.cfg.LR_STAGE]
+      learning_rate = tf.train.piecewise_constant(
+          global_step,
+          boundaries, staged_lr)
+      return tf.train.MomentumOptimizer(
+          learning_rate=learning_rate, momentum=self.cfg.MOMENTUM)
 
-    Args:
-      x: input tensor
-      conv2caps_params: parameters of conv2caps layer
-    Returns:
-      output tensor of capsule layer
-        - shape: (batch_size, num_caps, vec_dim, 1)
-    """
-    with tf.variable_scope('conv2caps'):
-      # conv2caps_params:
-      # {'kernel_size': None, 'stride': None, 'n_kernel': None,
-      #  'vec_dim': None, 'padding': 'VALID'}
-      _conv2caps = capsule_layer.Conv2CapsLayer(
-          self.cfg, **conv2caps_params, batch_size=self.batch_size)
-      return _conv2caps(x)
+    elif opt_name == 'gd':
+      return tf.train.GradientDescentOptimizer(self.cfg.LEARNING_RATE)
 
-  def _multi_caps_layers(self, x):
-    """
-    Build multi-capsule layer.
+    else:
+      raise ValueError('Wrong optimizer name!')
 
-    Args:
-      x: input tensor
-    Returns:
-      multi capsule layers' output tensor
-        - shape: (batch_size, num_caps, vec_dim, 1)
-    """
-    caps_layers = [x]
-    for iter_caps, caps_param in enumerate(self.cfg.CAPS_PARAMS):
-      # caps_param:
-      #       {'num_caps': None, 'vec_dim': None, 'route_epoch': None}
-      caps_layer = self._caps_layer(
-          caps_layers[iter_caps], caps_param, idx=iter_caps)
-      caps_layers.append(caps_layer)
-
-    return caps_layers[-1]
-
-  def _margin_loss(self, logits, labels, m_plus=0.9,
-                   m_minus=0.1, lambda_=0.5):
+  def _margin_loss(self,
+                   logits,
+                   labels,
+                   m_plus=0.9,
+                   m_minus=0.1,
+                   lambda_=0.5):
     """
     Calculate margin loss according to Hinton's paper.
     L = T_c * max(0, m_plus-||v_c||)^2 +
@@ -128,7 +109,7 @@ class CapsNet(ModelBase):
 
     return margin_loss
 
-  def _reconstruct_layers(self, inputs, labels):
+  def _reconstruct_layers(self, inputs, labels, is_training=None):
     """
     Reconstruction layer
 
@@ -137,6 +118,7 @@ class CapsNet(ModelBase):
         - shape: (batch_size, n_class, vec_dim_j)
       labels: labels
         - shape: (batch_size, n_class)
+      is_training: Whether or not the model is in training mode.
     Returns:
       output tensor of reconstruction layer
     """
@@ -148,7 +130,8 @@ class CapsNet(ModelBase):
     with tf.variable_scope('decoder'):
       # _reconstructed shape: (batch_size, image_size*image_size)
       _reconstructed, self.rec_arch_info = decoder(
-          _masked, self.cfg, batch_size=self.batch_size)
+          _masked, self.cfg, batch_size=self.batch_size,
+          is_training=is_training)
 
     return _reconstructed
 
@@ -168,7 +151,8 @@ class CapsNet(ModelBase):
 
     return loss
 
-  def _loss_with_rec(self, inputs, logits, labels, image_size):
+  def _loss_with_rec(self, inputs, logits,
+                     labels, image_size, is_training=None):
     """
     Calculate loss with reconstruction.
 
@@ -179,12 +163,14 @@ class CapsNet(ModelBase):
         - shape (batch_size, num_caps, vec_dim)
       labels: labels
       image_size: size of image, 3D
+      is_training: Whether or not the model is in training mode.
     Return:
       Total loss
     """
     # Reconstruction layers
     # reconstructed shape: (batch_size, image_size*image_size)
-    reconstructed = self._reconstruct_layers(logits, labels)
+    reconstructed = self._reconstruct_layers(
+        logits, labels, is_training=is_training)
     if self.cfg.SHOW_TRAINING_DETAILS:
       reconstructed = tf.Print(
           reconstructed, [tf.constant(4)],
@@ -231,13 +217,14 @@ class CapsNet(ModelBase):
 
     return loss, classifier_loss, reconstruct_loss, reconstructed_images
 
-  def _total_loss(self, inputs, logits, labels, image_size):
+  def _total_loss(self, inputs, logits, labels, image_size, is_training=None):
     """
     Get Losses and reconstructed images tensor.
     """
     if self.cfg.WITH_RECONSTRUCTION:
       loss, classifier_loss, reconstruct_loss, reconstructed_images = \
-          self._loss_with_rec(inputs, logits, labels, image_size)
+          self._loss_with_rec(
+              inputs, logits, labels, image_size, is_training=is_training)
     else:
       loss = self._loss_without_rec(logits, labels)
       classifier_loss, reconstruct_loss, reconstructed_images = \
@@ -247,7 +234,7 @@ class CapsNet(ModelBase):
 
     return loss, classifier_loss, reconstruct_loss, reconstructed_images
 
-  def _inference(self, inputs, labels):
+  def _inference(self, inputs, labels, is_training=None):
     """
     Build inference graph.
 
@@ -255,11 +242,13 @@ class CapsNet(ModelBase):
       inputs: input tensor
         - shape (batch_size, *image_size)
       labels: labels tensor
+      is_training: Whether or not the model is in training mode.
     Return:
       logits: output tensor of models
         - shape: (batch_size, num_caps, vec_dim)
     """
-    logits, self.clf_arch_info = classifier(inputs, self.cfg, self.batch_size)
+    logits, self.clf_arch_info = classifier(
+        inputs, self.cfg, self.batch_size, is_training=is_training)
 
     # Logits shape: (batch_size, num_caps, vec_dim, 1)
     logits = tf.squeeze(logits, name='logits')
@@ -276,8 +265,10 @@ class CapsNet(ModelBase):
 
     return logits, accuracy
 
-  def build_graph(self, image_size=(None, None, None),
-                  num_class=None, n_train_samples=None):
+  def build_graph(self,
+                  image_size=(None, None, None),
+                  num_class=None,
+                  n_train_samples=None):
     """
     Build the graph of CapsNet.
 
@@ -296,7 +287,7 @@ class CapsNet(ModelBase):
     with train_graph.as_default():
 
       # Get input placeholders
-      inputs, labels = self._get_inputs(image_size, num_class)
+      inputs, labels, is_training = self._get_inputs(image_size, num_class)
 
       # Global step
       global_step = tf.placeholder(tf.int16, name='global_step')
@@ -307,11 +298,13 @@ class CapsNet(ModelBase):
                                   global_step=global_step)
 
       # Build inference Graph
-      logits, accuracy = self._inference(inputs, labels)
+      logits, accuracy = self._inference(
+          inputs, labels, is_training=is_training)
 
       # Build reconstruction part
       loss, classifier_loss, reconstruct_loss, reconstructed_images = \
-          self._total_loss(inputs, logits, labels, image_size)
+          self._total_loss(
+              inputs, logits, labels, image_size, is_training=is_training)
 
       # Optimizer
       if self.cfg.SHOW_TRAINING_DETAILS:
@@ -331,6 +324,6 @@ class CapsNet(ModelBase):
         tf.summary.scalar('rec_loss', reconstruct_loss)
       summary_op = tf.summary.merge_all()
 
-      return global_step, train_graph, inputs, labels, train_op, \
-          saver, summary_op, loss, accuracy, classifier_loss, \
+      return global_step, train_graph, inputs, labels, is_training, \
+          train_op, saver, summary_op, loss, accuracy, classifier_loss, \
           reconstruct_loss, reconstructed_images

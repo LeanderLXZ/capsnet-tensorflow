@@ -238,7 +238,7 @@ class Conv2CapsLayer(object):
                vec_dim=None,
                padding='SAME',
                act_fn='relu',
-               stddev=None,
+               w_init_fn=tf.contrib.layers.xavier_initializer(),
                use_bias=True,
                batch_size=None):
     """
@@ -252,7 +252,7 @@ class Conv2CapsLayer(object):
       padding: padding type of convolution kernel
       act_fn: activation function of convolution layer
       vec_dim: dimensions of vectors of capsule
-      stddev: stddev of weights initializer
+      w_init_fn: weights initializer of convolution layer
       use_bias: add biases
       batch_size: number of samples per batch
     """
@@ -263,7 +263,7 @@ class Conv2CapsLayer(object):
     self.padding = padding
     self.act_fn = act_fn
     self.vec_dim = vec_dim
-    self.stddev = stddev
+    self.w_init_fn = w_init_fn
     self.use_bias = use_bias
     self.batch_size = batch_size
 
@@ -276,7 +276,7 @@ class Conv2CapsLayer(object):
             'padding': self.padding,
             'act_fn': self.act_fn,
             'vec_dim': self.vec_dim,
-            'stddev': self.stddev,
+            'w_init_fn': self.w_init_fn,
             'use_bias': self.use_bias,
             'batch_size': self.batch_size}
 
@@ -294,11 +294,6 @@ class Conv2CapsLayer(object):
     with tf.variable_scope('conv2caps'):
       # Convolution layer
       activation_fn = get_act_fn(self.act_fn)
-      if self.stddev is None:
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-      else:
-        weights_initializer = tf.truncated_normal_initializer(
-            stddev=self.stddev)
 
       if self.cfg.VAR_ON_CPU:
         kernels = variable_on_cpu(
@@ -306,7 +301,7 @@ class Conv2CapsLayer(object):
             shape=[self.kernel_size, self.kernel_size,
                    inputs.get_shape().as_list()[3],
                    self.n_kernel * self.vec_dim],
-            initializer=weights_initializer,
+            initializer=self.w_init_fn,
             dtype=tf.float32)
         caps = tf.nn.conv2d(
             input=inputs,
@@ -334,7 +329,7 @@ class Conv2CapsLayer(object):
             stride=self.stride,
             padding=self.padding,
             activation_fn=activation_fn,
-            weights_initializer=weights_initializer,
+            weights_initializer=self.w_init_fn,
             biases_initializer=biases_initializer)
 
       # Reshape and generating a capsule layer

@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-import numpy as np
 
 
 class ModelBase(object):
@@ -11,24 +10,6 @@ class ModelBase(object):
   def __init__(self, cfg):
 
     self.cfg = cfg
-
-  @staticmethod
-  def _batch_norm(x,
-                  is_training,
-                  batch_norm_decay,
-                  batch_norm_epsilon):
-    """
-    Batch normalization layer
-    """
-    with tf.name_scope('batch_norm'):
-      return tf.contrib.layers.batch_norm(
-          input=x,
-          decay=batch_norm_decay,
-          center=True,
-          scale=True,
-          epsilon=batch_norm_epsilon,
-          is_training=is_training,
-          fused=True)
 
   @staticmethod
   def _avg_pool(x,
@@ -53,36 +34,6 @@ class ModelBase(object):
     with tf.name_scope('global_avg_pool'):
       assert x.get_shape().ndims == 4
       return tf.reduce_mean(x, [1, 2])
-
-  def _optimizer(self,
-                 opt_name='adam',
-                 n_train_samples=None,
-                 global_step=None):
-    """
-    Optimizer.
-    """
-    if opt_name == 'adam':
-      return tf.train.AdamOptimizer(self.cfg.LEARNING_RATE)
-
-    elif opt_name == 'momentum':
-      n_batches_per_epoch = \
-          n_train_samples // self.cfg.GPU_BATCH_SIZE * self.cfg.GPU_NUMBER
-      boundaries = [
-          n_batches_per_epoch * x
-          for x in np.array(self.cfg.LR_BOUNDARIES, dtype=np.int64)]
-      staged_lr = [self.cfg.LEARNING_RATE * x
-                   for x in self.cfg.LR_STAGE]
-      learning_rate = tf.train.piecewise_constant(
-          global_step,
-          boundaries, staged_lr)
-      return tf.train.MomentumOptimizer(
-          learning_rate=learning_rate, momentum=self.cfg.MOMENTUM)
-
-    elif opt_name == 'gd':
-      return tf.train.GradientDescentOptimizer(self.cfg.LEARNING_RATE)
-
-    else:
-      raise ValueError('Wrong optimizer name!')
 
 
 class DenseLayer(object):
@@ -212,7 +163,7 @@ class ConvLayer(object):
                n_kernel=None,
                padding='SAME',
                act_fn='relu',
-               stddev=None,
+               w_init_fn=tf.contrib.layers.xavier_initializer(),
                resize=None,
                use_bias=True,
                atrous=False,
@@ -227,7 +178,7 @@ class ConvLayer(object):
       n_kernel: number of convolution kernels
       padding: padding type of convolution kernel
       act_fn: activation function
-      stddev: stddev of weights initializer
+      w_init_fn: weights initializer of convolution layer
       resize: if resize is not None, resize every image
       atrous: use atrous convolution
       use_bias: use bias
@@ -239,7 +190,7 @@ class ConvLayer(object):
     self.n_kernel = n_kernel
     self.padding = padding
     self.act_fn = act_fn
-    self.stddev = stddev
+    self.w_init_fn = w_init_fn
     self.resize = resize
     self.use_bias = use_bias
     self.atrous = atrous
@@ -253,7 +204,7 @@ class ConvLayer(object):
             'n_kernel': self.n_kernel,
             'padding': self.padding,
             'act_fn': self.act_fn,
-            'stddev': self.stddev,
+            'w_init_fn': self.w_init_fn,
             'resize': self.resize,
             'use_bias': self.use_bias,
             'atrous': self.atrous,
@@ -286,18 +237,12 @@ class ConvLayer(object):
 
       activation_fn = get_act_fn(self.act_fn)
 
-      if self.stddev is None:
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-      else:
-        weights_initializer = tf.truncated_normal_initializer(
-            stddev=self.stddev)
-
       if self.cfg.VAR_ON_CPU:
         kernels = variable_on_cpu(
             name='kernels',
             shape=[self.kernel_size, self.kernel_size,
                    inputs.get_shape().as_list()[3], self.n_kernel],
-            initializer=weights_initializer,
+            initializer=self.w_init_fn,
             dtype=tf.float32)
         conv = tf.nn.conv2d(input=inputs,
                             filter=kernels,
@@ -324,13 +269,14 @@ class ConvLayer(object):
             stride=self.stride,
             padding=self.padding,
             activation_fn=activation_fn,
-            weights_initializer=weights_initializer,
+            weights_initializer=self.w_init_fn,
             biases_initializer=biases_initializer)
 
       return conv
 
 
 class ConvTLayer(object):
+
   def __init__(self,
                cfg,
                kernel_size=None,
@@ -339,7 +285,7 @@ class ConvTLayer(object):
                padding='SAME',
                act_fn='relu',
                output_shape=None,
-               stddev=None,
+               w_init_fn=tf.contrib.layers.xavier_initializer(),
                use_bias=True,
                idx=None):
     """
@@ -353,7 +299,7 @@ class ConvTLayer(object):
       padding: padding type of convolution kernel
       act_fn: activation function
       output_shape: output shape of deconvolution layer
-      stddev: stddev of weights initializer
+      w_init_fn: weights initializer of convolution layer
       use_bias: use bias
       idx: index of layer
     """
@@ -364,7 +310,7 @@ class ConvTLayer(object):
     self.padding = padding
     self.act_fn = act_fn
     self.output_shape = output_shape
-    self.stddev = stddev
+    self.w_init_fn = w_init_fn
     self.use_bias = use_bias
     self.idx = idx
 
@@ -377,7 +323,7 @@ class ConvTLayer(object):
             'padding': self.padding,
             'act_fn': self.act_fn,
             'output_shape': self.output_shape,
-            'stddev': self.stddev,
+            'w_init_fn': self.w_init_fn,
             'use_bias': self.use_bias,
             'idx': self.idx}
 
@@ -393,18 +339,13 @@ class ConvTLayer(object):
     """
     with tf.variable_scope('conv_t_{}'.format(self.idx)):
       activation_fn = get_act_fn(self.act_fn)
-      if self.stddev is None:
-        weights_initializer = tf.contrib.layers.xavier_initializer()
-      else:
-        weights_initializer = tf.truncated_normal_initializer(
-            stddev=self.stddev)
 
       if self.cfg.VAR_ON_CPU:
         kernels = variable_on_cpu(
             name='kernels',
             shape=[self.kernel_size, self.kernel_size,
                    self.n_kernel, inputs.get_shape().as_list()[3]],
-            initializer=weights_initializer,
+            initializer=self.w_init_fn,
             dtype=tf.float32)
         conv_t = tf.nn.conv2d_transpose(
             value=inputs,
@@ -433,10 +374,76 @@ class ConvTLayer(object):
             stride=self.stride,
             padding=self.padding,
             activation_fn=activation_fn,
-            weights_initializer=weights_initializer,
+            weights_initializer=self.w_init_fn,
             biases_initializer=biases_initializer)
 
       return conv_t
+
+
+class BatchNorm(object):
+
+  def __init__(self,
+               cfg,
+               decay=0.997,
+               center=True,
+               scale=True,
+               is_training=None,
+               fused=True,
+               act_fn=None):
+    """
+    Batch normalization layer.
+
+    Args:
+      cfg: configuration
+      decay: Decay for the moving average.
+      center: If True, add offset of beta to normalized tensor.
+              If False, beta is ignored.
+      scale: If True, multiply by gamma. If False, gamma is not used.
+      is_training: Whether or not the layer is in training mode.
+      fused: If True, use a faster, fused implementation if possible.
+             If None, use the system recommended implementation.
+      act_fn: Add a activation function after batch normalization layer.
+              If None, not add.
+    """
+    self.cfg = cfg
+    self.decay = decay
+    self.center = center
+    self.scale = scale
+    self.is_training = is_training
+    self.fused = fused
+    self.act_fn = act_fn
+
+  @property
+  def params(self):
+    """Parameters of this layer."""
+    return {'cfg': self.cfg,
+            'decay': self.decay,
+            'center': self.center,
+            'scale': self.scale,
+            'is_training': self.is_training,
+            'fused': self.fused}
+
+  def __call__(self, inputs):
+    """
+    Batch normalization layer.
+
+    Args:
+      inputs: input tensor
+    Returns:
+      reshaped tensor
+    """
+    if self.act_fn is not None:
+      self.act_fn = get_act_fn(self.act_fn)
+
+    return tf.contrib.layers.batch_norm(
+           input=inputs,
+           decay=self.decay,
+           center=self.center,
+           scale=self.scale,
+           epsilon=self.cfg.EPSILON,
+           is_training=self.is_training,
+           fused=self.fused,
+           activation_fn=self.act_fn)
 
 
 class Reshape(object):
