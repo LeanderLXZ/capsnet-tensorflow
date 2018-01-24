@@ -27,7 +27,7 @@ def classifier(inputs, cfg, batch_size=None, is_training=None):
       n_kernel=128,
       padding='VALID',
       act_fn=None,
-      idx=0
+      idx=1
   ))
   model.add(BatchNorm(
       cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -38,7 +38,7 @@ def classifier(inputs, cfg, batch_size=None, is_training=None):
       n_kernel=256,
       padding='VALID',
       act_fn=None,
-      idx=0
+      idx=2
   ))
   model.add(BatchNorm(
       cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -73,7 +73,7 @@ def classifier(inputs, cfg, batch_size=None, is_training=None):
       vec_dim=64,
       route_epoch=3,
       batch_size=batch_size,
-      idx=0
+      idx=1
   ))
 
   return model.top_layer, model.info
@@ -142,6 +142,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=16,
           output_shape=[batch_size, 4, 4, 16],
           padding='VALID',
+          act_fn=None,
           idx=0))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -152,6 +153,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=32,
           output_shape=[batch_size, 12, 12, 32],
           padding='VALID',
+          act_fn=None,
           idx=1))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -162,6 +164,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=16,
           output_shape=[batch_size, 20, 20, 16],
           padding='VALID',
+          act_fn=None,
           idx=2))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -172,6 +175,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=8,
           output_shape=[batch_size, 28, 28, 8],
           padding='VALID',
+          act_fn=None,
           idx=3))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -244,6 +248,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=16,
           output_shape=[batch_size, 4, 4, 16],
           padding='VALID',
+          act_fn=None,
           idx=0))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -254,6 +259,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=32,
           output_shape=[batch_size, 12, 12, 32],
           padding='VALID',
+          act_fn=None,
           idx=1))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -264,6 +270,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=16,
           output_shape=[batch_size, 20, 20, 16],
           padding='VALID',
+          act_fn=None,
           idx=2))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
@@ -274,6 +281,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           n_kernel=8,
           output_shape=[batch_size, 28, 28, 8],
           padding='VALID',
+          act_fn=None,
           idx=3))
       model.add(BatchNorm(
           cfg, decay=0.997, is_training=is_training, act_fn='relu'))
