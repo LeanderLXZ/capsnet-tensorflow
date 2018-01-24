@@ -627,7 +627,7 @@ class Main(object):
     """
     session_cfg = tf.ConfigProto()
     session_cfg.gpu_options.allow_growth = True
-    session_cfg.gpu_options.allow_soft_placement = True
+    session_cfg.allow_soft_placement = True
 
     if self.cfg.VAR_ON_CPU:
       with tf.Session(graph=self.train_graph, config=session_cfg) as sess:
