@@ -5,6 +5,46 @@ from __future__ import print_function
 import tensorflow as tf
 
 
+def variable_on_cpu(name,
+                    shape,
+                    initializer,
+                    dtype=tf.float32,
+                    trainable=True):
+  """
+  Helper to create a Variable stored on CPU memory.
+
+  Args:
+    name: name of the variable
+    shape: list of ints
+    initializer: initializer for Variable
+    dtype: data type
+    trainable: variable can be trained by models
+  Returns:
+    Variable Tensor
+  """
+  with tf.device('/cpu:0'):
+    var = tf.get_variable(name, shape, initializer=initializer,
+                          dtype=dtype, trainable=trainable)
+  return var
+
+
+def get_act_fn(act_fn):
+  """
+  Helper to get activation function from name.
+  """
+  if act_fn == 'relu':
+    activation_fn = tf.nn.relu
+  elif act_fn == 'sigmoid':
+    activation_fn = tf.nn.sigmoid
+  elif act_fn == 'elu':
+    activation_fn = tf.nn.elu
+  elif act_fn is None:
+    activation_fn = None
+  else:
+    raise ValueError('Wrong activation function name!')
+  return activation_fn
+
+
 class ModelBase(object):
 
   def __init__(self, cfg):
@@ -112,46 +152,6 @@ class DenseLayer(object):
             biases_initializer=biases_initializer)
 
       return fc
-
-
-def variable_on_cpu(name,
-                    shape,
-                    initializer,
-                    dtype=tf.float32,
-                    trainable=True):
-  """
-  Helper to create a Variable stored on CPU memory.
-
-  Args:
-    name: name of the variable
-    shape: list of ints
-    initializer: initializer for Variable
-    dtype: data type
-    trainable: variable can be trained by models
-  Returns:
-    Variable Tensor
-  """
-  with tf.device('/cpu:0'):
-    var = tf.get_variable(name, shape, initializer=initializer,
-                          dtype=dtype, trainable=trainable)
-  return var
-
-
-def get_act_fn(act_fn):
-  """
-  Helper to get activation function from name.
-  """
-  if act_fn == 'relu':
-    activation_fn = tf.nn.relu
-  elif act_fn == 'sigmoid':
-    activation_fn = tf.nn.sigmoid
-  elif act_fn == 'elu':
-    activation_fn = tf.nn.elu
-  elif act_fn is None:
-    activation_fn = None
-  else:
-    raise ValueError('Wrong activation function name!')
-  return activation_fn
 
 
 class ConvLayer(object):
