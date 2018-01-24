@@ -26,9 +26,9 @@ def training_capsnet(cfg, mode):
 
 def pipeline(mode):
 
-  # training_capsnet(cfg_1, mode)
-  # training_capsnet(cfg_2, mode)
-  # training_capsnet(cfg_3, mode)
+  training_capsnet(cfg_1, mode)
+  training_capsnet(cfg_2, mode)
+  training_capsnet(cfg_3, mode)
   training_capsnet(cfg_4, mode)
   training_capsnet(cfg_5, mode)
   training_capsnet(cfg_6, mode)
@@ -48,4 +48,4 @@ if __name__ == '__main__':
   elif input_ == '2':
     pipeline('multi-gpu')
   else:
-    raise ValueError('Wrong input! Found: ', input_)
+    raise ValueError('Wrong input! Found: {}'.format(input_))

@@ -101,6 +101,31 @@ class DataPreProcess(object):
       self.y_train = self.y
       self.x_valid = self.x_test
       self.y_valid = self.y_test
+    else:
+      self.x_train = self.x[:train_stop]
+      self.y_train = self.y[:train_stop]
+      self.x_valid = self.x[train_stop:]
+      self.y_valid = self.y[train_stop:]
+
+  def _check_data(self):
+    """
+    Check data format.
+    """
+    assert self.x_train.max() <= 1, self.x_train.max()
+    assert self.y_train.max() <= 1, self.y_train.max()
+    assert self.x_valid.max() <= 1, self.x_valid.max()
+    assert self.y_valid.max() <= 1, self.y_valid.max()
+    assert self.x_test.max() <= 1, self.x_test.max()
+    assert self.y_test.max() <= 1, self.y_test.max()
+
+    assert self.x_train.min() >= 0, self.x_train.min()
+    assert self.y_train.min() >= 0, self.y_train.min()
+    assert self.x_valid.min() >= 0, self.x_valid.min()
+    assert self.y_valid.min() >= 0, self.y_valid.min()
+    assert self.x_test.min() >= 0, self.x_test.min()
+    assert self.y_test.min() >= 0, self.y_test.min()
+
+    if self.cfg.DPP_TEST_AS_VALID:
       if self.data_base_name == 'mnist':
         assert self.x_train.shape == (60000, 28, 28, 1), self.x_train.shape
         assert self.y_train.shape == (60000, 10), self.y_train.shape
@@ -119,10 +144,6 @@ class DataPreProcess(object):
         raise ValueError('Wrong database name!')
 
     else:
-      self.x_train = self.x[:train_stop]
-      self.y_train = self.y[:train_stop]
-      self.x_valid = self.x[train_stop:]
-      self.y_valid = self.y[train_stop:]
       if self.data_base_name == 'mnist':
         assert self.x_train.shape == (55000, 28, 28, 1), self.x_train.shape
         assert self.y_train.shape == (55000, 10), self.y_train.shape
@@ -196,6 +217,9 @@ class DataPreProcess(object):
     # Split data set into train/valid/test
     self._split_data()
 
+    # Check data format.
+    self._check_data()
+
     # Save data to pickles
     self._save_data()
 
@@ -224,7 +248,7 @@ if __name__ == '__main__':
   elif input_cfg == '2':
     DPP = DataPreProcess(cfg_2)
   else:
-    raise ValueError('Wrong config input! Found: ', input_cfg)
+    raise ValueError('Wrong config input! Found: {}'.format(input_cfg))
 
   if input_mode == '1':
     DPP.pipeline('mnist')
@@ -234,4 +258,4 @@ if __name__ == '__main__':
     DPP.pipeline('mnist')
     DPP.pipeline('cifar10')
   else:
-    raise ValueError('Wrong database input! Found: ', input_mode)
+    raise ValueError('Wrong database input! Found: {}'.format(input_mode))

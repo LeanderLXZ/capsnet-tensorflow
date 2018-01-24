@@ -88,4 +88,4 @@ if __name__ == '__main__':
     download_data('mnist')
     download_data('cifar10')
   else:
-    raise ValueError('Wrong input! Found: ', input_)
+    raise ValueError('Wrong input! Found: {}'.format(input_))

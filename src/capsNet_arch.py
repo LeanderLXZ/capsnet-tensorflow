@@ -11,7 +11,33 @@ def classifier(inputs, cfg, batch_size=None):
   model = Sequential(inputs)
   model.add(ConvLayer(
       cfg,
-      kernel_size=9,
+      kernel_size=3,
+      stride=1,
+      n_kernel=256,
+      padding='VALID',
+      act_fn='relu',
+      stddev=None,
+      resize=None,
+      use_bias=True,
+      atrous=False,
+      idx=0
+  ))
+  model.add(ConvLayer(
+      cfg,
+      kernel_size=3,
+      stride=1,
+      n_kernel=256,
+      padding='VALID',
+      act_fn='relu',
+      stddev=None,
+      resize=None,
+      use_bias=True,
+      atrous=False,
+      idx=0
+  ))
+  model.add(ConvLayer(
+      cfg,
+      kernel_size=3,
       stride=1,
       n_kernel=256,
       padding='VALID',
