@@ -384,44 +384,46 @@ class BatchNorm(object):
 
   def __init__(self,
                cfg,
-               decay=0.997,
+               is_training,
+               momentum=0.99,
                center=True,
                scale=True,
-               is_training=None,
-               fused=True,
-               act_fn=None):
+               epsilon=0.001,
+               act_fn='relu',
+               idx=None):
     """
     Batch normalization layer.
 
     Args:
       cfg: configuration
-      decay: Decay for the moving average.
+      is_training: Whether or not the layer is in training mode.
+      momentum: Momentum for the moving average.
       center: If True, add offset of beta to normalized tensor.
               If False, beta is ignored.
       scale: If True, multiply by gamma. If False, gamma is not used.
-      is_training: Whether or not the layer is in training mode.
-      fused: If True, use a faster, fused implementation if possible.
-             If None, use the system recommended implementation.
+      epsilon: Small float added to variance to avoid dividing by zero.
       act_fn: Add a activation function after batch normalization layer.
               If None, not add.
+      idx: index of layer
     """
     self.cfg = cfg
-    self.decay = decay
+    self.is_training = is_training
+    self.momentum = momentum
     self.center = center
     self.scale = scale
-    self.is_training = is_training
-    self.fused = fused
+    self.epsilon = epsilon
     self.act_fn = act_fn
+    self.idx = idx
 
   @property
   def params(self):
     """Parameters of this layer."""
     return {'cfg': self.cfg,
-            'decay': self.decay,
+            'momentum': self.momentum,
             'center': self.center,
             'scale': self.scale,
-            'is_training': self.is_training,
-            'fused': self.fused}
+            'epsilon': self.epsilon,
+            'act_fn': self.act_fn}
 
   def __call__(self, inputs):
     """
@@ -432,18 +434,20 @@ class BatchNorm(object):
     Returns:
       reshaped tensor
     """
-    if self.act_fn is not None:
-      self.act_fn = get_act_fn(self.act_fn)
+    with tf.variable_scope('batch_norm_{}'.format(self.idx)):
+      bn = tf.layers.batch_normalization(
+          inputs=inputs,
+          momentum=self.momentum,
+          center=self.center,
+          scale=self.scale,
+          epsilon=self.epsilon,
+          training=self.is_training)
 
-    return tf.contrib.layers.batch_norm(
-           inputs=inputs,
-           decay=self.decay,
-           center=self.center,
-           scale=self.scale,
-           epsilon=self.cfg.EPSILON,
-           is_training=self.is_training,
-           fused=self.fused,
-           activation_fn=self.act_fn)
+      if self.act_fn is not None:
+        activation_fn = get_act_fn(self.act_fn)
+        return activation_fn(bn)
+      else:
+        return bn
 
 
 class Reshape(object):
