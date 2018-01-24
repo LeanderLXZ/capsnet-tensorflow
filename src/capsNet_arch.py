@@ -19,7 +19,7 @@ def classifier(inputs, cfg, batch_size=None, is_training=None):
       idx=0
   ))
   model.add(BatchNorm(
-      cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+      cfg, is_training, momentum=0.99, act_fn='relu', idx=0))
   model.add(ConvLayer(
       cfg,
       kernel_size=5,
@@ -30,7 +30,7 @@ def classifier(inputs, cfg, batch_size=None, is_training=None):
       idx=1
   ))
   model.add(BatchNorm(
-      cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+      cfg, is_training, momentum=0.99, act_fn='relu', idx=1))
   model.add(ConvLayer(
       cfg,
       kernel_size=5,
@@ -41,7 +41,7 @@ def classifier(inputs, cfg, batch_size=None, is_training=None):
       idx=2
   ))
   model.add(BatchNorm(
-      cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+      cfg, is_training, momentum=0.99, act_fn='relu', idx=2))
   # models.add(Dense2Capsule(
   #     cfg,
   #     identity_map=True,
@@ -145,7 +145,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=0))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=0))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -156,7 +156,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=1))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=1))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -167,7 +167,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=2))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=2))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -178,7 +178,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=3))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=3))
       model.add(ConvTLayer(
           cfg,
           kernel_size=3,
@@ -251,7 +251,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=0))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=0))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -262,7 +262,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=1))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=1))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -273,7 +273,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=2))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=2))
       model.add(ConvTLayer(
           cfg,
           kernel_size=9,
@@ -284,7 +284,7 @@ def decoder(inputs, cfg, batch_size=None, is_training=None):
           act_fn=None,
           idx=3))
       model.add(BatchNorm(
-          cfg, decay=0.997, is_training=is_training, act_fn='relu'))
+          cfg, is_training, momentum=0.99, act_fn='relu', idx=3))
       model.add(ConvTLayer(
           cfg,
           kernel_size=5,
