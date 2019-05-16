@@ -25,7 +25,7 @@ __C = EasyDict()
 # Database name
 # 'mnist': MNIST
 # 'cifar10' CIFAR-10
-__C.DATABASE_NAME = 'cifar10'
+__C.DATABASE_NAME = 'mnist'
 
 # Training version
 # Set None to auto generate version
@@ -90,12 +90,12 @@ __C.WITH_RECONSTRUCTION = True
 # 'fc': full_connected layers
 # 'conv': convolution layers
 # 'conv_t': transpose convolution layers
-__C.DECODER_TYPE = 'conv_t'
+__C.DECODER_TYPE = 'fc'
 
 # Reconstruction loss
 # 'mse': Mean Square Error
 # 'ce' : sigmoid_cross_entropy_with_logits
-__C.RECONSTRUCTION_LOSS = 'ce'
+__C.RECONSTRUCTION_LOSS = 'mse'
 
 # Scaling for reconstruction loss
 __C.RECONSTRUCT_LOSS_SCALE = 0.392  # 0.0005*784=0.392
@@ -116,7 +116,7 @@ __C.DISPLAY_STEP = None  # batches
 
 # Save summary step
 # Set None to not save summaries
-__C.SAVE_LOG_STEP = 20  # batches
+__C.SAVE_LOG_STEP = None  # batches
 
 # Save reconstructed images
 # Set None to not save images
@@ -128,18 +128,18 @@ __C.MAX_IMAGE_IN_COL = 20
 # Calculate train loss and valid loss using full data set
 # 'per_epoch': evaluate on full set when n epochs finished
 # 'per_batch': evaluate on full set when n batches finished
-__C.FULL_SET_EVAL_MODE = 'per_batch'
+__C.FULL_SET_EVAL_MODE = 'per_epoch'
 # None: not evaluate
-__C.FULL_SET_EVAL_STEP = 50
+__C.FULL_SET_EVAL_STEP = 1
 
 # Save models
 # 'per_epoch': save models when n epochs finished
 # 'per_batch': save models when n batches finished
 __C.SAVE_MODEL_MODE = 'per_epoch'
 # None: not save models
-__C.SAVE_MODEL_STEP = 10
+__C.SAVE_MODEL_STEP = True
 # Maximum number of recent checkpoints to keep.
-__C.MAX_TO_KEEP_CKP = 5
+__C.MAX_TO_KEEP_CKP = 1
 
 # Calculate the train loss of full data set, which may take lots of time.
 __C.EVAL_WITH_FULL_TRAIN_SET = False
@@ -155,7 +155,7 @@ __C.SHOW_TRAINING_DETAILS = False
 __C.TEST_VERSION = 'fc_rec_mse'
 
 # Testing checkpoint index
-__C.TEST_CKP_IDX = 29
+__C.TEST_CKP_IDX = 49
 
 # Testing with reconstruction
 __C.TEST_WITH_RECONSTRUCTION = True
