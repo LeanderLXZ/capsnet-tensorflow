@@ -642,8 +642,8 @@ if __name__ == '__main__':
   opts, args = getopt.getopt(sys.argv[1:], "g", ['gpu-id'])
   for op, value in opts:
     if op == "-g":
-      print('Using /gpu: %d' % value)
-      environ["CUDA_VISIBLE_DEVICES"] = str(value)
+      print('Using /gpu: %d' % int(value))
+      environ["CUDA_VISIBLE_DEVICES"] = str(int(value))
 
   utils.thick_line()
   print('Input [ 1 ] to run normal version.')
